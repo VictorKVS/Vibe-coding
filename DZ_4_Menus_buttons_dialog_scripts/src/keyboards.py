@@ -28,6 +28,14 @@ def rest_type_keyboard() -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup(inline_keyboard=[[InlineKeyboardButton(text=t, callback_data=f"rest:{v}")] for t, v in values])
 
 
+def directions_keyboard(items: list[dict]) -> InlineKeyboardMarkup:
+    rows = []
+    for item in items:
+        rows.append([InlineKeyboardButton(text=item["country"], callback_data=f"direction:{item['slug']}")])
+    rows.append([InlineKeyboardButton(text="🌍 Любое направление", callback_data="direction:any")])
+    return InlineKeyboardMarkup(inline_keyboard=rows)
+
+
 def confirm_keyboard() -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup(inline_keyboard=[
         [InlineKeyboardButton(text="✅ Искать туры", callback_data="confirm:yes")],
