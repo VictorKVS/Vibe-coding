@@ -1,13 +1,16 @@
 from __future__ import annotations
 
+import asyncio
 from pathlib import Path
 
 from aiogram import F, Router
 from aiogram.filters import CommandStart
 from aiogram.fsm.context import FSMContext
-from aiogram.types import CallbackQuery, FSInputFile, Message, ReplyKeyboardRemove
+from aiogram.types import CallbackQuery, FSInputFile, InputMediaPhoto, Message, ReplyKeyboardRemove
 
+from src.agents.travel_expert import answer_with_llm
 from src.catalog import find_tours, get_tour
+from src.config import load_settings
 from src.destinations import enabled_destinations, get_destination
 from src.fsm import ExpertChat, LeadForm, TourSearch
 from src.keyboards import (
@@ -20,6 +23,7 @@ from src.keyboards import (
     rest_type_keyboard,
     tour_actions,
 )
+from src.llm import build_gigachat_callable
 
 router = Router(name="ai-travel-mvp")
 
@@ -27,6 +31,7 @@ DATA_DIR = Path("data")
 ASSETS_DIR = Path("assets")
 DESTINATIONS_CSV = DATA_DIR / "destinations.csv"
 SQLITE_PATH = DATA_DIR / "ai_travel.db"
+KNOWLEDGE_DIR = Path("knowledge")
 
 REST_LABELS = {
     "beach": "Пляжный",
@@ -207,6 +212,22 @@ async def search_tours(call: CallbackQuery, state: FSMContext) -> None:
     await call.answer()
 
 
+@router.callback_query(F.data.startswith("gallery:"))
+async def show_gallery(call: CallbackQuery) -> None:
+    slug = call.data.split(":", 1)[1]
+    gallery_dir = ASSETS_DIR / "gallery" / slug
+    photos = sorted([p for p in gallery_dir.glob("*.*") if p.suffix.lower() in {".jpg", ".jpeg", ".png", ".webp"}]) if gallery_dir.exists() else []
+    if not photos:
+        await call.message.answer("Галерея для этого направления пока не найдена в assets/gallery.")
+        await call.answer()
+        return
+    media = []
+    for index, photo in enumerate(photos[:10]):
+        media.append(InputMediaPhoto(media=FSInputFile(photo), caption="Галерея тура" if index == 0 else None))
+    await call.message.answer_media_group(media)
+    await call.answer()
+
+
 @router.callback_query(F.data.startswith("expert:"))
 async def expert_entry(call: CallbackQuery, state: FSMContext) -> None:
     parts = call.data.split(":")
@@ -221,6 +242,31 @@ async def expert_entry(call: CallbackQuery, state: FSMContext) -> None:
     await state.update_data(expert_slug=slug, expert_tour_code=tour_code)
     await send_screen(call.message, "ai.jpg", "🤖 Travel Expert AI готов. Задайте вопрос по Непалу: сезон, климат, треккинг, еда, транспорт, достопримечательности, правила поездки.")
     await call.answer()
+
+
+@router.message(ExpertChat.active, F.text)
+async def expert_question(message: Message, state: FSMContext) -> None:
+    data = await state.get_data()
+    settings = load_settings()
+    if not settings.gigachat_credentials:
+        await message.answer("GIGACHAT_CREDENTIALS не задан. В Colab добавьте секрет и перезапустите бота.")
+        return
+    question = (message.text or "").strip()
+    try:
+        llm_callable = build_gigachat_callable(settings.gigachat_credentials)
+        answer = await asyncio.to_thread(
+            answer_with_llm,
+            question,
+            data.get("expert_slug", "nepal"),
+            str(KNOWLEDGE_DIR),
+            str(SQLITE_PATH),
+            llm_callable,
+            data.get("expert_tour_code"),
+        )
+    except Exception as exc:
+        await message.answer(f"AI-консультант временно недоступен: {type(exc).__name__}. Попробуйте ещё раз позже.")
+        return
+    await message.answer(answer)
 
 
 @router.callback_query(F.data.startswith("lead:"))
