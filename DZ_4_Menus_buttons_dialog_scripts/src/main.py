@@ -8,6 +8,7 @@ from aiogram import Bot, Dispatcher
 from src.bot import router
 from src.catalog import build_sqlite
 from src.config import load_settings
+from src.storage import init_runtime_schema
 
 
 async def main() -> None:
@@ -19,6 +20,7 @@ async def main() -> None:
     sqlite_path = Path(settings.sqlite_path)
     if csv_path.exists():
         build_sqlite(str(csv_path), str(sqlite_path))
+    init_runtime_schema(str(sqlite_path))
 
     bot = Bot(token=settings.tg_token)
     dp = Dispatcher()
