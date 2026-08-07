@@ -1,18 +1,18 @@
-tour_code,slug,country,primary_city_or_region,knowledge_status,pricing_status
-NP-001,nepal,Nepal,Kathmandu/Param Himalayan,DETAILED,INTERNAL_MVP
-KG-002,kyrgyzstan,Kyrgyzstan,Issyk-Kul/Tien Shan,STUB,UNVERIFIED
-RU-003,baikal,Russia,Lake Baikal,STUB,UNVERIFIED
-TZ-004,tanzania,Tanzania,Serengeti/Kilimanjaro,STUB,UNVERIFIED
-GE-005,georgia,Georgia,Tbilisi/Kazbegi,STUB,UNVERIFIED
-UZ-006,samarkand,Uzbekistan,Samarkand,STUB,UNVERIFIED
-DK-007,copenhagen,Denmark,Copenhagen,STUB,UNVERIFIED
-CZ-008,prague,Czechia,Prague,STUB,UNVERIFIED
-EG-009,egypt,Egypt,Cairo/Red Sea,STUB,UNVERIFIED
-TR-010,turkey,Turkey,Istanbul/Antalya,STUB,UNVERIFIED
-IT-011,italy,Italy,Rome,STUB,UNVERIFIED
-FR-012,france,France,Paris,STUB,UNVERIFIED
-GR-013,greece,Greece,Santorini/Athens,STUB,UNVERIFIED
-MV-014,maldives,Maldives,Atolls,STUB,UNVERIFIED
-ID-015,bali,Indonesia,Bali,STUB,UNVERIFIED
-JP-016,japan,Japan,Tokyo/Fuji,STUB,UNVERIFIED
-CR-017,cruise,Mediterranean,Mediterranean cruise,STUB,UNVERIFIED
+tour_code,slug,country,primary_city_or_region,knowledge_status,pricing_status,image_file,telegram_enabled,notes
+NP-001,nepal,Nepal,Kathmandu/Pokhara/Himalaya,DETAILED,INTERNAL_MVP,nepal.jpg,true,"Эталонное направление MVP; подробная база знаний"
+KG-002,kyrgyzstan,Kyrgyzstan,Issyk-Kul/Tien Shan,STUB,UNVERIFIED,kyrgyzstan.jpg,true,"Карточка доступна; экспертные данные требуют наполнения"
+RU-003,baikal,Russia,Lake Baikal/Olkhon,STUB,UNVERIFIED,baikal.jpg,true,"Карточка доступна; экспертные данные требуют наполнения"
+TZ-004,tanzania,Tanzania,Serengeti/Kilimanjaro/Zanzibar,STUB,UNVERIFIED,tanzania.jpg,true,"Карточка доступна; экспертные данные требуют наполнения"
+GE-005,georgia,Georgia,Tbilisi/Kazbegi,STUB,UNVERIFIED,georgia.jpg,true,"Карточка доступна; экспертные данные требуют наполнения"
+UZ-006,samarkand,Uzbekistan,Samarkand,STUB,UNVERIFIED,samarkand.jpg,true,"Карточка доступна; экспертные данные требуют наполнения"
+DK-007,copenhagen,Denmark,Copenhagen,STUB,UNVERIFIED,copenhagen.jpg,true,"Карточка доступна; экспертные данные требуют наполнения"
+CZ-008,prague,Czechia,Prague,STUB,UNVERIFIED,prague.jpg,true,"Карточка доступна; экспертные данные требуют наполнения"
+EG-009,egypt,Egypt,Cairo/Red Sea,STUB,UNVERIFIED,egypt.jpg,true,"Карточка доступна; экспертные данные требуют наполнения"
+TR-010,turkey,Turkey,Istanbul/Antalya,STUB,UNVERIFIED,turkey.jpg,true,"Карточка доступна; экспертные данные требуют наполнения"
+IT-011,italy,Italy,Rome,STUB,UNVERIFIED,italy.jpg,true,"Карточка доступна; экспертные данные требуют наполнения"
+FR-012,france,France,Paris,STUB,UNVERIFIED,france.jpg,true,"Карточка доступна; экспертные данные требуют наполнения"
+GR-013,greece,Greece,Athens/Santorini,STUB,UNVERIFIED,greece.jpg,true,"Карточка доступна; экспертные данные требуют наполнения"
+MV-014,maldives,Maldives,Maldives Atolls,STUB,UNVERIFIED,maldives.jpg,true,"Карточка доступна; экспертные данные требуют наполнения"
+ID-015,bali,Indonesia,Bali,STUB,UNVERIFIED,bali.jpg,true,"Карточка доступна; экспертные данные требуют наполнения"
+JP-016,japan,Japan,Tokyo/Fuji/Kyoto,STUB,UNVERIFIED,japan.jpg,true,"Карточка доступна; экспертные данные требуют наполнения"
+CR-017,cruise,Mediterranean,Mediterranean cruise,STUB,UNVERIFIED,cruise.jpg,true,"Карточка доступна; маршрут и цена должны приходить из каталога"
