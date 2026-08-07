@@ -1,0 +1,48 @@
+{
+  "schema_version": 1,
+  "source_of_truth": "github",
+  "runtime": "google_colab",
+  "updated_at": "2026-08-07",
+  "destinations": {
+    "nepal": {
+      "status": "DETAILED",
+      "approved_documents": [
+        "README.md",
+        "overview.md",
+        "climate.md",
+        "visa.md",
+        "attractions.md",
+        "food.md",
+        "souvenirs.md",
+        "transport.md",
+        "trekking.md",
+        "safety.md",
+        "faq.md",
+        "reviews.md"
+      ],
+      "sources_registry": "sources.jsonl"
+    },
+    "kyrgyzstan": {"status": "STUB"},
+    "baikal": {"status": "STUB"},
+    "tanzania": {"status": "STUB"},
+    "georgia": {"status": "STUB"},
+    "samarkand": {"status": "STUB"},
+    "copenhagen": {"status": "STUB"},
+    "prague": {"status": "STUB"},
+    "egypt": {"status": "STUB"},
+    "turkey": {"status": "STUB"},
+    "italy": {"status": "STUB"},
+    "france": {"status": "STUB"},
+    "greece": {"status": "STUB"},
+    "maldives": {"status": "STUB"},
+    "bali": {"status": "STUB"},
+    "japan": {"status": "STUB"},
+    "cruise": {"status": "STUB"}
+  },
+  "rules": {
+    "live_price_from_llm": false,
+    "operational_data_source": "data/tours.csv or SQLite",
+    "unverified_claims_as_facts": false,
+    "credentials_in_repository": false
+  }
+}
