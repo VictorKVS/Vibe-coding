@@ -24,6 +24,7 @@ from src.keyboards import (
     tour_actions,
 )
 from src.llm import build_gigachat_callable
+from src.storage import save_lead
 
 router = Router(name="ai-travel-mvp")
 
@@ -47,6 +48,24 @@ async def send_screen(message: Message, filename: str, caption: str, reply_marku
         await message.answer_photo(FSInputFile(path), caption=caption, reply_markup=reply_markup)
     else:
         await message.answer(caption, reply_markup=reply_markup)
+
+
+async def send_tour_card(message: Message, tour: dict, slug: str) -> None:
+    price = tour.get("price")
+    price_text = f"{price:,.0f} {tour.get('currency')}".replace(",", " ") if price is not None else "цена требует проверки"
+    text = (
+        f"🌍 {tour.get('country')} — {tour.get('title')}\n"
+        f"📍 {tour.get('city')}\n"
+        f"🏨 {tour.get('hotel') or 'отель уточняется'} {tour.get('stars') or ''}★\n"
+        f"🗓 {tour.get('days')} дней / {tour.get('nights')} ночей\n"
+        f"💰 {price_text}\n"
+        f"Статус цены: {tour.get('price_status')}"
+    )
+    image = ASSETS_DIR / "tours" / f"{slug}.jpg"
+    if image.exists():
+        await message.answer_photo(FSInputFile(image), caption=text, reply_markup=tour_actions(tour["tour_code"], slug))
+    else:
+        await message.answer(text, reply_markup=tour_actions(tour["tour_code"], slug))
 
 
 @router.message(CommandStart())
@@ -196,18 +215,9 @@ async def search_tours(call: CallbackQuery, state: FSMContext) -> None:
         return
 
     await send_screen(call.message, "found.jpg", f"🤖 Найдено вариантов в проверенном каталоге: {len(tours)}")
+    card_slug = (destination or {}).get("slug", "nepal")
     for tour in tours[:5]:
-        price = tour.get("price")
-        price_text = f"{price:,.0f} {tour.get('currency')}".replace(",", " ") if price is not None else "цена требует проверки"
-        text = (
-            f"🌍 {tour.get('country')} — {tour.get('title')}\n"
-            f"📍 {tour.get('city')}\n"
-            f"🏨 {tour.get('hotel') or 'отель уточняется'} {tour.get('stars') or ''}★\n"
-            f"🗓 {tour.get('days')} дней / {tour.get('nights')} ночей\n"
-            f"💰 {price_text}\n"
-            f"Статус цены: {tour.get('price_status')}"
-        )
-        await call.message.answer(text, reply_markup=tour_actions(tour["tour_code"], (destination or {}).get("slug", "nepal")))
+        await send_tour_card(call.message, tour, card_slug)
     await state.clear()
     await call.answer()
 
@@ -215,7 +225,9 @@ async def search_tours(call: CallbackQuery, state: FSMContext) -> None:
 @router.callback_query(F.data.startswith("gallery:"))
 async def show_gallery(call: CallbackQuery) -> None:
     slug = call.data.split(":", 1)[1]
-    gallery_dir = ASSETS_DIR / "gallery" / slug
+    preferred = ASSETS_DIR / "gallery" / slug
+    fallback = ASSETS_DIR / "gallery"
+    gallery_dir = preferred if preferred.exists() else fallback
     photos = sorted([p for p in gallery_dir.glob("*.*") if p.suffix.lower() in {".jpg", ".jpeg", ".png", ".webp"}]) if gallery_dir.exists() else []
     if not photos:
         await call.message.answer("Галерея для этого направления пока не найдена в assets/gallery.")
@@ -287,15 +299,26 @@ async def lead_start(call: CallbackQuery, state: FSMContext) -> None:
 @router.message(LeadForm.waiting_contact, F.contact)
 async def lead_contact(message: Message, state: FSMContext) -> None:
     data = await state.get_data()
+    tour_code = data.get("lead_tour_code")
+    contact = message.contact
+    user = message.from_user
+    lead_id = save_lead(
+        str(SQLITE_PATH),
+        telegram_user_id=user.id if user else None,
+        telegram_username=user.username if user else None,
+        first_name=user.first_name if user else None,
+        last_name=user.last_name if user else None,
+        phone_number=contact.phone_number,
+        tour_code=tour_code,
+    )
     await state.clear()
-    # MVP: здесь позднее будет INSERT в таблицу leads.
+    await message.answer("Контакт получен.", reply_markup=ReplyKeyboardRemove())
     await send_screen(
         message,
         "success.jpg",
-        f"✅ Заявка принята. Тур: {data.get('lead_tour_code')}. Контакт передан менеджеру MVP.",
+        f"✅ Заявка #{lead_id} принята. Тур: {tour_code}. Менеджер увидит её в базе MVP.",
+        main_menu(),
     )
-    await message.answer("Главное меню", reply_markup=main_menu())
-    await message.answer("Готово", reply_markup=ReplyKeyboardRemove())
 
 
 @router.callback_query(F.data == "about")
