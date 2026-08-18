@@ -382,6 +382,13 @@ body::after {
   padding: 14px clamp(18px, 3vw, 44px); background: rgba(9, 7, 17, .76);
   border-bottom: 1px solid rgba(255,255,255,.07); backdrop-filter: blur(22px) saturate(140%);
 }
+.save-indicator { display: flex; align-items: center; gap: 7px; color: #8f899d; font-size: 10px; white-space: nowrap; }
+.save-indicator span { width: 7px; height: 7px; border-radius: 50%; background: #777181; }
+.save-indicator.saved span, .save-indicator.restored span, .save-indicator.imported span, .save-indicator.exported span { background: var(--mint); box-shadow: 0 0 12px rgba(102,227,180,.55); }
+.save-indicator.failed { color: #ff9daf; }
+.save-indicator.failed span { background: #ff718c; }
+.project-action { display: flex; align-items: center; gap: 6px; padding: 9px 11px; border: 1px solid rgba(255,255,255,.08); border-radius: 10px; color: #aaa3b9; background: rgba(255,255,255,.035); cursor: pointer; font-size: 10px; }
+.project-action:hover { color: #fff; border-color: rgba(102,227,180,.32); background: rgba(102,227,180,.07); }
 .genre-bar {
   display: grid; grid-template-columns: minmax(210px, .9fr) minmax(180px, .75fr) auto auto minmax(170px, 1fr);
   align-items: center; gap: 12px; margin: 22px 0 16px; padding: 13px;
@@ -429,11 +436,13 @@ body::after {
 @media (max-width: 1080px) {
   .genre-bar { grid-template-columns: minmax(220px, 1fr) minmax(190px, 1fr) auto auto; }
   .active-model-pill { grid-column: 1 / -1; padding: 4px 6px 2px; }
+  .save-indicator { display: none; }
 }
 
 @media (max-width: 700px) {
   .workspace-shell { padding-inline: 12px; }
   .workspace-header { margin-inline: -12px; padding-inline: 12px; }
+  .project-action { padding: 9px; font-size: 0; }
   .genre-bar { display: grid; grid-template-columns: 1fr 1fr; align-items: stretch; }
   .genre-control, .current-genre, .active-model-pill { grid-column: 1 / -1; }
   .genre-control { grid-template-columns: 1fr; }
