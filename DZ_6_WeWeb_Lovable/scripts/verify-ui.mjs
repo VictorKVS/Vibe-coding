@@ -149,9 +149,18 @@ try {
   });
   assert.equal(scriptEditors[2].value, manualFinale, "смена жанра затёрла ручную правку");
 
+  await act(async () => new Promise((resolve) => setTimeout(resolve, 420)));
+  const savedProject = JSON.parse(localStorage.getItem("bookcraft.mvp.project.v1"));
+  assert.equal(savedProject.version, 1, "автосохранение использует неизвестную версию формата");
+  assert.equal(savedProject.genre, "Роман", "автосохранение потеряло выбранный жанр");
+  assert.equal(savedProject.script.finale, manualFinale, "автосохранение потеряло ручную правку");
+  assert.equal(JSON.stringify(savedProject).includes("apiKey"), false, "автосохранение не должно содержать API-ключ");
+  assert.ok(document.querySelector(".save-indicator").textContent.includes("Автосохранено"), "нет видимого статуса автосохранения");
+
   await act(async () => root.unmount());
   console.log("PASS MIN-UI: реальный React dropdown содержит 5 жанров и меняет отображаемый state");
   console.log("PASS MED-UI: демо получает одну сцену от локального API и сохраняет ручную правку");
+  console.log("PASS MVP-RECOVERY: проект автосохраняется без API-ключей и готов к восстановлению");
 } finally {
   await vite.close();
   dom.window.close();
