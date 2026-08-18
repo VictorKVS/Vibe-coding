@@ -31,7 +31,7 @@ async function check(level, name, test) {
 await check("MIN", "формальный dropdown хранит и показывает один из 5 жанров", () => {
   assert.equal(GENRES.length, 5);
   assert.equal(new Set(GENRES).size, 5);
-  assert.match(appSource, /const \[genre, setGenre\] = useState\(GENRES\[0\]\)/);
+  assert.match(appSource, /const \[genre, setGenre\] = useState\(initialProject\?\.genre \|\| GENRES\[0\]\)/);
   assert.match(appSource, /value=\{genre\}/);
   assert.match(appSource, /onChange=\{\(event\) => setGenre\(event\.target\.value\)\}/);
   assert.match(appSource, /Текущий жанр:[\s\S]{0,80}\{genre\}/);
