@@ -89,7 +89,7 @@ function UniverseBlueprint() {
   const eventIcons = { place: MapPin, conflict: Swords, generated: Sparkles };
 
   return (
-    <details className="blueprint" open>
+    <details className="blueprint">
       <summary>
         <span><GitBranch size={16} /> Инженерная карта мира · MVP</span>
         <small>1 линия · 4 героя · 3 события</small>
@@ -576,6 +576,16 @@ function Workspace({ mode, onBack }) {
     () => Object.values(script).filter((value) => value.trim()).length,
     [script],
   );
+  const wordCount = useMemo(
+    () => Object.values(script).join(" ").trim().split(/\s+/).filter(Boolean).length,
+    [script],
+  );
+  const activeModel = useMemo(
+    () => modelConfig.source === "local"
+      ? LOCAL_MODELS.find((model) => model.id === modelConfig.localModel)?.label || "Локальная модель"
+      : modelConfig.externalModel || modelConfig.externalAgent || "Внешний агент",
+    [modelConfig],
+  );
 
   async function sendMessage() {
     const cleanIdea = idea.trim();
@@ -794,21 +804,25 @@ function Workspace({ mode, onBack }) {
       </header>
 
       <section className="genre-bar">
-        <label htmlFor="genre-select">Выберите жанр</label>
-        <select
-          id="genre-select"
-          value={genre}
-          onChange={(event) => setGenre(event.target.value)}
-        >
-          {GENRES.map((item) => <option key={item}>{item}</option>)}
-        </select>
-        <div className="current-genre">
-          <Check size={15} /> Текущий жанр: <strong>{genre}</strong>
+        <div className="genre-control">
+          <label htmlFor="genre-select">Выберите жанр</label>
+          <select
+            id="genre-select"
+            value={genre}
+            onChange={(event) => setGenre(event.target.value)}
+          >
+            {GENRES.map((item) => <option key={item}>{item}</option>)}
+          </select>
         </div>
-        <div className="state-note">Значение сохранено в state формы</div>
+        <div className="current-genre">
+          <Check size={15} /> <span>Текущий жанр:</span> <strong>{genre}</strong>
+        </div>
+        <div className="workspace-stat"><span>Структура</span><strong>{completed}/3</strong></div>
+        <div className="workspace-stat"><span>Объём</span><strong>{wordCount} слов</strong></div>
+        <div className="active-model-pill" title={activeModel}><span />{activeModel}</div>
       </section>
 
-      <details className="model-gateway" open>
+      <details className="model-gateway">
         <summary>
           <span><Settings size={16} /> Универсальный агент · подключение модели</span>
           <small>{modelConfig.source === "local" ? "локальный контур" : modelConfig.externalAgent || "внешний агент"}</small>
@@ -1022,6 +1036,11 @@ function Workspace({ mode, onBack }) {
           {error && <div className="error-box">{error}</div>}
 
           <div className="composer">
+            <div className="prompt-chips" aria-label="Быстрые команды">
+              {["Предложи сильную завязку", "Усиль конфликт", "Сделай финал неожиданным"].map((prompt) => (
+                <button type="button" key={prompt} onClick={() => setIdea(prompt)}>{prompt}</button>
+              ))}
+            </div>
             <textarea
               value={idea}
               onChange={(event) => setIdea(event.target.value)}
@@ -1046,7 +1065,10 @@ function Workspace({ mode, onBack }) {
               <span className="panel-kicker">Редактор структуры</span>
               <h2>{meta.title}</h2>
             </div>
-            <div className="progress-pill">{completed}/3 раздела</div>
+            <div className="script-metrics">
+              <div className="progress-pill">{completed}/3 раздела</div>
+              <span>{wordCount} слов</span>
+            </div>
           </div>
 
           <div className="script-sections">
