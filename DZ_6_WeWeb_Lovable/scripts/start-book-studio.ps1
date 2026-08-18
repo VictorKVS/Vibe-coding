@@ -10,15 +10,15 @@ $script:ChecksPassed = 0
 
 function Write-Check([string]$Label, [string]$Detail = "") {
     $script:ChecksPassed++
-    $suffix = if ($Detail) { " — $Detail" } else { "" }
+    $suffix = if ($Detail) { " - $Detail" } else { "" }
     Write-Host "  [OK] $Label$suffix" -ForegroundColor Green
 }
 
 function Stop-Preflight([string]$Problem, [string]$Fix) {
     Write-Host ""
-    Write-Host "  [ОШИБКА] $Problem" -ForegroundColor Red
-    Write-Host "  Что сделать: $Fix" -ForegroundColor Yellow
-    throw "Предстартовая диагностика не пройдена."
+    Write-Host "  [ERROR] $Problem" -ForegroundColor Red
+    Write-Host "  Action: $Fix" -ForegroundColor Yellow
+    throw "Preflight failed."
 }
 
 function Test-Url([string]$Url, [int]$TimeoutSec = 2) {
@@ -46,7 +46,7 @@ function Test-LlmAnswer {
     try {
         $body = @{
             model = "gigachat-local"
-            messages = @(@{ role = "user"; content = "Ответь только словом: ГОТОВО" })
+            messages = @(@{ role = "user"; content = "Reply with one word only: READY" })
             temperature = 0
             max_tokens = 12
             stream = $false
@@ -61,55 +61,55 @@ function Test-LlmAnswer {
 
 Clear-Host
 Write-Host "===============================================" -ForegroundColor DarkMagenta
-Write-Host " BOOK.CRAFT — ПРОВЕРКА ГОТОВНОСТИ К ДЕМОНСТРАЦИИ" -ForegroundColor Magenta
+Write-Host " BOOK.CRAFT - DEMO READINESS CHECK" -ForegroundColor Magenta
 Write-Host "===============================================" -ForegroundColor DarkMagenta
 
-Write-Host "`n[1/6] Проверяю окружение..." -ForegroundColor Cyan
+Write-Host "`n[1/6] Checking environment..." -ForegroundColor Cyan
 if (-not (Test-Path $LlamaServer)) {
-    Stop-Preflight "Не найден llama-server.exe" "Проверьте путь: $LlamaServer"
+    Stop-Preflight "llama-server.exe not found" "Check path: $LlamaServer"
 }
-Write-Check "llama-server.exe найден"
+Write-Check "llama-server.exe found"
 
 if (-not (Test-Path $ModelPath)) {
-    Stop-Preflight "Не найдена локальная модель GigaChat" "Проверьте путь: $ModelPath"
+    Stop-Preflight "Local GigaChat model not found" "Check path: $ModelPath"
 }
 $modelSizeGb = [math]::Round((Get-Item $ModelPath).Length / 1GB, 1)
-Write-Check "Модель GigaChat найдена" "$modelSizeGb ГБ"
+Write-Check "GigaChat model found" "$modelSizeGb GB"
 
 if (-not (Get-Command node.exe -ErrorAction SilentlyContinue)) {
-    Stop-Preflight "Node.js не найден в PATH" "Установите Node.js LTS и заново откройте PowerShell."
+    Stop-Preflight "Node.js is not in PATH" "Install Node.js LTS and reopen PowerShell."
 }
 if (-not (Get-Command npm.cmd -ErrorAction SilentlyContinue)) {
-    Stop-Preflight "npm не найден в PATH" "Переустановите Node.js LTS с npm."
+    Stop-Preflight "npm is not in PATH" "Reinstall Node.js LTS with npm."
 }
 $nodeVersion = (& node.exe --version).Trim()
-Write-Check "Node.js и npm доступны" $nodeVersion
+Write-Check "Node.js and npm available" $nodeVersion
 
 Set-Location $ProjectRoot
 
-Write-Host "`n[2/6] Проверяю зависимости..." -ForegroundColor Cyan
+Write-Host "`n[2/6] Checking dependencies..." -ForegroundColor Cyan
 if (-not (Test-Path (Join-Path $ProjectRoot "node_modules"))) {
-    Write-Host "  Первый запуск: устанавливаю зависимости..." -ForegroundColor Yellow
+    Write-Host "  First run: installing dependencies..." -ForegroundColor Yellow
     & npm.cmd install --no-audit --no-fund
     if ($LASTEXITCODE -ne 0) {
-        Stop-Preflight "npm install завершился ошибкой" "Проверьте интернет и повторите запуск."
+        Stop-Preflight "npm install failed" "Check internet access and run again."
     }
 }
-Write-Check "Зависимости интерфейса установлены"
+Write-Check "UI dependencies installed"
 
-Write-Host "`n[3/6] Запускаю приёмочные тесты M0→M1..." -ForegroundColor Cyan
+Write-Host "`n[3/6] Running M0-M1 acceptance tests..." -ForegroundColor Cyan
 & npm.cmd test
 if ($LASTEXITCODE -ne 0) {
-    Stop-Preflight "MIN/MED/MAX тесты не прошли" "Не записывайте видео; сохраните вывод этого окна."
+    Stop-Preflight "MIN/MED/MAX tests failed" "Do not record the video; save this console output."
 }
-Write-Check "MIN / MED / MAX — зелёные"
+Write-Check "MIN / MED / MAX are green"
 
-Write-Host "`n[4/6] Проверяю локальный GigaChat..." -ForegroundColor Cyan
+Write-Host "`n[4/6] Checking local GigaChat..." -ForegroundColor Cyan
 if (-not (Test-Url $LlmHealth)) {
     if (Test-TcpPort 1234) {
-        Stop-Preflight "Порт 1234 занят другой программой" "Закройте программу на порту 1234 и повторите запуск."
+        Stop-Preflight "Port 1234 is occupied" "Close the program using port 1234 and run again."
     }
-    Write-Host "  Запускаю llama-server; первый старт может занять до 90 секунд..." -ForegroundColor Yellow
+    Write-Host "  Starting llama-server; first start may take up to 90 seconds..." -ForegroundColor Yellow
     $arguments = @(
         "-m", ('"' + $ModelPath + '"'),
         "--host", "127.0.0.1",
@@ -130,20 +130,20 @@ if (-not (Test-Url $LlmHealth)) {
         }
     }
     if (-not $ready) {
-        Stop-Preflight "GigaChat не запустился за 90 секунд" "Проверьте окно llama-server и наличие свободной видеопамяти."
+        Stop-Preflight "GigaChat did not start in 90 seconds" "Check llama-server and available VRAM."
     }
 }
-Write-Check "Сервер модели отвечает" "127.0.0.1:1234"
+Write-Check "Model server is responding" "127.0.0.1:1234"
 
 if (-not (Test-LlmAnswer)) {
-    Stop-Preflight "Сервер запущен, но модель не генерирует ответ" "Проверьте окно llama-server; затем перезапустите BOOK.CRAFT."
+    Stop-Preflight "Server runs but model returned no answer" "Check llama-server, then restart BOOK.CRAFT."
 }
-Write-Check "Контрольная генерация GigaChat успешна"
+Write-Check "GigaChat control generation passed"
 
-Write-Host "`n[5/6] Запускаю интерфейс..." -ForegroundColor Cyan
+Write-Host "`n[5/6] Starting UI..." -ForegroundColor Cyan
 if (-not (Test-Url $AppUrl)) {
     if (Test-TcpPort 5173) {
-        Stop-Preflight "Порт 5173 занят другой программой" "Закройте старый Vite/Node-процесс и повторите запуск."
+        Stop-Preflight "Port 5173 is occupied" "Close the old Vite/Node process and run again."
     }
     Start-Process -FilePath "npm.cmd" -ArgumentList @("run", "dev") -WorkingDirectory $ProjectRoot
     for ($attempt = 1; $attempt -le 45; $attempt++) {
@@ -152,12 +152,12 @@ if (-not (Test-Url $AppUrl)) {
     }
 }
 if (-not (Test-Url $AppUrl)) {
-    Stop-Preflight "Интерфейс не запустился" "Проверьте окно npm/Vite и повторите запуск."
+    Stop-Preflight "UI did not start" "Check npm/Vite window and run again."
 }
-Write-Check "Интерфейс отвечает" $AppUrl
+Write-Check "UI is responding" $AppUrl
 
-Write-Host "`n[6/6] BOOK.CRAFT ГОТОВ К ДЕМОНСТРАЦИИ" -ForegroundColor Green
-Write-Host "  Успешных проверок: $script:ChecksPassed" -ForegroundColor Green
-Write-Host "  В приложении: Сценарий книги → Загрузить демо → Отправить" -ForegroundColor White
-Write-Host "  Не закрывайте окна llama-server и Vite во время записи." -ForegroundColor DarkGray
+Write-Host "`n[6/6] BOOK.CRAFT READY FOR DEMO" -ForegroundColor Green
+Write-Host "  Checks passed: $script:ChecksPassed" -ForegroundColor Green
+Write-Host "  In the app: Book script -> Load demo -> Send" -ForegroundColor White
+Write-Host "  Keep llama-server and Vite windows open while recording." -ForegroundColor DarkGray
 Start-Process $AppUrl
