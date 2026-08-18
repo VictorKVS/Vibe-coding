@@ -80,7 +80,7 @@ await check("MAX", "демо-мир ограничен четырьмя геро
   assert.match(appSource, /setIdea\(M1_DEMO\.idea\)/);
   assert.match(launcherSource, /npm\.cmd test/);
   assert.match(launcherSource, /Test-LlmAnswer/);
-  assert.match(launcherSource, /ГОТОВ К ДЕМОНСТРАЦИИ/);
+  assert.match(launcherSource, /READY FOR DEMO/);
   assert.match(launcherSource, /Test-TcpPort 1234/);
   assert.match(launcherSource, /Test-TcpPort 5173/);
   assert.match(demoRunbook, /статическ/i);
