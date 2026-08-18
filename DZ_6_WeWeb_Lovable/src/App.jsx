@@ -1,0 +1,1192 @@
+import { useEffect, useMemo, useRef, useState } from "react";
+import {
+  ArrowLeft,
+  BookOpenText,
+  Check,
+  Clapperboard,
+  Database,
+  Feather,
+  FileText,
+  GitBranch,
+  ImageIcon,
+  MapPin,
+  LoaderCircle,
+  RotateCcw,
+  Send,
+  Sparkles,
+  Swords,
+  Trash2,
+  Upload,
+  UserRound,
+  Download,
+  KeyRound,
+  PlugZap,
+  Settings,
+} from "lucide-react";
+import { GENRES, M1_DEMO, M1_WORLD } from "./m1-contract.js";
+
+const CHARACTER_COLORS = ["#a887ff", "#66e3b4", "#ff8abf", "#ffc765", "#65c7ff", "#ff846e"];
+
+const LOCAL_MODELS = [
+  { id: "gigachat-20b-a3b-q4", label: "GigaChat-20B A3B Instruct · Q4_K_M", capability: "текст" },
+  { id: "gigachat3-10b-a18b-q4", label: "GigaChat3-10B A1.8B · Q4_K_S", capability: "текст · рекомендуемая" },
+  { id: "qwen25-14b-1m-q4", label: "Qwen2.5-14B-Instruct-1M · Q4_K_M", capability: "длинный контекст" },
+  { id: "qwen25-coder-14b-q4", label: "Qwen2.5-Coder-14B-Instruct · Q4_K_M", capability: "код" },
+  { id: "deepseek-coder-v2-lite", label: "DeepSeek-Coder-V2-Lite-Instruct · Q4/Q5", capability: "код" },
+  { id: "llava16-mistral-7b", label: "LLaVA-1.6-Mistral-7B · Q4/Q5", capability: "текст + изображение" },
+  { id: "llava-llama3-8b-int4", label: "LLaVA-Llama-3-8B · INT4", capability: "текст + изображение" },
+  { id: "cogvlm-13b-f16", label: "CogVLM-13B-Chat · F16", capability: "текст + изображение" },
+  { id: "mythomax-l2-13b-q4", label: "MythoMax-L2-13B · Q4_K_S", capability: "творческий текст" },
+];
+
+const DEFAULT_MODEL_CONFIG = {
+  source: "local",
+  localModel: LOCAL_MODELS[1].id,
+  externalAgent: "",
+  externalProtocol: "openai-compatible",
+  externalEndpoint: "https://api.example.com/v1/chat/completions",
+  externalModel: "",
+  apiKey: "",
+};
+
+const EMPTY_SCRIPT = {
+  introduction: "",
+  development: "",
+  finale: "",
+};
+
+const STARTERS = {
+  book: {
+    title: "Сценарий книги",
+    chatTitle: "Чат — сценарий книги",
+    subtitle: "От первой искры до цельного литературного мира",
+    icon: BookOpenText,
+  },
+  video: {
+    title: "Сценарий видеоролика",
+    chatTitle: "Чат — сценарий видеоролика",
+    subtitle: "Сцены, ритм и визуальная драматургия",
+    icon: Clapperboard,
+  },
+};
+
+function Atmosphere() {
+  return (
+    <div className="atmosphere" aria-hidden="true">
+      <div className="aurora-orb orb-one" />
+      <div className="aurora-orb orb-two" />
+      <div className="aurora-orb orb-three" />
+      <div className="spark-field">
+        {Array.from({ length: 18 }, (_, index) => (
+          <i key={index} style={{ "--spark": index + 1 }} />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function UniverseBlueprint() {
+  const eventIcons = { place: MapPin, conflict: Swords, generated: Sparkles };
+
+  return (
+    <details className="blueprint" open>
+      <summary>
+        <span><GitBranch size={16} /> Инженерная карта мира · MVP</span>
+        <small>1 линия · 4 героя · 3 события</small>
+      </summary>
+      <div className="blueprint-grid">
+        <section className="cast-rail">
+          <header><UserRound size={14} /> Действующие лица</header>
+          <div className="cast-list">
+            {M1_WORLD.characters.map((character, index) => (
+              <div className={`cast-node cast-${index + 1}`} key={character.name}>
+                <i>{character.icon}</i>
+                <span><strong>{character.name}</strong><small>{character.role}</small></span>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        <section className="event-rail">
+          <header><MapPin size={14} /> Основная хронология</header>
+          <div className="event-line">
+            {M1_WORLD.events.map((event, index) => {
+              const EventIcon = eventIcons[event.icon];
+              return (
+                <div className="event-segment" key={event.id}>
+                  {index > 0 && (
+                    <b className={`event-connector ${event.status === "generated" ? "branch" : ""}`}>
+                      <span>{event.status === "generated" ? "AI-развилка" : "приводит к"}</span>
+                    </b>
+                  )}
+                  <article className={`event-card ${event.status}`}>
+                    <span className="event-code">{event.id} · {event.status === "canon" ? "КАНОН" : "НОВОЕ"}</span>
+                    <i><EventIcon size={15} /></i>
+                    <strong>{event.title}</strong>
+                    <small>{event.detail}</small>
+                  </article>
+                </div>
+              );
+            })}
+          </div>
+        </section>
+      </div>
+      <footer className="blueprint-legend">
+        <span><i className="legend-canon" /> подтверждено источником</span>
+        <span><i className="legend-new" /> новая сцена</span>
+        <span><i className="legend-link" /> причинная связь</span>
+        <strong>Статический демо-мир · автоматическое извлечение не реализовано</strong>
+      </footer>
+    </details>
+  );
+}
+
+function extractJson(text) {
+  const fenced = text.match(/```(?:json)?\s*([\s\S]*?)```/i);
+  const candidate = fenced?.[1] ?? text.match(/\{[\s\S]*\}/)?.[0];
+  if (!candidate) return null;
+  try {
+    return JSON.parse(candidate);
+  } catch {
+    return null;
+  }
+}
+
+function normalizeScriptPayload(payload, currentScript) {
+  if (!payload || typeof payload !== "object") return null;
+  const fields = ["introduction", "development", "finale"];
+  if (!fields.every((field) => typeof payload[field] === "string")) return null;
+  return {
+    assistantMessage:
+      typeof payload.assistantMessage === "string" && payload.assistantMessage.trim()
+        ? payload.assistantMessage.trim()
+        : "Сценарий обновлён.",
+    script: Object.fromEntries(
+      fields.map((field) => [field, payload[field].trim() || currentScript[field]]),
+    ),
+  };
+}
+
+async function callModelCompletion({ messages, temperature, maxTokens, modelConfig, timeoutMs = 90000 }) {
+  const controller = new AbortController();
+  const timeout = window.setTimeout(() => controller.abort(), timeoutMs);
+  const isLocal = modelConfig.source === "local";
+  const endpoint = isLocal ? "/llm-api/v1/chat/completions" : modelConfig.externalEndpoint.trim();
+  if (!endpoint) throw new Error("Укажите endpoint внешнего агента");
+  if (!isLocal && !modelConfig.externalModel.trim()) throw new Error("Укажите ID модели внешнего агента");
+  if (!isLocal && !modelConfig.apiKey.trim()) throw new Error("Укажите API-ключ внешнего агента");
+  try {
+    const response = await fetch(endpoint, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        ...(!isLocal ? { Authorization: `Bearer ${modelConfig.apiKey.trim()}` } : {}),
+      },
+      signal: controller.signal,
+      body: JSON.stringify({
+        model: isLocal ? modelConfig.localModel : modelConfig.externalModel.trim(),
+        messages,
+        temperature,
+        max_tokens: maxTokens,
+        stream: false,
+      }),
+    });
+    if (!response.ok) throw new Error(`Агент вернул ошибку ${response.status}`);
+    const data = await response.json();
+    const content = data?.choices?.[0]?.message?.content?.trim();
+    if (!content) throw new Error("Модель вернула пустой ответ");
+    return content;
+  } catch (error) {
+    if (error.name === "AbortError") {
+      throw new Error(`Агент не ответил за ${Math.round(timeoutMs / 1000)} секунд`);
+    }
+    throw error;
+  } finally {
+    window.clearTimeout(timeout);
+  }
+}
+
+function escapeRegExp(value) {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+function CharacterHighlight({ text, characters }) {
+  const activeCharacters = characters.filter((character) => character.name.trim());
+  if (!text.trim() || activeCharacters.length === 0) return null;
+
+  const byName = new Map(
+    activeCharacters.map((character, index) => [
+      character.name.trim().toLocaleLowerCase("ru"),
+      { ...character, color: character.color || CHARACTER_COLORS[index % CHARACTER_COLORS.length] },
+    ]),
+  );
+  const pattern = activeCharacters
+    .map((character) => character.name.trim())
+    .sort((a, b) => b.length - a.length)
+    .map(escapeRegExp)
+    .join("|");
+  const parts = text.split(new RegExp(`(${pattern})`, "giu"));
+
+  return (
+    <div className="character-highlight-view">
+      <header>
+        <span>ЦВЕТОВАЯ КАРТА ГЕРОЕВ</span>
+        <div>
+          {Array.from(byName.values()).map((character) => (
+            <small key={character.id}><i style={{ background: character.color }} />{character.name}</small>
+          ))}
+        </div>
+      </header>
+      <p>
+        {parts.map((part, index) => {
+          const character = byName.get(part.toLocaleLowerCase("ru"));
+          return character ? (
+            <mark
+              key={`${part}-${index}`}
+              style={{ "--character-color": character.color }}
+              title={`${character.name}: ${character.role || "роль не заполнена"}`}
+            >
+              {part}
+            </mark>
+          ) : <span key={`${part}-${index}`}>{part}</span>;
+        })}
+      </p>
+    </div>
+  );
+}
+
+async function generateWithLocalModel({
+  mode,
+  genre,
+  idea,
+  script,
+  messages,
+  referenceMode,
+  sources,
+  modelConfig,
+}) {
+  const modeTitle = mode === "book" ? "книги" : "видеоролика";
+  const history = messages
+    .slice(-6)
+    .map((item) => `${item.role === "user" ? "Пользователь" : "Ассистент"}: ${item.text}`)
+    .join("\n");
+
+  const referenceLabels = {
+    original: "Создай самостоятельную оригинальную историю. Источники используй только как справочный материал.",
+    inspired: "Создай новую историю по мотивам источников: сохрани узнаваемые идеи мира и темы, но не копируй фрагменты исходного текста.",
+    continuation: "Создай неофициальное продолжение: учитывай факты, персонажей и незавершённые линии источников; явно отделяй канон от новых решений.",
+  };
+  const sourceContext = sources.length
+    ? sources
+        .map((source) => `ИСТОЧНИК «${source.name}»:\n${source.text}`)
+        .join("\n\n")
+        .slice(0, 14000)
+    : "Источники не добавлены.";
+
+  const prompt = `
+Ты — сценарист и редактор. Помоги создать сценарий ${modeTitle} в жанре «${genre}».
+Измени три части сценария с учётом новой просьбы пользователя. Сохраняй удачные
+фрагменты текущей версии, если пользователь не просит их заменить.
+
+Режим работы с источниками:
+${referenceLabels[referenceMode]}
+
+Локальная база знаний:
+${sourceContext}
+
+Текущий сценарий:
+Вступление: ${script.introduction || "пока не заполнено"}
+Развитие: ${script.development || "пока не заполнено"}
+Финал: ${script.finale || "пока не заполнено"}
+
+Последний диалог:
+${history || "диалог только начинается"}
+
+Новая просьба: ${idea}
+
+Верни только JSON без markdown:
+{
+  "assistantMessage": "короткий комментарий о внесённых изменениях",
+  "introduction": "обновлённое вступление",
+  "development": "обновлённое развитие",
+  "finale": "обновлённый финал"
+}`.trim();
+
+  const raw = await callModelCompletion({
+    messages: [
+      {
+        role: "system",
+        content:
+          "Ты создаёшь оригинальные сценарии на русском языке и строго соблюдаешь требуемый формат ответа.",
+      },
+      { role: "user", content: prompt },
+    ],
+    temperature: 0.85,
+    maxTokens: 1600,
+    modelConfig,
+  });
+
+  const firstAttempt = normalizeScriptPayload(extractJson(raw), script);
+  if (firstAttempt) return firstAttempt;
+
+  const repairedRaw = await callModelCompletion({
+    messages: [
+      {
+        role: "system",
+        content:
+          "Ты исправляешь формат данных. Не переписывай содержание. Верни только валидный JSON без markdown.",
+      },
+      {
+        role: "user",
+        content: `Преобразуй ответ ниже в объект с четырьмя строковыми полями:
+assistantMessage, introduction, development, finale.
+Никаких других полей и пояснений.
+
+ОТВЕТ ДЛЯ ИСПРАВЛЕНИЯ:
+${raw.slice(0, 12000)}`,
+      },
+    ],
+    temperature: 0.1,
+    maxTokens: 1600,
+    timeoutMs: 60000,
+    modelConfig,
+  });
+  const repaired = normalizeScriptPayload(extractJson(repairedRaw), script);
+  if (!repaired) {
+    throw new Error("Выбранный агент дважды вернул ответ в неверном формате; исходный сценарий сохранён");
+  }
+  return {
+    ...repaired,
+    assistantMessage: `${repaired.assistantMessage} Формат ответа был исправлен автоматически.`,
+  };
+}
+
+async function createIllustrationPrompt({ genre, sceneTitle, sceneText, visualStyle, characterProfiles, modelConfig }) {
+  const characterContext = characterProfiles
+    .filter((character) => character.name.trim())
+    .map(
+      (character) =>
+        `${character.name}: роль/профессия — ${character.role || "не указана"}; ` +
+        `внешность и одежда — ${character.appearance || "не указаны"}; ` +
+        `биография и уже произошедшие события — ${character.history || "не указаны"}.`,
+    )
+    .join("\n");
+  return callModelCompletion({
+      modelConfig,
+      messages: [
+        {
+          role: "system",
+          content:
+            "Ты арт-директор. Создавай точные русскоязычные промпты для иллюстраций, не добавляй пояснений.",
+        },
+        {
+          role: "user",
+          content: `Создай один цельный промпт для иллюстрации сцены произведения.
+Жанр: ${genre}.
+Часть: ${sceneTitle}.
+Визуальный стиль: ${visualStyle}.
+Текст сцены: ${sceneText}
+
+Паспорта постоянных персонажей:
+${characterContext || "Персонажи пока не описаны; не придумывай противоречащие сцене детали."}
+
+Опиши персонажей, действие, окружение, свет, композицию, настроение и ракурс.
+Строго сохраняй профессию, возраст, телосложение, одежду и биографические признаки персонажей.
+Не помещай надписи, буквы и водяные знаки на изображение. Максимум 900 знаков.`,
+        },
+      ],
+      temperature: 0.65,
+      maxTokens: 420,
+      timeoutMs: 90000,
+  });
+}
+
+function extractImageId(content = "") {
+  return content.match(/<img[^>]+src=["']([^"']+)["']/i)?.[1] || null;
+}
+
+async function generateGigaChatImage({ accessToken, prompt }) {
+  const response = await fetch("/giga-cloud/v1/chat/completions", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${accessToken}`,
+    },
+    body: JSON.stringify({
+      model: "GigaChat",
+      messages: [
+        {
+          role: "system",
+          content:
+            "Ты художник-иллюстратор. Создай выразительный кинематографичный кадр строго по описанию.",
+        },
+        { role: "user", content: `Нарисуй иллюстрацию: ${prompt}` },
+      ],
+      function_call: "auto",
+    }),
+  });
+
+  if (!response.ok) {
+    const details = await response.text();
+    throw new Error(
+      response.status === 401
+        ? "Access token GigaChat недействителен или истёк"
+        : `GigaChat Image вернул ошибку ${response.status}: ${details.slice(0, 180)}`,
+    );
+  }
+
+  const data = await response.json();
+  const imageId = extractImageId(data?.choices?.[0]?.message?.content);
+  if (!imageId) throw new Error("GigaChat не вернул идентификатор изображения");
+
+  const imageResponse = await fetch(`/giga-cloud/v1/files/${imageId}/content`, {
+    headers: { Authorization: `Bearer ${accessToken}`, Accept: "image/jpeg" },
+  });
+  if (!imageResponse.ok) throw new Error(`Не удалось скачать изображение (${imageResponse.status})`);
+  return URL.createObjectURL(await imageResponse.blob());
+}
+
+function StartScreen({ onSelect }) {
+  return (
+    <main className="start-shell">
+      <Atmosphere />
+      <header className="brand-row">
+        <div className="brand-mark"><Feather size={19} /></div>
+        <span>BOOK·CRAFT</span>
+        <div className="local-badge"><span /> Локальная AI-студия</div>
+      </header>
+
+      <section className="hero">
+        <div className="hero-stage">
+          <div className="hero-copy">
+            <div className="eyebrow"><Sparkles size={15} /> Narrative Knowledge Studio</div>
+            <h1>Создание<br /><em>сценариев</em></h1>
+            <p>
+              Превратите идею в стройную историю. Выберите формат — локальный
+              AI-соавтор поможет построить драматургию от вступления до финала.
+            </p>
+          </div>
+
+          <div className="story-visual" aria-hidden="true">
+            <div className="story-aura" />
+            <div className="floating-note note-one">Новая сюжетная линия</div>
+            <div className="floating-note note-two">3 главы готовы</div>
+            <div className="story-card">
+              <header>
+                <span className="story-label">РУКОПИСЬ · 01</span>
+                <span className="story-status"><i /> AI создаёт</span>
+              </header>
+              <h3>Невский<br />после полуночи</h3>
+              <p>Фантастический Петербург · 2147 год</p>
+              <div className="plot-line">
+                <span className="plot-node complete">01</span><b />
+                <span className="plot-node active">02</span><b />
+                <span className="plot-node">03</span>
+              </div>
+              <div className="scene-stack">
+                <div><span>Вступление</span><strong>Город просыпается</strong></div>
+                <div><span>Развитие</span><strong>Тайна под Невой</strong></div>
+                <div><span>Финал</span><strong>Ещё не написан</strong></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="choice-grid">
+          {Object.entries(STARTERS).map(([key, item]) => {
+            const Icon = item.icon;
+            return (
+              <button className="choice-card" key={key} onClick={() => onSelect(key)}>
+                <div className="choice-icon"><Icon size={26} /></div>
+                <div>
+                  <strong>{item.title}</strong>
+                  <span>{item.subtitle}</span>
+                </div>
+                <span className="choice-arrow">→</span>
+              </button>
+            );
+          })}
+        </div>
+      </section>
+
+      <footer className="start-footer">
+        <span>GigaChat · локальный контур</span>
+        <span>Ваши тексты остаются на компьютере</span>
+      </footer>
+    </main>
+  );
+}
+
+function Workspace({ mode, onBack }) {
+  const [genre, setGenre] = useState(GENRES[0]);
+  const [idea, setIdea] = useState("");
+  const [script, setScript] = useState(EMPTY_SCRIPT);
+  const [messages, setMessages] = useState([
+    {
+      role: "assistant",
+      text: "Опишите идею, героев или задачу. Я предложу структуру и сразу обновлю сценарий справа.",
+    },
+  ]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [referenceMode, setReferenceMode] = useState("original");
+  const [illustrationScene, setIllustrationScene] = useState("development");
+  const [visualStyle, setVisualStyle] = useState("Кинематографичная книжная иллюстрация");
+  const [gigaAccessToken, setGigaAccessToken] = useState("");
+  const [modelConfig, setModelConfig] = useState(DEFAULT_MODEL_CONFIG);
+  const [connectionStatus, setConnectionStatus] = useState("not-tested");
+  const [isTestingConnection, setIsTestingConnection] = useState(false);
+  const [illustrationPrompt, setIllustrationPrompt] = useState("");
+  const [illustrationUrl, setIllustrationUrl] = useState("");
+  const [isIllustrating, setIsIllustrating] = useState(false);
+  const [selectedExcerpt, setSelectedExcerpt] = useState("");
+  const [characterProfiles, setCharacterProfiles] = useState(() => {
+    try {
+      return JSON.parse(localStorage.getItem("bookcraft.characters") || "[]");
+    } catch {
+      return [];
+    }
+  });
+  const [sources, setSources] = useState(() => {
+    try {
+      return JSON.parse(localStorage.getItem("bookcraft.sources") || "[]");
+    } catch {
+      return [];
+    }
+  });
+  const fileInputRef = useRef(null);
+
+  useEffect(() => {
+    localStorage.setItem("bookcraft.sources", JSON.stringify(sources));
+  }, [sources]);
+
+  useEffect(
+    () => () => {
+      if (illustrationUrl) URL.revokeObjectURL(illustrationUrl);
+    },
+    [illustrationUrl],
+  );
+
+  useEffect(() => {
+    localStorage.setItem("bookcraft.characters", JSON.stringify(characterProfiles));
+  }, [characterProfiles]);
+
+  const meta = STARTERS[mode];
+  const completed = useMemo(
+    () => Object.values(script).filter((value) => value.trim()).length,
+    [script],
+  );
+
+  async function sendMessage() {
+    const cleanIdea = idea.trim();
+    if (!cleanIdea || isLoading) return;
+
+    const nextMessages = [...messages, { role: "user", text: cleanIdea }];
+    setMessages(nextMessages);
+    setIdea("");
+    setError("");
+    setIsLoading(true);
+
+    try {
+      const result = await generateWithLocalModel({
+        mode,
+        genre,
+        idea: cleanIdea,
+        script,
+        messages: nextMessages,
+        referenceMode,
+        sources,
+        modelConfig,
+      });
+      if (result.script) setScript(result.script);
+      setMessages((items) => [
+        ...items,
+        { role: "assistant", text: result.assistantMessage },
+      ]);
+    } catch (requestError) {
+      setError(
+        `${requestError.message}. Проверьте настройки выбранного агента.`,
+      );
+    } finally {
+      setIsLoading(false);
+    }
+  }
+
+  function updateModelConfig(field, value) {
+    setModelConfig((current) => ({ ...current, [field]: value }));
+    setConnectionStatus("not-tested");
+  }
+
+  async function testModelConnection() {
+    setError("");
+    setIsTestingConnection(true);
+    setConnectionStatus("testing");
+    try {
+      const response = await callModelCompletion({
+        modelConfig,
+        messages: [{ role: "user", content: "Ответь одним словом: READY" }],
+        temperature: 0,
+        maxTokens: 12,
+        timeoutMs: 30000,
+      });
+      setConnectionStatus(response ? "ready" : "failed");
+    } catch (connectionError) {
+      setConnectionStatus("failed");
+      setError(`Проверка агента: ${connectionError.message}`);
+    } finally {
+      setIsTestingConnection(false);
+    }
+  }
+
+  async function addSources(event) {
+    const files = Array.from(event.target.files || []);
+    const accepted = [];
+    for (const file of files) {
+      if (file.size > 2 * 1024 * 1024) {
+        setError(`Файл «${file.name}» больше 2 МБ. Для MVP добавьте сокращённую текстовую версию.`);
+        continue;
+      }
+      const text = await file.text();
+      accepted.push({
+        id: `${file.name}-${file.lastModified}`,
+        name: file.name,
+        text,
+        size: file.size,
+      });
+    }
+    setSources((current) => {
+      const byId = new Map(current.map((source) => [source.id, source]));
+      accepted.forEach((source) => byId.set(source.id, source));
+      return Array.from(byId.values());
+    });
+    event.target.value = "";
+  }
+
+  function resetWorkspace() {
+    setScript(EMPTY_SCRIPT);
+    setMessages([
+      {
+        role: "assistant",
+        text: "Новый сценарий создан. Расскажите, с чего начнём.",
+      },
+    ]);
+    setError("");
+    if (illustrationUrl) URL.revokeObjectURL(illustrationUrl);
+    setIllustrationUrl("");
+    setIllustrationPrompt("");
+    setSelectedExcerpt("");
+  }
+
+  function loadM1Demo() {
+    setGenre(M1_DEMO.genre);
+    setScript({ ...M1_DEMO.script });
+    setCharacterProfiles(M1_DEMO.characters.map((character) => ({ ...character })));
+    setIdea(M1_DEMO.idea);
+    setMessages([
+      {
+        role: "assistant",
+        text:
+          "Демо «Невский после полуночи» загружено: четыре героя, три события и незавершённый финал. Нажмите «Отправить», чтобы GigaChat создал генерируемую сцену.",
+      },
+    ]);
+    setError("");
+    setSelectedExcerpt("");
+    setIllustrationPrompt("");
+    if (illustrationUrl) URL.revokeObjectURL(illustrationUrl);
+    setIllustrationUrl("");
+  }
+
+  function rememberSelection(key, textarea) {
+    const excerpt = textarea.value.slice(textarea.selectionStart, textarea.selectionEnd).trim();
+    if (!excerpt) return;
+    setIllustrationScene(key);
+    setSelectedExcerpt(excerpt);
+  }
+
+  function addCharacter() {
+    setCharacterProfiles((items) => [
+      ...items,
+      {
+        id: crypto.randomUUID(),
+        name: "",
+        role: "",
+        appearance: "",
+        history: "",
+        color: CHARACTER_COLORS[items.length % CHARACTER_COLORS.length],
+      },
+    ]);
+  }
+
+  function updateCharacter(id, field, value) {
+    setCharacterProfiles((items) =>
+      items.map((character) => (character.id === id ? { ...character, [field]: value } : character)),
+    );
+  }
+
+  async function createIllustration() {
+    const sceneText = selectedExcerpt.trim() || script[illustrationScene]?.trim();
+    if (!sceneText) {
+      setError("Сначала создайте или заполните выбранную часть сценария.");
+      return;
+    }
+    if (!gigaAccessToken.trim()) {
+      setError("Для облачной иллюстрации вставьте временный access token GigaChat.");
+      return;
+    }
+
+    setError("");
+    setIsIllustrating(true);
+    try {
+      const sceneNames = {
+        introduction: "Вступление",
+        development: "Развитие",
+        finale: "Финал",
+      };
+      const prompt = await createIllustrationPrompt({
+        genre,
+        sceneTitle: sceneNames[illustrationScene],
+        sceneText,
+        visualStyle,
+        characterProfiles,
+        modelConfig,
+      });
+      setIllustrationPrompt(prompt);
+      const nextUrl = await generateGigaChatImage({
+        accessToken: gigaAccessToken.trim(),
+        prompt,
+      });
+      if (illustrationUrl) URL.revokeObjectURL(illustrationUrl);
+      setIllustrationUrl(nextUrl);
+      setMessages((items) => [
+        ...items,
+        {
+          role: "assistant",
+          text: selectedExcerpt
+            ? `Готово: выделенный отрывок из раздела «${sceneNames[illustrationScene]}» превращён в иллюстрацию.`
+            : `Готово: создана иллюстрация для раздела «${sceneNames[illustrationScene]}».`,
+        },
+      ]);
+    } catch (illustrationError) {
+      setError(illustrationError.message);
+    } finally {
+      setIsIllustrating(false);
+    }
+  }
+
+  return (
+    <main className="workspace-shell">
+      <Atmosphere />
+      <header className="workspace-header">
+        <button className="back-button" onClick={onBack} aria-label="Вернуться">
+          <ArrowLeft size={18} />
+        </button>
+        <div className="mini-brand"><Feather size={17} /> BOOK·CRAFT</div>
+        <div className="workspace-heading">
+          <span>Рабочее пространство</span>
+          <strong>{meta.title}</strong>
+        </div>
+        <button className="demo-button" onClick={loadM1Demo}>
+          <Sparkles size={15} /> Загрузить демо
+        </button>
+        <button className="reset-button" onClick={resetWorkspace}>
+          <RotateCcw size={15} /> Новый сценарий
+        </button>
+      </header>
+
+      <section className="genre-bar">
+        <label htmlFor="genre-select">Выберите жанр</label>
+        <select
+          id="genre-select"
+          value={genre}
+          onChange={(event) => setGenre(event.target.value)}
+        >
+          {GENRES.map((item) => <option key={item}>{item}</option>)}
+        </select>
+        <div className="current-genre">
+          <Check size={15} /> Текущий жанр: <strong>{genre}</strong>
+        </div>
+        <div className="state-note">Значение сохранено в state формы</div>
+      </section>
+
+      <details className="model-gateway" open>
+        <summary>
+          <span><Settings size={16} /> Универсальный агент · подключение модели</span>
+          <small>{modelConfig.source === "local" ? "локальный контур" : modelConfig.externalAgent || "внешний агент"}</small>
+        </summary>
+        <div className="model-gateway-content">
+          <div className="model-source-switch" role="group" aria-label="Источник модели">
+            <button
+              type="button"
+              className={modelConfig.source === "local" ? "active" : ""}
+              onClick={() => updateModelConfig("source", "local")}
+            >
+              Локальная модель
+            </button>
+            <button
+              type="button"
+              className={modelConfig.source === "external" ? "active" : ""}
+              onClick={() => updateModelConfig("source", "external")}
+            >
+              Внешний агент
+            </button>
+          </div>
+
+          {modelConfig.source === "local" ? (
+            <label className="model-field model-field-wide">
+              <span>Модель из подтверждённого локального инвентаря</span>
+              <select value={modelConfig.localModel} onChange={(event) => updateModelConfig("localModel", event.target.value)}>
+                {LOCAL_MODELS.map((model) => (
+                  <option key={model.id} value={model.id}>{model.label} — {model.capability}</option>
+                ))}
+              </select>
+              <small>Список ограничен моделями, ранее выявленными на вашем диске. Файл модели в проект не копируется.</small>
+            </label>
+          ) : (
+            <div className="external-agent-grid">
+              <label className="model-field">
+                <span>Какой внешний агент используется</span>
+                <input value={modelConfig.externalAgent} onChange={(event) => updateModelConfig("externalAgent", event.target.value)} placeholder="Например: OpenAI, GigaChat, корпоративный gateway" />
+              </label>
+              <label className="model-field">
+                <span>Протокол</span>
+                <select value={modelConfig.externalProtocol} onChange={(event) => updateModelConfig("externalProtocol", event.target.value)}>
+                  <option value="openai-compatible">OpenAI-compatible Chat Completions</option>
+                </select>
+              </label>
+              <label className="model-field model-field-wide">
+                <span>Endpoint</span>
+                <input value={modelConfig.externalEndpoint} onChange={(event) => updateModelConfig("externalEndpoint", event.target.value)} placeholder="https://host/v1/chat/completions" />
+              </label>
+              <label className="model-field">
+                <span>ID модели</span>
+                <input value={modelConfig.externalModel} onChange={(event) => updateModelConfig("externalModel", event.target.value)} placeholder="model-name" />
+              </label>
+              <label className="model-field">
+                <span><KeyRound size={12} /> API-ключ</span>
+                <input type="password" autoComplete="off" value={modelConfig.apiKey} onChange={(event) => updateModelConfig("apiKey", event.target.value)} placeholder="Ключ не сохраняется" />
+              </label>
+            </div>
+          )}
+
+          <div className="model-gateway-footer">
+            <button type="button" onClick={testModelConnection} disabled={isTestingConnection}>
+              {isTestingConnection ? <LoaderCircle size={14} className="spin" /> : <PlugZap size={14} />}
+              Проверить подключение
+            </button>
+            <span className={`connection-status ${connectionStatus}`}>
+              {connectionStatus === "ready" ? "READY · агент отвечает" : connectionStatus === "failed" ? "FAIL · проверьте параметры" : connectionStatus === "testing" ? "Проверка…" : "Соединение не проверено"}
+            </span>
+            <small>Ключ хранится только в памяти открытой вкладки, не записывается в localStorage и не включается в экспорт.</small>
+          </div>
+        </div>
+      </details>
+
+      <details className="knowledge-panel">
+        <summary>
+          <span className="knowledge-title"><Database size={16} /> База знаний произведения</span>
+          <span className="knowledge-count">{sources.length} источник(а)</span>
+        </summary>
+        <div className="knowledge-content">
+          <div className="reference-modes">
+            <span>Режим генерации</span>
+            {[
+              ["original", "Оригинальная история"],
+              ["inspired", "По мотивам"],
+              ["continuation", "Продолжение"],
+            ].map(([value, label]) => (
+              <button
+                type="button"
+                key={value}
+                className={referenceMode === value ? "active" : ""}
+                onClick={() => setReferenceMode(value)}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+
+          <div className="source-actions">
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept=".txt,.md,.json,text/plain,application/json"
+              multiple
+              hidden
+              onChange={addSources}
+            />
+            <button type="button" onClick={() => fileInputRef.current?.click()}>
+              <Upload size={15} /> Добавить TXT / MD / JSON
+            </button>
+            <small>
+              Используйте собственные, лицензированные или перешедшие в общественное достояние тексты.
+            </small>
+          </div>
+
+          <div className="source-list">
+            {sources.length === 0 ? (
+              <div className="empty-source">
+                <FileText size={18} /> Источники пока не добавлены. Генерация будет полностью оригинальной.
+              </div>
+            ) : (
+              sources.map((source) => (
+                <div className="source-chip" key={source.id}>
+                  <FileText size={14} />
+                  <span>{source.name}</span>
+                  <small>{Math.max(1, Math.round(source.size / 1024))} КБ</small>
+                  <button
+                    type="button"
+                    aria-label={`Удалить ${source.name}`}
+                    onClick={() =>
+                      setSources((current) => current.filter((item) => item.id !== source.id))
+                    }
+                  >
+                    <Trash2 size={13} />
+                  </button>
+                </div>
+              ))
+            )}
+          </div>
+        </div>
+      </details>
+
+      <UniverseBlueprint />
+
+      <details className="character-bible">
+        <summary>
+          <span><UserRound size={16} /> Паспорта персонажей</span>
+          <small>{characterProfiles.length} персонаж(а) · постоянная память образов</small>
+        </summary>
+        <div className="character-bible-content">
+          <p>
+            Эти данные добавляются к каждому арт-промпту: профессия, внешность,
+            одежда и прожитые события не должны случайно меняться между кадрами.
+          </p>
+          <div className="character-profile-list">
+            {characterProfiles.map((character, index) => (
+              <article className="character-profile" key={character.id}>
+                <header>
+                  <strong>Персонаж {String(index + 1).padStart(2, "0")}</strong>
+                  <label className="character-color" title="Цвет персонажа">
+                    <input
+                      type="color"
+                      value={character.color || CHARACTER_COLORS[index % CHARACTER_COLORS.length]}
+                      onChange={(event) => updateCharacter(character.id, "color", event.target.value)}
+                    />
+                  </label>
+                  <button
+                    type="button"
+                    aria-label="Удалить персонажа"
+                    onClick={() => setCharacterProfiles((items) => items.filter((item) => item.id !== character.id))}
+                  >
+                    <Trash2 size={13} />
+                  </button>
+                </header>
+                <input placeholder="Имя" value={character.name} onChange={(event) => updateCharacter(character.id, "name", event.target.value)} />
+                <input placeholder="Кто он: профессия, статус, навыки" value={character.role} onChange={(event) => updateCharacter(character.id, "role", event.target.value)} />
+                <textarea placeholder="Постоянная внешность, возраст, телосложение, одежда" value={character.appearance} onChange={(event) => updateCharacter(character.id, "appearance", event.target.value)} />
+                <textarea placeholder="Прошлое и уже произошедшие в сюжете события" value={character.history} onChange={(event) => updateCharacter(character.id, "history", event.target.value)} />
+              </article>
+            ))}
+          </div>
+          <button type="button" className="add-character" onClick={addCharacter}>
+            <UserRound size={14} /> Добавить персонажа
+          </button>
+        </div>
+      </details>
+
+      <section className="workspace-grid">
+        <aside className="chat-panel panel">
+          <div className="panel-heading">
+            <div>
+              <span className="panel-kicker">AI-соавтор</span>
+              <h2>{meta.chatTitle}</h2>
+            </div>
+            <div className="online-dot" title="Локальная модель" />
+          </div>
+
+          <div className="messages" aria-live="polite">
+            {messages.map((message, index) => (
+              <div className={`message ${message.role}`} key={`${message.role}-${index}`}>
+                {message.role === "assistant" && <Sparkles size={14} />}
+                <p>{message.text}</p>
+              </div>
+            ))}
+            {isLoading && (
+              <div className="message assistant loading-message">
+                <LoaderCircle size={15} className="spin" />
+                <p>Продумываю сюжет и обновляю структуру…</p>
+              </div>
+            )}
+          </div>
+
+          {error && <div className="error-box">{error}</div>}
+
+          <div className="composer">
+            <textarea
+              value={idea}
+              onChange={(event) => setIdea(event.target.value)}
+              onKeyDown={(event) => {
+                if (event.key === "Enter" && !event.shiftKey) {
+                  event.preventDefault();
+                  sendMessage();
+                }
+              }}
+              placeholder="Опишите идею, сюжет или задачу"
+              rows={3}
+            />
+            <button onClick={sendMessage} disabled={!idea.trim() || isLoading}>
+              <Send size={17} /> Отправить
+            </button>
+          </div>
+        </aside>
+
+        <section className="script-panel panel">
+          <div className="panel-heading script-heading">
+            <div>
+              <span className="panel-kicker">Редактор структуры</span>
+              <h2>{meta.title}</h2>
+            </div>
+            <div className="progress-pill">{completed}/3 раздела</div>
+          </div>
+
+          <div className="script-sections">
+            {[
+              ["introduction", "01", "Вступление", "Завязка, мир, герои и первый импульс истории"],
+              ["development", "02", "Развитие", "Конфликт, препятствия, решения и поворотные точки"],
+              ["finale", "03", "Финал", "Кульминация, развязка и итоговое впечатление"],
+            ].map(([key, number, title, placeholder]) => (
+              <article className="script-block" key={key}>
+                <header>
+                  <span>{number}</span>
+                  <div><strong>{title}</strong><small>{placeholder}</small></div>
+                </header>
+                <textarea
+                  value={script[key]}
+                  onChange={(event) =>
+                    setScript((current) => ({ ...current, [key]: event.target.value }))
+                  }
+                  onSelect={(event) => rememberSelection(key, event.currentTarget)}
+                  placeholder={`Здесь появится ${title.toLowerCase()}. Текст можно редактировать вручную.`}
+                />
+                <div className="selection-action">
+                  <button
+                    type="button"
+                    onMouseDown={(event) => event.preventDefault()}
+                    onClick={() => {
+                      if (illustrationScene !== key) setSelectedExcerpt("");
+                      setIllustrationScene(key);
+                      document.querySelector(".illustration-studio")?.scrollIntoView({ behavior: "smooth", block: "center" });
+                    }}
+                  >
+                    <ImageIcon size={13} /> Иллюстрировать выделенное
+                  </button>
+                  <span>
+                    {illustrationScene === key && selectedExcerpt
+                      ? `Выбрано ${selectedExcerpt.length} символов`
+                      : "Выделите абзац мышью"}
+                  </span>
+                </div>
+                <CharacterHighlight text={script[key]} characters={characterProfiles} />
+              </article>
+            ))}
+
+            <article className="illustration-studio">
+              <header className="illustration-heading">
+                <div className="illustration-icon"><ImageIcon size={20} /></div>
+                <div>
+                  <span>AI ART · GIGACHAT</span>
+                  <h3>Текст превращается в иллюстрацию</h3>
+                  <p>Локальная модель создаёт арт-промпт, облачная — настоящий кадр.</p>
+                </div>
+              </header>
+
+              <div className="illustration-controls">
+                <label>
+                  Источник кадра
+                  <select value={illustrationScene} onChange={(event) => { setIllustrationScene(event.target.value); setSelectedExcerpt(""); }}>
+                    <option value="introduction">Вступление</option>
+                    <option value="development">Развитие</option>
+                    <option value="finale">Финал</option>
+                  </select>
+                </label>
+                <label>
+                  Визуальный стиль
+                  <select value={visualStyle} onChange={(event) => setVisualStyle(event.target.value)}>
+                    <option>Кинематографичная книжная иллюстрация</option>
+                    <option>Графический роман</option>
+                    <option>Акварельная сказка</option>
+                    <option>Ретрофутуризм</option>
+                    <option>Исторический реализм</option>
+                  </select>
+                </label>
+                <label className="token-field">
+                  Временный access token GigaChat
+                  <input
+                    type="password"
+                    value={gigaAccessToken}
+                    onChange={(event) => setGigaAccessToken(event.target.value)}
+                    placeholder="Токен хранится только в памяти вкладки"
+                    autoComplete="off"
+                  />
+                </label>
+                <button
+                  type="button"
+                  className="illustrate-button"
+                  onClick={createIllustration}
+                  disabled={isIllustrating || !script[illustrationScene]?.trim()}
+                >
+                  {isIllustrating ? <LoaderCircle size={17} className="spin" /> : <Sparkles size={17} />}
+                  {isIllustrating ? "Создаю кадр…" : "Создать иллюстрацию"}
+                </button>
+              </div>
+
+              {selectedExcerpt && (
+                <div className="selected-excerpt">
+                  <span>ВЫДЕЛЕННЫЙ ОТРЫВОК</span>
+                  <p>{selectedExcerpt}</p>
+                  <button type="button" onClick={() => setSelectedExcerpt("")}>Использовать весь раздел</button>
+                </div>
+              )}
+
+              <div className={`illustration-preview ${illustrationUrl ? "has-image" : ""}`}>
+                {illustrationUrl ? (
+                  <>
+                    <img src={illustrationUrl} alt={`AI-иллюстрация: ${illustrationScene}`} />
+                    <a href={illustrationUrl} download={`bookcraft-${illustrationScene}.jpg`}>
+                      <Download size={15} /> Скачать кадр
+                    </a>
+                  </>
+                ) : (
+                  <div className="empty-illustration">
+                    <ImageIcon size={34} />
+                    <strong>Здесь появится первый кадр комикса</strong>
+                    <span>Выберите сцену и запустите генерацию</span>
+                  </div>
+                )}
+              </div>
+
+              {illustrationPrompt && (
+                <details className="art-prompt">
+                  <summary>Показать арт-промпт</summary>
+                  <p>{illustrationPrompt}</p>
+                </details>
+              )}
+              <small className="cloud-notice">
+                В облако отправляется только текст выбранной сцены и арт-промпт. Токен не сохраняется.
+              </small>
+            </article>
+          </div>
+        </section>
+      </section>
+    </main>
+  );
+}
+
+export default function App() {
+  const [mode, setMode] = useState(null);
+  return mode ? (
+    <Workspace mode={mode} onBack={() => setMode(null)} />
+  ) : (
+    <StartScreen onSelect={setMode} />
+  );
+}
