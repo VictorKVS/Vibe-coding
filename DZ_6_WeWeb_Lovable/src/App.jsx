@@ -19,6 +19,7 @@ import {
   Upload,
   UserRound,
   Download,
+  FolderOpen,
   KeyRound,
   PlugZap,
   Settings,
@@ -48,6 +49,17 @@ const DEFAULT_MODEL_CONFIG = {
   externalModel: "",
   apiKey: "",
 };
+
+const PROJECT_STORAGE_KEY = "bookcraft.mvp.project.v1";
+
+function loadSavedProject(mode) {
+  try {
+    const saved = JSON.parse(localStorage.getItem(PROJECT_STORAGE_KEY) || "null");
+    return saved?.version === 1 && saved?.mode === mode ? saved : null;
+  } catch {
+    return null;
+  }
+}
 
 const EMPTY_SCRIPT = {
   introduction: "",
@@ -518,10 +530,11 @@ function StartScreen({ onSelect }) {
 }
 
 function Workspace({ mode, onBack }) {
-  const [genre, setGenre] = useState(GENRES[0]);
+  const initialProject = useMemo(() => loadSavedProject(mode), [mode]);
+  const [genre, setGenre] = useState(initialProject?.genre || GENRES[0]);
   const [idea, setIdea] = useState("");
-  const [script, setScript] = useState(EMPTY_SCRIPT);
-  const [messages, setMessages] = useState([
+  const [script, setScript] = useState(initialProject?.script || EMPTY_SCRIPT);
+  const [messages, setMessages] = useState(initialProject?.messages || [
     {
       role: "assistant",
       text: "Опишите идею, героев или задачу. Я предложу структуру и сразу обновлю сценарий справа.",
@@ -529,7 +542,7 @@ function Workspace({ mode, onBack }) {
   ]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
-  const [referenceMode, setReferenceMode] = useState("original");
+  const [referenceMode, setReferenceMode] = useState(initialProject?.referenceMode || "original");
   const [illustrationScene, setIllustrationScene] = useState("development");
   const [visualStyle, setVisualStyle] = useState("Кинематографичная книжная иллюстрация");
   const [gigaAccessToken, setGigaAccessToken] = useState("");
@@ -540,7 +553,10 @@ function Workspace({ mode, onBack }) {
   const [illustrationUrl, setIllustrationUrl] = useState("");
   const [isIllustrating, setIsIllustrating] = useState(false);
   const [selectedExcerpt, setSelectedExcerpt] = useState("");
+  const [savedAt, setSavedAt] = useState(initialProject?.savedAt || "");
+  const [saveStatus, setSaveStatus] = useState(initialProject ? "restored" : "ready");
   const [characterProfiles, setCharacterProfiles] = useState(() => {
+    if (initialProject?.characterProfiles) return initialProject.characterProfiles;
     try {
       return JSON.parse(localStorage.getItem("bookcraft.characters") || "[]");
     } catch {
@@ -548,6 +564,7 @@ function Workspace({ mode, onBack }) {
     }
   });
   const [sources, setSources] = useState(() => {
+    if (initialProject?.sources) return initialProject.sources;
     try {
       return JSON.parse(localStorage.getItem("bookcraft.sources") || "[]");
     } catch {
@@ -555,6 +572,7 @@ function Workspace({ mode, onBack }) {
     }
   });
   const fileInputRef = useRef(null);
+  const projectInputRef = useRef(null);
 
   useEffect(() => {
     localStorage.setItem("bookcraft.sources", JSON.stringify(sources));
@@ -570,6 +588,24 @@ function Workspace({ mode, onBack }) {
   useEffect(() => {
     localStorage.setItem("bookcraft.characters", JSON.stringify(characterProfiles));
   }, [characterProfiles]);
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      const nextSavedAt = new Date().toISOString();
+      const snapshot = {
+        version: 1, mode, genre, script, messages, referenceMode, sources,
+        characterProfiles, savedAt: nextSavedAt,
+      };
+      try {
+        localStorage.setItem(PROJECT_STORAGE_KEY, JSON.stringify(snapshot));
+        setSavedAt(nextSavedAt);
+        setSaveStatus("saved");
+      } catch {
+        setSaveStatus("failed");
+      }
+    }, 350);
+    return () => window.clearTimeout(timer);
+  }, [mode, genre, script, messages, referenceMode, sources, characterProfiles]);
 
   const meta = STARTERS[mode];
   const completed = useMemo(
@@ -685,6 +721,47 @@ function Workspace({ mode, onBack }) {
     setIllustrationUrl("");
     setIllustrationPrompt("");
     setSelectedExcerpt("");
+    localStorage.removeItem(PROJECT_STORAGE_KEY);
+    setSavedAt("");
+    setSaveStatus("ready");
+  }
+
+  function exportProject() {
+    const payload = {
+      version: 1, exportedAt: new Date().toISOString(), mode, genre, script,
+      messages, referenceMode, sources, characterProfiles,
+    };
+    const url = URL.createObjectURL(new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" }));
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `bookcraft-${mode}-${new Date().toISOString().slice(0, 10)}.json`;
+    link.click();
+    URL.revokeObjectURL(url);
+    setSaveStatus("exported");
+  }
+
+  async function importProject(event) {
+    const file = event.target.files?.[0];
+    event.target.value = "";
+    if (!file) return;
+    try {
+      const payload = JSON.parse(await file.text());
+      if (payload.version !== 1 || !GENRES.includes(payload.genre)) throw new Error("неподдерживаемый формат проекта");
+      if (!["book", "video"].includes(payload.mode)) throw new Error("неизвестный тип сценария");
+      if (!["introduction", "development", "finale"].every((key) => typeof payload.script?.[key] === "string")) throw new Error("повреждена структура сценария");
+      if (payload.mode !== mode) throw new Error(`откройте режим «${STARTERS[payload.mode].title}» и повторите импорт`);
+      setGenre(payload.genre);
+      setScript(payload.script);
+      setMessages(Array.isArray(payload.messages) ? payload.messages : []);
+      setReferenceMode(["original", "inspired", "continuation"].includes(payload.referenceMode) ? payload.referenceMode : "original");
+      setSources(Array.isArray(payload.sources) ? payload.sources : []);
+      setCharacterProfiles(Array.isArray(payload.characterProfiles) ? payload.characterProfiles : []);
+      setSaveStatus("imported");
+      setError("");
+    } catch (importError) {
+      setError(`Импорт проекта: ${importError.message}`);
+      setSaveStatus("failed");
+    }
   }
 
   function loadM1Demo() {
@@ -795,6 +872,17 @@ function Workspace({ mode, onBack }) {
           <span>Рабочее пространство</span>
           <strong>{meta.title}</strong>
         </div>
+        <input ref={projectInputRef} type="file" accept="application/json,.json" hidden onChange={importProject} />
+        <div className={`save-indicator ${saveStatus}`} title={savedAt || "Проект ещё не сохранён"}>
+          <span />
+          {saveStatus === "failed" ? "Ошибка сохранения" : saveStatus === "restored" ? "Проект восстановлен" : saveStatus === "imported" ? "Проект импортирован" : saveStatus === "exported" ? "Копия скачана" : savedAt ? "Автосохранено" : "Готов к работе"}
+        </div>
+        <button className="project-action" onClick={() => projectInputRef.current?.click()}>
+          <FolderOpen size={15} /> Импорт
+        </button>
+        <button className="project-action" onClick={exportProject}>
+          <Download size={15} /> Экспорт
+        </button>
         <button className="demo-button" onClick={loadM1Demo}>
           <Sparkles size={15} /> Загрузить демо
         </button>
