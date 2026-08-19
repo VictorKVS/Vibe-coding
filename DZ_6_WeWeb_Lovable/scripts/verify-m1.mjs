@@ -66,6 +66,11 @@ await check("MED", "универсальный Model Gateway не сохраня
   assert.match(appSource, /MythoMax-L2-13B/);
   assert.match(appSource, /Подключить модель/);
   assert.match(appSource, /READY · модель подключена/);
+  assert.match(appSource, /GigaChat API · api\.giga\.chat/);
+  assert.match(appSource, /GigaChat-2-Max/);
+  assert.match(appSource, /GigaChat-3-Ultra/);
+  assert.match(appSource, /"\/giga-cloud\/v1\/chat\/completions"/);
+  assert.match(appSource, /Временный токен на 30 минут/);
 });
 
 await check("MAX", "демо-мир ограничен четырьмя героями и тремя событиями", () => {
