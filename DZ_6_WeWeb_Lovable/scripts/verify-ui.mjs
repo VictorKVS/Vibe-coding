@@ -26,12 +26,17 @@ Object.assign(globalThis, {
   getComputedStyle: dom.window.getComputedStyle,
   requestAnimationFrame: dom.window.requestAnimationFrame.bind(dom.window),
   cancelAnimationFrame: dom.window.cancelAnimationFrame.bind(dom.window),
+  File: dom.window.File,
+  URL: dom.window.URL,
   IS_REACT_ACT_ENVIRONMENT: true,
 });
 Object.defineProperty(globalThis, "navigator", {
   value: dom.window.navigator,
   configurable: true,
 });
+
+dom.window.URL.createObjectURL = () => "blob:dz8-photo";
+dom.window.URL.revokeObjectURL = () => {};
 
 // React DOM определяет доступность браузерной среды при импорте, поэтому
 // загружаем его только после установки JSDOM globals.
@@ -97,6 +102,26 @@ try {
   assert.ok(scriptEditors[1].value.length > 40, "развитие демо не загрузилось");
   assert.equal(scriptEditors[2].value, "", "до генерации финальная сцена должна быть пустой");
 
+  const photoCard = document.querySelector(".photo-upload-card");
+  const photoInput = photoCard?.querySelector('input[type="file"]');
+  assert.ok(photoCard && photoInput, "нет блока загрузки изображения для ДЗ-8");
+  assert.equal(photoCard.querySelector(".photo-uploaded-status"), null, "статус виден без изображения");
+
+  const testPhoto = new File(["demo"], "bookcraft-demo.png", { type: "image/png" });
+  Object.defineProperty(photoInput, "files", { value: [testPhoto], configurable: true });
+  await act(async () => photoInput.dispatchEvent(new Event("change", { bubbles: true })));
+
+  const uploadedStatus = photoCard.querySelector(".photo-uploaded-status");
+  assert.ok(uploadedStatus, "после выбора изображения не появился статус");
+  assert.match(uploadedStatus.textContent, /Фото загружено/, "текст статуса не соответствует заданию");
+
+  const removePhotoButton = [...photoCard.querySelectorAll("button")].find((button) =>
+    button.textContent.includes("Удалить фото"),
+  );
+  assert.ok(removePhotoButton, "у прикреплённого изображения нет кнопки удаления");
+  await act(async () => removePhotoButton.dispatchEvent(new MouseEvent("click", { bubbles: true })));
+  assert.equal(photoCard.querySelector(".photo-uploaded-status"), null, "статус остался после удаления изображения");
+
   const generatedFinale =
     "Передатчик назвал Лею её детским именем, а Незнакомец снял маску: сигнал отправил её брат из завтрашнего Петербурга.";
   const mockFetch = async (url, options) => {
@@ -161,6 +186,7 @@ try {
   console.log("PASS MIN-UI: реальный React dropdown содержит 5 жанров и меняет отображаемый state");
   console.log("PASS MED-UI: демо получает одну сцену от локального API и сохраняет ручную правку");
   console.log("PASS MVP-RECOVERY: проект автосохраняется без API-ключей и готов к восстановлению");
+  console.log("PASS DZ8-LITE: статус «Фото загружено» виден только при прикреплённом изображении");
 } finally {
   await vite.close();
   dom.window.close();
