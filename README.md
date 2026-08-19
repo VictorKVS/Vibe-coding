@@ -7,6 +7,12 @@
 [![Tests](https://img.shields.io/badge/tests-10%2F10-22c55e)](DZ_6_WeWeb_Lovable/README.md)
 [![Build](https://img.shields.io/badge/production_build-passed-2563eb)](DZ_6_WeWeb_Lovable/README.md)
 
+## BOOK·CRAFT
+
+[![BOOK·CRAFT — создание сценариев](submissions/DZ-06/screenshots/01-start-screen.png)](submissions/DZ-06/README.md)
+
+Работающий локальный AI-редактор сценариев: выбор жанра, три части произведения, Model Gateway, база знаний, персонажи и контролируемая генерация.
+
 ## Навигация по сдачам
 
 | Работа | Продукт | Состояние | Демонстрация | Материалы |
