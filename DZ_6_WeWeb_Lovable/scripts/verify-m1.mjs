@@ -64,6 +64,8 @@ await check("MED", "универсальный Model Gateway не сохраня
   assert.doesNotMatch(appSource, /localStorage\.setItem\([^)]*apiKey/i);
   assert.match(appSource, /const LOCAL_MODELS = \[/);
   assert.match(appSource, /MythoMax-L2-13B/);
+  assert.match(appSource, /Подключить модель/);
+  assert.match(appSource, /READY · модель подключена/);
 });
 
 await check("MAX", "демо-мир ограничен четырьмя героями и тремя событиями", () => {
