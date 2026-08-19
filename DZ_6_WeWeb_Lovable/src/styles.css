@@ -453,3 +453,128 @@ body::after {
   .panel-heading { padding: 18px; }
   .script-metrics > span { display: none; }
 }
+
+
+/* DZ-08 Lite · explicit image upload confirmation */
+.photo-upload-card {
+  position: relative;
+  min-height: 260px;
+  margin-top: 18px;
+  overflow: hidden;
+  border: 1px dashed rgba(168, 135, 255, 0.48);
+  border-radius: 18px;
+  background: linear-gradient(145deg, rgba(21, 19, 40, 0.94), rgba(9, 30, 36, 0.9));
+}
+
+.photo-upload-card.has-photo {
+  border-style: solid;
+  border-color: rgba(102, 227, 180, 0.52);
+}
+
+.photo-upload-card > img {
+  display: block;
+  width: 100%;
+  max-height: 440px;
+  object-fit: contain;
+  background: rgba(5, 7, 17, 0.78);
+}
+
+.photo-uploaded-status {
+  position: absolute;
+  z-index: 2;
+  top: 14px;
+  left: 14px;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 9px 12px;
+  border: 1px solid rgba(102, 227, 180, 0.58);
+  border-radius: 999px;
+  color: #66e3b4;
+  background: rgba(5, 25, 24, 0.92);
+  box-shadow: 0 8px 28px rgba(102, 227, 180, 0.18);
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+}
+
+.photo-upload-empty {
+  display: flex;
+  width: 100%;
+  min-height: 260px;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: 8px;
+  border: 0;
+  color: rgba(238, 235, 255, 0.78);
+  background: transparent;
+  cursor: pointer;
+}
+
+.photo-upload-empty strong {
+  color: #f4f1ff;
+  font-size: 15px;
+}
+
+.photo-upload-empty span {
+  max-width: 440px;
+  color: rgba(203, 198, 224, 0.62);
+  font-size: 12px;
+  text-align: center;
+}
+
+.photo-upload-meta {
+  display: flex;
+  min-height: 48px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 9px 12px;
+  color: rgba(232, 228, 248, 0.72);
+  font-size: 12px;
+}
+
+.photo-upload-meta span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.photo-upload-meta button,
+.replace-photo-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border: 1px solid rgba(255, 138, 191, 0.28);
+  border-radius: 9px;
+  padding: 7px 10px;
+  color: #ffb1d4;
+  background: rgba(45, 20, 39, 0.72);
+  cursor: pointer;
+}
+
+.replace-photo-button {
+  position: absolute;
+  z-index: 2;
+  top: 14px;
+  right: 14px;
+  border-color: rgba(168, 135, 255, 0.36);
+  color: #d8c9ff;
+  background: rgba(18, 14, 34, 0.9);
+}
+
+@media (max-width: 720px) {
+  .photo-uploaded-status,
+  .replace-photo-button {
+    top: 10px;
+  }
+
+  .photo-uploaded-status {
+    left: 10px;
+  }
+
+  .replace-photo-button {
+    right: 10px;
+  }
+}
