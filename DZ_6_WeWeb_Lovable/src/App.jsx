@@ -40,6 +40,13 @@ const LOCAL_MODELS = [
   { id: "mythomax-l2-13b-q4", label: "MythoMax-L2-13B · Q4_K_S", capability: "творческая проза" },
 ];
 
+const GIGACHAT_MODELS = [
+  { id: "GigaChat-2", label: "GigaChat 2 Lite · быстро и экономно" },
+  { id: "GigaChat-2-Pro", label: "GigaChat 2 Pro · редактура и сложные инструкции" },
+  { id: "GigaChat-2-Max", label: "GigaChat 2 Max · максимум качества и креативности" },
+  { id: "GigaChat-3-Ultra", label: "GigaChat 3 Ultra · freemium для физических лиц" },
+];
+
 const DEFAULT_MODEL_CONFIG = {
   source: "local",
   localModel: LOCAL_MODELS[1].id,
@@ -183,7 +190,12 @@ async function callModelCompletion({ messages, temperature, maxTokens, modelConf
   const controller = new AbortController();
   const timeout = window.setTimeout(() => controller.abort(), timeoutMs);
   const isLocal = modelConfig.source === "local";
-  const endpoint = isLocal ? "/llm-api/v1/chat/completions" : modelConfig.externalEndpoint.trim();
+  const isGigaChat = !isLocal && modelConfig.externalProtocol === "gigachat";
+  const endpoint = isLocal
+    ? "/llm-api/v1/chat/completions"
+    : isGigaChat
+      ? "/giga-cloud/v1/chat/completions"
+      : modelConfig.externalEndpoint.trim();
   if (!endpoint) throw new Error("Укажите endpoint внешнего агента");
   if (!isLocal && !modelConfig.externalModel.trim()) throw new Error("Укажите ID модели внешнего агента");
   if (!isLocal && !modelConfig.apiKey.trim()) throw new Error("Укажите API-ключ внешнего агента");
@@ -659,7 +671,20 @@ function Workspace({ mode, onBack }) {
   }
 
   function updateModelConfig(field, value) {
-    setModelConfig((current) => ({ ...current, [field]: value }));
+    setModelConfig((current) => {
+      if (field === "externalProtocol" && value === "gigachat") {
+        return {
+          ...current,
+          externalAgent: "GigaChat API",
+          externalProtocol: value,
+          externalEndpoint: "https://api.giga.chat/v1/chat/completions",
+          externalModel: current.externalModel.startsWith("GigaChat")
+            ? current.externalModel
+            : GIGACHAT_MODELS[0].id,
+        };
+      }
+      return { ...current, [field]: value };
+    });
     setConnectionStatus("not-tested");
   }
 
@@ -953,19 +978,42 @@ function Workspace({ mode, onBack }) {
                 <span>Протокол</span>
                 <select value={modelConfig.externalProtocol} onChange={(event) => updateModelConfig("externalProtocol", event.target.value)}>
                   <option value="openai-compatible">OpenAI-compatible Chat Completions</option>
+                  <option value="gigachat">GigaChat API · api.giga.chat</option>
                 </select>
               </label>
               <label className="model-field model-field-wide">
                 <span>Endpoint</span>
-                <input value={modelConfig.externalEndpoint} onChange={(event) => updateModelConfig("externalEndpoint", event.target.value)} placeholder="https://host/v1/chat/completions" />
+                <input
+                  value={modelConfig.externalEndpoint}
+                  onChange={(event) => updateModelConfig("externalEndpoint", event.target.value)}
+                  placeholder="https://host/v1/chat/completions"
+                  readOnly={modelConfig.externalProtocol === "gigachat"}
+                />
+                {modelConfig.externalProtocol === "gigachat" && (
+                  <small>Локальный Vite proxy безопасно направляет запрос на https://api.giga.chat/v1/chat/completions.</small>
+                )}
               </label>
               <label className="model-field">
-                <span>ID модели</span>
-                <input value={modelConfig.externalModel} onChange={(event) => updateModelConfig("externalModel", event.target.value)} placeholder="model-name" />
+                <span>Модель</span>
+                {modelConfig.externalProtocol === "gigachat" ? (
+                  <select value={modelConfig.externalModel} onChange={(event) => updateModelConfig("externalModel", event.target.value)}>
+                    {GIGACHAT_MODELS.map((model) => (
+                      <option key={model.id} value={model.id}>{model.label}</option>
+                    ))}
+                  </select>
+                ) : (
+                  <input value={modelConfig.externalModel} onChange={(event) => updateModelConfig("externalModel", event.target.value)} placeholder="model-name" />
+                )}
               </label>
               <label className="model-field">
-                <span><KeyRound size={12} /> API-ключ</span>
-                <input type="password" autoComplete="off" value={modelConfig.apiKey} onChange={(event) => updateModelConfig("apiKey", event.target.value)} placeholder="Ключ не сохраняется" />
+                <span><KeyRound size={12} /> {modelConfig.externalProtocol === "gigachat" ? "Access token GigaChat" : "API-ключ"}</span>
+                <input
+                  type="password"
+                  autoComplete="off"
+                  value={modelConfig.apiKey}
+                  onChange={(event) => updateModelConfig("apiKey", event.target.value)}
+                  placeholder={modelConfig.externalProtocol === "gigachat" ? "Временный токен на 30 минут" : "Ключ не сохраняется"}
+                />
               </label>
             </div>
           )}
