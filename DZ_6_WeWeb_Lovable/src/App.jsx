@@ -563,6 +563,7 @@ function Workspace({ mode, onBack }) {
   const [isTestingConnection, setIsTestingConnection] = useState(false);
   const [illustrationPrompt, setIllustrationPrompt] = useState("");
   const [illustrationUrl, setIllustrationUrl] = useState("");
+  const [uploadedPhoto, setUploadedPhoto] = useState(null);
   const [isIllustrating, setIsIllustrating] = useState(false);
   const [selectedExcerpt, setSelectedExcerpt] = useState("");
   const [savedAt, setSavedAt] = useState(initialProject?.savedAt || "");
@@ -584,6 +585,7 @@ function Workspace({ mode, onBack }) {
     }
   });
   const fileInputRef = useRef(null);
+  const photoInputRef = useRef(null);
   const projectInputRef = useRef(null);
 
   useEffect(() => {
@@ -595,6 +597,13 @@ function Workspace({ mode, onBack }) {
       if (illustrationUrl) URL.revokeObjectURL(illustrationUrl);
     },
     [illustrationUrl],
+  );
+
+  useEffect(
+    () => () => {
+      if (uploadedPhoto?.url) URL.revokeObjectURL(uploadedPhoto.url);
+    },
+    [uploadedPhoto],
   );
 
   useEffect(() => {
@@ -733,6 +742,32 @@ function Workspace({ mode, onBack }) {
     event.target.value = "";
   }
 
+  function attachPhoto(event) {
+    const file = event.target.files?.[0];
+    event.target.value = "";
+    if (!file) return;
+    if (!file.type.startsWith("image/")) {
+      setError("Выберите изображение в формате PNG, JPEG или WEBP.");
+      return;
+    }
+    if (file.size > 10 * 1024 * 1024) {
+      setError("Изображение больше 10 МБ. Выберите файл меньшего размера.");
+      return;
+    }
+    setError("");
+    setUploadedPhoto((current) => {
+      if (current?.url) URL.revokeObjectURL(current.url);
+      return { name: file.name, url: URL.createObjectURL(file) };
+    });
+  }
+
+  function removePhoto() {
+    setUploadedPhoto((current) => {
+      if (current?.url) URL.revokeObjectURL(current.url);
+      return null;
+    });
+  }
+
   function resetWorkspace() {
     setScript(EMPTY_SCRIPT);
     setMessages([
@@ -744,6 +779,7 @@ function Workspace({ mode, onBack }) {
     setError("");
     if (illustrationUrl) URL.revokeObjectURL(illustrationUrl);
     setIllustrationUrl("");
+    removePhoto();
     setIllustrationPrompt("");
     setSelectedExcerpt("");
     localStorage.removeItem(PROJECT_STORAGE_KEY);
@@ -1305,6 +1341,43 @@ function Workspace({ mode, onBack }) {
                   <button type="button" onClick={() => setSelectedExcerpt("")}>Использовать весь раздел</button>
                 </div>
               )}
+
+              <section className={`photo-upload-card ${uploadedPhoto ? "has-photo" : ""}`} aria-label="Загрузка изображения">
+                {uploadedPhoto && (
+                  <div className="photo-uploaded-status" role="status">
+                    <Check size={15} /> Фото загружено
+                  </div>
+                )}
+                <input
+                  ref={photoInputRef}
+                  type="file"
+                  accept="image/png,image/jpeg,image/webp,image/*"
+                  hidden
+                  onChange={attachPhoto}
+                />
+                {uploadedPhoto ? (
+                  <>
+                    <img src={uploadedPhoto.url} alt="Прикреплённое пользователем изображение" />
+                    <div className="photo-upload-meta">
+                      <span>{uploadedPhoto.name}</span>
+                      <button type="button" onClick={removePhoto}>
+                        <Trash2 size={14} /> Удалить фото
+                      </button>
+                    </div>
+                  </>
+                ) : (
+                  <button type="button" className="photo-upload-empty" onClick={() => photoInputRef.current?.click()}>
+                    <Upload size={22} />
+                    <strong>Добавить изображение</strong>
+                    <span>После выбора файла появится зелёная надпись «Фото загружено»</span>
+                  </button>
+                )}
+                {uploadedPhoto && (
+                  <button type="button" className="replace-photo-button" onClick={() => photoInputRef.current?.click()}>
+                    <Upload size={14} /> Заменить
+                  </button>
+                )}
+              </section>
 
               <div className={`illustration-preview ${illustrationUrl ? "has-image" : ""}`}>
                 {illustrationUrl ? (
