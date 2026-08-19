@@ -37,7 +37,7 @@ const LOCAL_MODELS = [
   { id: "llava16-mistral-7b", label: "LLaVA-1.6-Mistral-7B · Q4/Q5", capability: "текст + изображение" },
   { id: "llava-llama3-8b-int4", label: "LLaVA-Llama-3-8B · INT4", capability: "текст + изображение" },
   { id: "cogvlm-13b-f16", label: "CogVLM-13B-Chat · F16", capability: "текст + изображение" },
-  { id: "mythomax-l2-13b-q4", label: "MythoMax-L2-13B · Q4_K_S", capability: "творческий текст" },
+  { id: "mythomax-l2-13b-q4", label: "MythoMax-L2-13B · Q4_K_S", capability: "творческая проза" },
 ];
 
 const DEFAULT_MODEL_CONFIG = {
@@ -973,10 +973,10 @@ function Workspace({ mode, onBack }) {
           <div className="model-gateway-footer">
             <button type="button" onClick={testModelConnection} disabled={isTestingConnection}>
               {isTestingConnection ? <LoaderCircle size={14} className="spin" /> : <PlugZap size={14} />}
-              Проверить подключение
+              Подключить модель
             </button>
             <span className={`connection-status ${connectionStatus}`}>
-              {connectionStatus === "ready" ? "READY · агент отвечает" : connectionStatus === "failed" ? "FAIL · проверьте параметры" : connectionStatus === "testing" ? "Проверка…" : "Соединение не проверено"}
+              {connectionStatus === "ready" ? "READY · модель подключена" : connectionStatus === "failed" ? "FAIL · проверьте параметры" : connectionStatus === "testing" ? "Подключение…" : "Модель ещё не подключена"}
             </span>
             <small>Ключ хранится только в памяти открытой вкладки, не записывается в localStorage и не включается в экспорт.</small>
           </div>
