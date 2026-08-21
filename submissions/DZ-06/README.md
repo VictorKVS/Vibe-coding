@@ -70,8 +70,8 @@ npm run build
 |---|---|
 | `01-start-screen.png` | Стартовый экран и выбор сценария книги |
 | `02-genre-dropdown.png` | Раскрытый список из пяти жанров |
-| `03-current-genre.png` | Выбранный «Триллер» и строка текущего жанра |
-| `04-editors.png` | Вступление, развитие и финал |
+| `03-current-genre-and-model.png` | Выбранный «Триллер» и строка текущего жанра |
+| `04-script-editors.png` | Вступление, развитие и финал |
 | `05-tests-green.png` | Полный зелёный вывод `npm test` |
 | `06-build-green.png` | Успешный `npm run build` |
 
