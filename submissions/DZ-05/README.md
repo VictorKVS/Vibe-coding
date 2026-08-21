@@ -28,12 +28,13 @@
 | Транскрипт отсутствует | Понятный Telegram alert без падения бота | ✅ |
 | Автоматическая проверка | MIN / MED / MAX — **3/3 green** | ✅ |
 | Скриншоты работы | Шесть подтверждающих изображений в репозитории | ✅ |
-| Публичная копия Notebook | Нужно добавить ссылку Google/Яндекс Диска | ⏳ |
+| Публичная копия Notebook | [Открыть на Google Диске](https://drive.google.com/file/d/122yMR8T8XbuLaFdxbqOk_lvfeljDOhR9/view?usp=drivesdk) | ✅ |
 
 ## 🔗 Быстрые ссылки
 
 - [Исходный код проекта](../../DZ_5_Integrations_files,_Sheets,_external_APIs/)
 - [Jupyter Notebook в репозитории](../../DZ_5_Integrations_files,_Sheets,_external_APIs/notebooks/DZ5_AI_Secretary_TXT_Download.ipynb)
+- [Публичный Notebook на Google Диске](https://drive.google.com/file/d/122yMR8T8XbuLaFdxbqOk_lvfeljDOhR9/view?usp=drivesdk)
 - [Открыть Notebook в Google Colab](https://colab.research.google.com/github/VictorKVS/Vibe-coding/blob/agent/dz6-dz8-showcase-clean/DZ_5_Integrations_files,_Sheets,_external_APIs/notebooks/DZ5_AI_Secretary_TXT_Download.ipynb)
 - [Архитектура решения](../../DZ_5_Integrations_files,_Sheets,_external_APIs/docs/ARCHITECTURE.md)
 - [Все скриншоты](screenshots/)
@@ -162,10 +163,8 @@ DZ-5 transcript download acceptance: 3/3 checks green.
 - временные записи и результаты исключены через `.gitignore`;
 - Notebook перед публикацией не должен содержать токены и приватные outputs.
 
-## 📮 Ссылки для сдачи
+## 📮 Ссылка для сдачи
 
-- **Публичный Jupyter Notebook:** ⏳ добавить открытую ссылку Google/Яндекс Диска.
-- **Скриншоты:** ✅ размещены непосредственно в этом README.
-- **Короткое видео:** необязательно — функциональность подтверждена последовательностью скриншотов и тестами.
-
-> Перед отправкой преподавателю публичную ссылку на Notebook необходимо проверить в приватном окне браузера.
+<p align="center">
+  <a href="https://drive.google.com/file/d/122yMR8T8XbuLaFdxbqOk_lvfeljDOhR9/view?usp=drivesdk"><strong>📓 Открыть публичный Jupyter Notebook на Google Диске</strong></a>
+</p>
