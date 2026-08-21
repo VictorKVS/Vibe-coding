@@ -1,85 +1,171 @@
-# ДЗ-5 — Интеграции: файлы, Sheets, внешние API
+# 🎙️ ДЗ-5 — AI-секретарь встреч
 
-## Результат
+<p align="center">
+  <strong>Интеграции: файлы · Google Sheets · внешние API · Telegram</strong>
+</p>
 
-Telegram-бот **AI-секретарь встреч** принимает запись созвона и формирует два скачиваемых результата в одном сообщении:
+<p align="center">
+  <img src="https://img.shields.io/badge/Telegram-Bot-26A5E4?logo=telegram&logoColor=white" alt="Telegram Bot">
+  <img src="https://img.shields.io/badge/PDF-ready-success" alt="PDF ready">
+  <img src="https://img.shields.io/badge/TXT-ready-success" alt="TXT ready">
+  <img src="https://img.shields.io/badge/acceptance-3%2F3-brightgreen" alt="Acceptance 3/3">
+</p>
 
-| Артефакт | Кнопка | Формат |
-|---|---|---:|
-| Протокол встречи | «Скачать протокол (PDF)» | PDF |
-| Полный транскрипт | «Скачать транскрипт (TXT)» | UTF-8 TXT |
+> Telegram-бот принимает аудио или видео встречи, распознаёт речь, выполняет AI-анализ и возвращает **PDF-протокол** и **полный TXT-транскрипт** через две inline-кнопки в одном сообщении.
 
-- [Исходники проекта](../../DZ_5_Integrations_files,_Sheets,_external_APIs/)
-- [Jupyter Notebook](../../DZ_5_Integrations_files,_Sheets,_external_APIs/notebooks/DZ5_AI_Secretary_TXT_Download.ipynb)
-- [Открыть Notebook в Colab](https://colab.research.google.com/github/VictorKVS/Vibe-coding/blob/agent/dz6-dz8-showcase-clean/DZ_5_Integrations_files,_Sheets,_external_APIs/notebooks/DZ5_AI_Secretary_TXT_Download.ipynb)
-- [Архитектура](../../DZ_5_Integrations_files,_Sheets,_external_APIs/docs/ARCHITECTURE.md)
+<p align="center">
+  <img src="screenshots/04-two-download-buttons-and-pdf.png" width="720" alt="Две кнопки скачивания и полученный PDF">
+</p>
 
-## Статус сдачи
+## ✅ Результат
 
-| Компонент | Статус |
-|---|:---:|
-| TXT inline-кнопка | ✅ |
-| PDF inline-кнопка | ✅ |
-| Привязка к artifact_id | ✅ |
-| Безопасная ошибка отсутствующего файла | ✅ |
-| Автоматическая приёмка | ✅ код готов |
-| Публичная копия Notebook на Диске | ⏳ |
-| Скриншоты | ⏳ |
-| Демонстрационное видео | ⏳ |
+| Требование | Реализация | Статус |
+|---|---|:---:|
+| Кнопка «Скачать протокол (PDF)» | PDF отправляется пользователю из результата конкретного созвона | ✅ |
+| Кнопка «Скачать транскрипт (TXT)» | TXT отправляется отдельным файлом в UTF-8 | ✅ |
+| Обе кнопки в одном сообщении | Единая inline-клавиатура результата | ✅ |
+| Файл относится к нужному созвону | callback привязан к уникальному `artifact_id` | ✅ |
+| Транскрипт отсутствует | Понятный Telegram alert без падения бота | ✅ |
+| Автоматическая проверка | MIN / MED / MAX — **3/3 green** | ✅ |
+| Скриншоты работы | Шесть подтверждающих изображений в репозитории | ✅ |
+| Публичная копия Notebook | Нужно добавить ссылку Google/Яндекс Диска | ⏳ |
 
-## Пользовательский сценарий
+## 🔗 Быстрые ссылки
+
+- [Исходный код проекта](../../DZ_5_Integrations_files,_Sheets,_external_APIs/)
+- [Jupyter Notebook в репозитории](../../DZ_5_Integrations_files,_Sheets,_external_APIs/notebooks/DZ5_AI_Secretary_TXT_Download.ipynb)
+- [Открыть Notebook в Google Colab](https://colab.research.google.com/github/VictorKVS/Vibe-coding/blob/agent/dz6-dz8-showcase-clean/DZ_5_Integrations_files,_Sheets,_external_APIs/notebooks/DZ5_AI_Secretary_TXT_Download.ipynb)
+- [Архитектура решения](../../DZ_5_Integrations_files,_Sheets,_external_APIs/docs/ARCHITECTURE.md)
+- [Все скриншоты](screenshots/)
+- [Чек-лист записи демонстрации](demo/RECORDING_CHECKLIST.md)
+
+## 🧭 Как работает бот
 
 ```mermaid
-sequenceDiagram
-    participant U as Пользователь
-    participant B as Telegram-бот
-    participant STT as AssemblyAI
-    participant AI as OpenAI
-    participant GS as Google Sheets
-
-    U->>B: Отправляет аудио/видео
-    B->>STT: Передаёт нормализованный звук
-    STT-->>B: Возвращает транскрипт
-    B->>AI: Анализирует встречу
-    AI-->>B: Саммари, задачи, ответственные
-    B->>GS: Записывает результаты
-    B-->>U: PDF + TXT inline-кнопки
-    U->>B: Скачать TXT
-    B-->>U: transcript.txt
+flowchart LR
+    A[🎬 Аудио или видео] --> B[📥 Получение файла]
+    B --> C[🎙️ Транскрибация]
+    C --> D[🧠 AI-анализ]
+    D --> E[📊 Google Sheets]
+    D --> F[📄 PDF-протокол]
+    C --> G[📝 TXT-транскрипт]
+    F --> H[📲 Inline-кнопки]
+    G --> H
+    H --> I[✅ Скачивание пользователем]
 ```
 
-## Приёмочные уровни
+## 📸 Демонстрация по шагам
 
-| Уровень | Проверка | Критерий |
-|---|---|---|
-| MIN | Две кнопки в одном сообщении | PDF и TXT видны одновременно |
-| MED | Правильный файл | callback содержит artifact_id созвона |
-| MAX | Отказоустойчивость | отсутствующий TXT вызывает alert, бот продолжает работу |
+<table>
+<tr>
+<td width="50%" valign="top">
 
-## Команда проверки
+### 1. Запуск и загрузка
+
+Пользователь запускает AI-секретаря и отправляет аудио или видео встречи.
+
+<img src="screenshots/01-bot-start-and-upload.png" width="100%" alt="Запуск бота и загрузка записи">
+
+</td>
+<td width="50%" valign="top">
+
+### 2. Транскрибация
+
+Бот принимает файл, показывает прогресс и распознаёт речь.
+
+<img src="screenshots/02-transcription-processing.png" width="100%" alt="Процесс транскрибации">
+
+</td>
+</tr>
+<tr>
+<td width="50%" valign="top">
+
+### 3. AI-анализ
+
+После распознавания модель формирует саммари, задачи и протокол встречи.
+
+<img src="screenshots/03-ai-analysis-and-protocol.png" width="100%" alt="AI-анализ и формирование протокола">
+
+</td>
+<td width="50%" valign="top">
+
+### 4. PDF-протокол
+
+В одном сообщении доступны обе кнопки; PDF успешно отправляется пользователю.
+
+<img src="screenshots/04-two-download-buttons-and-pdf.png" width="100%" alt="Две кнопки и скачанный PDF">
+
+</td>
+</tr>
+<tr>
+<td width="50%" valign="top">
+
+### 5. TXT-транскрипт
+
+Вторая кнопка отправляет полный текст последнего обработанного созвона.
+
+<img src="screenshots/05-transcript-txt-downloaded.png" width="100%" alt="Скачанный TXT-транскрипт">
+
+</td>
+<td width="50%" valign="top">
+
+### 6. Автоматическая приёмка
+
+Проверены интерфейс, привязка к артефакту и безопасная обработка отсутствующего файла.
+
+<img src="screenshots/06-tests-green.png" width="100%" alt="Зелёные проверки 3 из 3">
+
+</td>
+</tr>
+</table>
+
+## 🧪 Приёмочные уровни
+
+| Уровень | Что проверяется | Результат |
+|---|---|:---:|
+| **MIN** | PDF и TXT отображаются одновременно | ✅ PASS |
+| **MED** | Каждый callback содержит `artifact_id` нужного созвона | ✅ PASS |
+| **MAX** | Отсутствующий TXT вызывает alert, бот продолжает работу | ✅ PASS |
+
+Запуск проверки:
 
 ```powershell
 Set-Location "DZ_5_Integrations_files,_Sheets,_external_APIs"
 python scripts/verify_transcript_download.py
 ```
 
-## Доказательства
+Ожидаемый итог:
 
-| Файл | Что показать |
+```text
+PASS DZ5-TXT-MIN: one result message contains PDF and TXT inline buttons
+PASS DZ5-TXT-MED: every callback is bound to its artifact_id
+PASS DZ5-TXT-MAX: missing transcript returns a safe Telegram alert
+DZ-5 transcript download acceptance: 3/3 checks green.
+```
+
+## 🧩 Использованные интеграции
+
+| Компонент | Назначение |
 |---|---|
-| `01-two-buttons.png` | одно сообщение с PDF и TXT |
-| `02-pdf-downloaded.png` | полученный PDF |
-| `03-transcript-downloaded.png` | полученный TXT |
-| `04-missing-transcript-alert.png` | безопасная ошибка |
-| `05-tests-green.png` | приёмка 3/3 |
-| `DZ5_AI_Secretary_demo.mp4` | полный короткий сценарий |
+| Telegram Bot / aiogram | приём записи, статусы и inline-кнопки |
+| AssemblyAI | распознавание речи |
+| LLM API | саммари, решения, задачи и ответственные |
+| Google Sheets API | сохранение структурированных результатов |
+| ReportLab | формирование PDF-протокола |
+| TXT UTF-8 | полный текст транскрипта |
 
-Правила подготовки: [screenshots/README.md](screenshots/README.md) и [demo/RECORDING_CHECKLIST.md](demo/RECORDING_CHECKLIST.md).
+## 🔐 Безопасность
 
-## Ссылки для преподавателя
+- API-ключи не сохраняются в Notebook и Git;
+- секреты задаются через переменные окружения или Colab Secrets;
+- callback не содержит секретных данных;
+- временные записи и результаты исключены через `.gitignore`;
+- Notebook перед публикацией не должен содержать токены и приватные outputs.
 
-- **Публичный Jupyter Notebook:** ⏳ вставить ссылку Google/Яндекс Диска.
-- **Скриншоты:** ⏳ вставить открытую ссылку.
-- **Короткое видео:** ⏳ вставить открытую ссылку.
+## 📮 Ссылки для сдачи
 
-Перед сдачей каждую ссылку проверить в приватном окне браузера.
+- **Публичный Jupyter Notebook:** ⏳ добавить открытую ссылку Google/Яндекс Диска.
+- **Скриншоты:** ✅ размещены непосредственно в этом README.
+- **Короткое видео:** необязательно — функциональность подтверждена последовательностью скриншотов и тестами.
+
+> Перед отправкой преподавателю публичную ссылку на Notebook необходимо проверить в приватном окне браузера.
