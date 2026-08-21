@@ -44,7 +44,7 @@ await check("MED", "локальная генерация обновляет т�
   for (const field of ["introduction", "development", "finale"]) {
     assert.ok(appSource.includes(field), `нет поля ${field}`);
   }
-  assert.match(appSource, /const endpoint = isLocal \? "\/llm-api\/v1\/chat\/completions"/);
+  assert.match(appSource, /const endpoint = isLocal[\s\S]{0,80}\? "\/llm-api\/v1\/chat\/completions"/);
   assert.match(appSource, /setScript\(result\.script\)/);
   assert.match(appSource, /setScript\(\(current\) => \(\{ \.\.\.current, \[key\]: event\.target\.value \}\)\)/);
   assert.match(appSource, /book:[\s\S]*video:/);
@@ -64,6 +64,13 @@ await check("MED", "универсальный Model Gateway не сохраня
   assert.doesNotMatch(appSource, /localStorage\.setItem\([^)]*apiKey/i);
   assert.match(appSource, /const LOCAL_MODELS = \[/);
   assert.match(appSource, /MythoMax-L2-13B/);
+  assert.match(appSource, /Подключить модель/);
+  assert.match(appSource, /READY · модель подключена/);
+  assert.match(appSource, /GigaChat API · api\.giga\.chat/);
+  assert.match(appSource, /GigaChat-2-Max/);
+  assert.match(appSource, /GigaChat-3-Ultra/);
+  assert.match(appSource, /"\/giga-cloud\/v1\/chat\/completions"/);
+  assert.match(appSource, /Временный токен на 30 минут/);
 });
 
 await check("MAX", "демо-мир ограничен четырьмя героями и тремя событиями", () => {

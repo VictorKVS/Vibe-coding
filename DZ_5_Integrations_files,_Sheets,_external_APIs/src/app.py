@@ -22,6 +22,7 @@ from .services import analyze_transcript, answer_from_transcript, append_to_shee
 router = Router()
 SETTINGS: Settings | None = None
 CHAT_STATE: dict[int, dict] = {}
+ARTIFACT_STATE: dict[str, dict] = {}
 LOCKS: dict[int, asyncio.Lock] = {}
 
 
@@ -32,12 +33,33 @@ def kb_start() -> InlineKeyboardMarkup:
     ])
 
 
-def kb_ready() -> InlineKeyboardMarkup:
+def kb_ready(artifact_id: str) -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup(inline_keyboard=[
-        [InlineKeyboardButton(text="📄 Скачать PDF", callback_data="download_pdf")],
+        [
+            InlineKeyboardButton(
+                text="📄 Скачать протокол (PDF)",
+                callback_data=f"download_pdf:{artifact_id}",
+            ),
+            InlineKeyboardButton(
+                text="📝 Скачать транскрипт (TXT)",
+                callback_data=f"download_txt:{artifact_id}",
+            ),
+        ],
         [InlineKeyboardButton(text="💬 Задать вопрос", callback_data="ask_ai")],
         [InlineKeyboardButton(text="🔄 Новая запись", callback_data="new_record")],
     ])
+
+
+def _artifact_file(callback_data: str | None, prefix: str, state_key: str) -> Path | None:
+    if not callback_data or not callback_data.startswith(prefix):
+        return None
+    artifact_id = callback_data.removeprefix(prefix).strip()
+    state = ARTIFACT_STATE.get(artifact_id)
+    raw_path = state.get(state_key) if state else None
+    if not raw_path:
+        return None
+    path = Path(raw_path)
+    return path if path.is_file() else None
 
 
 async def send_stage(message: Message, stage: str, caption: str | None = None, reply_markup=None):
@@ -131,7 +153,7 @@ async def _process_local(message: Message, local_path: Path, source: str, declar
             await asyncio.to_thread(build_protocol_pdf, pdf_path, transcript, analysis, source)
             await reporter.set("ready")
 
-            CHAT_STATE[chat_id] = {
+            result_state = {
                 "artifact_id": artifact.id,
                 "transcript": transcript,
                 "transcript_path": str(transcript_path),
@@ -140,11 +162,13 @@ async def _process_local(message: Message, local_path: Path, source: str, declar
                 "pdf_path": str(pdf_path),
                 "qa_mode": False,
             }
+            CHAT_STATE[chat_id] = result_state
+            ARTIFACT_STATE[artifact.id] = result_state
             await send_stage(
                 message,
                 "ready",
                 "Протокол готов ✅\nРезультаты сохранены.",
-                reply_markup=kb_ready(),
+                reply_markup=kb_ready(artifact.id),
             )
         except Exception as e:
             await progress_message.edit_text(f"Обработка остановлена.\nОшибка: {type(e).__name__}")
@@ -173,14 +197,40 @@ async def how_it_works(callback: CallbackQuery):
     await callback.message.answer("Файл → нормализация → транскрибация → сохранение текста → AI-анализ → Google Sheets → PDF-протокол.")
 
 
-@router.callback_query(F.data == "download_pdf")
+@router.callback_query(F.data.startswith("download_pdf:"))
 async def download_pdf(callback: CallbackQuery):
-    await callback.answer()
-    state = CHAT_STATE.get(callback.message.chat.id)
-    if not state or not Path(state["pdf_path"]).exists():
-        await callback.message.answer("PDF пока недоступен.")
+    pdf_path = _artifact_file(callback.data, "download_pdf:", "pdf_path")
+    if not pdf_path:
+        await callback.answer(
+            "PDF-протокол отсутствует. Обработайте запись ещё раз.",
+            show_alert=True,
+        )
         return
-    await callback.message.answer_document(FSInputFile(state["pdf_path"]), caption="Протокол встречи")
+    await callback.answer()
+    await callback.message.answer_document(
+        FSInputFile(pdf_path),
+        caption="Протокол встречи (PDF)",
+    )
+
+
+@router.callback_query(F.data.startswith("download_txt:"))
+async def download_transcript(callback: CallbackQuery):
+    transcript_path = _artifact_file(
+        callback.data,
+        "download_txt:",
+        "transcript_path",
+    )
+    if not transcript_path:
+        await callback.answer(
+            "Файл транскрипта отсутствует. Обработайте запись ещё раз.",
+            show_alert=True,
+        )
+        return
+    await callback.answer()
+    await callback.message.answer_document(
+        FSInputFile(transcript_path),
+        caption="Текст транскрипта созвона (TXT)",
+    )
 
 
 @router.callback_query(F.data == "ask_ai")

@@ -1,0 +1,40 @@
+# Secrets
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+service-account*.json
+credentials*.json
+
+# Runtime artifacts and user data
+runtime/
+downloads/
+normalized/
+transcripts/
+protocols/
+*.mp3
+*.wav
+*.ogg
+*.m4a
+*.mp4
+*.mov
+*.webm
+
+# Python
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.venv/
+venv/
+
+# Jupyter
+.ipynb_checkpoints/
+
+# OS and editors
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
