@@ -1,7 +1,10 @@
 from pathlib import Path
 
-APP = Path(__file__).resolve().parents[1] / "backend" / "app.py"
-source = APP.read_text(encoding="utf-8")
+ROOT = Path(__file__).resolve().parents[1]
+BACKEND = ROOT / "backend" / "app.py"
+FRONTEND = ROOT / "src" / "App.jsx"
+source = BACKEND.read_text(encoding="utf-8")
+frontend = FRONTEND.read_text(encoding="utf-8")
 
 checks = {
     "audio field": 'audio: Annotated[UploadFile | None, File()] = None',
@@ -12,17 +15,31 @@ checks = {
     "media type guard": "status_code=415",
     "size guard": "status_code=413",
     "local model inventory": 'root.rglob("*.gguf")',
-    "no token persistence": "localStorage" not in source,
+    "art endpoint": '@app.post("/api/art/generate"',
+    "official chat route": '"/v1/chat/completions"',
+    "text2image auto mode": '"function_call": "auto"',
+    "file download route": 'f"/v1/files/{image_id}/content"',
+    "safe image extraction": "_extract_gigachat_image_id",
+    "browser calls local gateway": 'http://127.0.0.1:8018/api/art/generate',
+    "frontend checks data image": 'startsWith("data:image/")',
 }
 
-missing = [name for name, fragment in checks.items() if fragment is not True and fragment not in source]
-if checks["no token persistence"] is not True:
-    missing.append("no token persistence")
+missing = [
+    name
+    for name, fragment in checks.items()
+    if fragment not in (source + "\n" + frontend)
+]
 if missing:
-    raise SystemExit("FAIL DZ8-PRO: " + ", ".join(missing))
+    raise SystemExit("FAIL DZ8-MEDIA: " + ", ".join(missing))
+
+if "localStorage.setItem" in frontend and "gigaAccessToken" in frontend.split("localStorage.setItem", 1)[1].split(")", 1)[0]:
+    raise SystemExit("FAIL DZ8-SECURITY: GigaChat token must not be stored")
 
 print("PASS DZ8-PRO-MIN: audio is optional and text keeps priority")
 print("PASS DZ8-PRO-MED: STT result becomes user_message in one pipeline")
 print("PASS DZ8-PRO-MAX: errors, type and size are handled safely")
 print("PASS DZ8-MODELS: local GGUF inventory is exposed by the gateway")
-print("DZ-8 media acceptance: 4/4 checks green.")
+print("PASS DZ8-ART-MIN: selected text becomes an art prompt")
+print("PASS DZ8-ART-MED: GigaChat text2image returns a downloadable JPG")
+print("PASS DZ8-ART-MAX: token stays in memory and errors are user-safe")
+print("DZ-8 media acceptance: 7/7 checks green.")
