@@ -1,81 +1,177 @@
-# Vibe Coding · портфолио учебных AI-проектов
+<h1 align="center">⚡ VIBE CODING · AI PRODUCT JOURNEY</h1>
 
-> Практические интеграции, воспроизводимый запуск, тестируемые критерии и отдельная карточка сдачи для каждой работы.
+<p align="center">
+  <strong>От Telegram-бота с кнопками — к интеграциям, локальным LLM и мультимодальной AI-студии</strong>
+</p>
 
-[![DZ-5](https://img.shields.io/badge/DZ--5-код_готов-22c55e)](submissions/DZ-05/README.md)
-[![DZ-6](https://img.shields.io/badge/DZ--6-тесты_и_build_готовы-22c55e)](submissions/DZ-06/README.md)
-[![DZ-8 Lite](https://img.shields.io/badge/DZ--8_Lite-готово-22c55e)](submissions/DZ-08/LITE/README.md)
-[![DZ-8 Pro](https://img.shields.io/badge/DZ--8_Pro-подготовка-f59e0b)](submissions/DZ-08/PRO/README.md)
+<p align="center">
+  <a href="submissions/DZ-04/README.md"><img src="https://img.shields.io/badge/DZ--4-Telegram_UX-26A5E4" alt="DZ-4"></a>
+  <a href="submissions/DZ-05/README.md"><img src="https://img.shields.io/badge/DZ--5-ready-22C55E" alt="DZ-5"></a>
+  <a href="submissions/DZ-06/README.md"><img src="https://img.shields.io/badge/DZ--6-ready-22C55E" alt="DZ-6"></a>
+  <a href="submissions/DZ-08/LITE/README.md"><img src="https://img.shields.io/badge/DZ--8_Lite-ready-22C55E" alt="DZ-8 Lite"></a>
+  <a href="submissions/DZ-08/PRO/README.md"><img src="https://img.shields.io/badge/DZ--8_Pro-in_progress-F59E0B" alt="DZ-8 Pro"></a>
+</p>
 
-## Проекты
+> Репозиторий показывает не набор разрозненных домашних работ, а последовательное развитие одного подхода: **интерфейс → интеграции → AI-продукт → мультимодальность → управляемый backend**.
 
-| Работа | Продукт | Ключевой результат | Карточка сдачи |
-|---|---|---|---|
-| ДЗ‑5 | AI‑секретарь встреч | файлы → STT → Sheets → PDF + TXT | [Открыть](submissions/DZ-05/README.md) |
-| ДЗ‑6 | BOOK·CRAFT | AI‑редактор сценариев с жанрами и Model Gateway | [Открыть](submissions/DZ-06/README.md) |
-| ДЗ‑8 Lite | BOOK·CRAFT Media | зелёный статус после загрузки изображения | [Открыть](submissions/DZ-08/LITE/README.md) |
-| ДЗ‑8 Pro | Voice Backend | audio → STT → user_message | [Открыть](submissions/DZ-08/PRO/README.md) |
+<p align="center">
+  <a href="submissions/DZ-06/README.md">
+    <img src="submissions/DZ-06/screenshots/07-bookcraft-start-screen.jpg" width="900" alt="BOOK CRAFT — флагманский проект">
+  </a>
+</p>
 
-## ДЗ‑5 · AI-секретарь встреч
+## 🧭 Карта развития
 
 ```mermaid
 flowchart LR
-    F["Аудио / видео / ссылка"] --> STT["AssemblyAI"]
-    STT --> TXT["TXT-транскрипт"]
-    TXT --> AI["OpenAI-анализ"]
-    AI --> GS["Google Sheets"]
-    AI --> PDF["PDF-протокол"]
-    TXT --> TG["Telegram-кнопки"]
-    PDF --> TG
+    D4["ДЗ-4<br/>Telegram UX<br/>меню · кнопки · FSM"]
+    D5["ДЗ-5<br/>Интеграции<br/>STT · Sheets · PDF · TXT"]
+    D6["ДЗ-6<br/>AI-продукт<br/>React · Local LLM · Gateway"]
+    D8L["ДЗ-8 Lite<br/>Изображения<br/>upload · status · UI"]
+    D8P["ДЗ-8 Pro<br/>Voice backend<br/>audio · STT · API"]
+
+    D4 --> D5 --> D6 --> D8L --> D8P
 ```
 
-В одном сообщении пользователь получает:
+| Ступень | Что появилось | Архитектурное развитие |
+|---|---|---|
+| **ДЗ-4** | Telegram-бот туристического агента | от Notebook к модулям, меню и FSM |
+| **ДЗ-5** | AI-секретарь встреч | внешние API, файлы, таблицы и два формата результата |
+| **ДЗ-6** | BOOK·CRAFT | полноценный React UI, локальная модель, состояние и тесты |
+| **ДЗ-8 Lite** | работа с изображениями | мультимодальный ввод и честная обратная связь интерфейса |
+| **ДЗ-8 Pro** | голосовой backend | следующий слой: audio → STT → структурированный ответ |
 
-- **«Скачать протокол (PDF)»**;
-- **«Скачать транскрипт (TXT)»**.
+> ДЗ-7 в текущем составе репозитория не найдено и сознательно не обозначается как выполненное.
 
-[Открыть исходники ДЗ‑5](DZ_5_Integrations_files,_Sheets,_external_APIs/) ·
-[Открыть Notebook](DZ_5_Integrations_files,_Sheets,_external_APIs/notebooks/DZ5_AI_Secretary_TXT_Download.ipynb) ·
-[Открыть в Colab](https://colab.research.google.com/github/VictorKVS/Vibe-coding/blob/agent/dz6-dz8-showcase-clean/DZ_5_Integrations_files,_Sheets,_external_APIs/notebooks/DZ5_AI_Secretary_TXT_Download.ipynb)
+## 🚀 Проекты
 
-## ДЗ‑6 · BOOK·CRAFT
+<table>
+<tr>
+<td width="50%" valign="top">
 
-[![BOOK·CRAFT — создание сценариев](submissions/DZ-06/screenshots/01-start-screen.png)](submissions/DZ-06/README.md)
+### 🧭 ДЗ-4 · AI Travel Premium
 
-Локальный AI‑редактор сценариев: пять жанров, три редактируемые части, база знаний, паспорта персонажей, импорт/экспорт, автосохранение и подключение моделей.
+Telegram-бот с меню, inline-кнопками, диалоговыми состояниями, каталогом туров, изображениями и LLM-слоем.
 
-| Проверка | Результат |
-|---|---:|
-| Контракт сущностей | 3/3 PASS |
-| MIN/MED/MAX | 4/4 PASS |
-| React UI и восстановление | PASS |
-| Production build | PASS |
-| npm audit | 0 уязвимостей |
+**Рост:** Notebook → модульное приложение.
 
-## Организация репозитория
+[Открыть карточку](submissions/DZ-04/README.md) · [Исходники](DZ_4_Menus_buttons_dialog_scripts/)
 
-```text
-Vibe-coding/
-├── DZ_5_Integrations_files,_Sheets,_external_APIs/
-├── DZ_6_WeWeb_Lovable/
-└── submissions/
-    ├── DZ-05/
-    ├── DZ-06/
-    └── DZ-08/
-        ├── LITE/
-        └── PRO/
-```
+</td>
+<td width="50%" valign="top">
+
+### 🎙️ ДЗ-5 · AI-секретарь встреч
+
+Принимает запись созвона, распознаёт речь, формирует AI-анализ и отдаёт PDF-протокол вместе с TXT-транскриптом.
+
+**Рост:** интерфейс → внешние сервисы и артефакты.
+
+[Открыть карточку](submissions/DZ-05/README.md) · [Исходники](DZ_5_Integrations_files,_Sheets,_external_APIs/)
+
+</td>
+</tr>
+<tr>
+<td width="50%" valign="top">
+
+### ✨ ДЗ-6 · BOOK·CRAFT
+
+AI-студия сценариев книг и видеороликов: жанры, локальный GigaChat, Model Gateway, карта мира, персонажи, редакторы и экспорт.
+
+**Рост:** бот → самостоятельный AI-продукт.
+
+[Открыть карточку](submissions/DZ-06/README.md) · [Смотреть видео](submissions/DZ-06/demo/DZ6_BOOKCRAFT_Viktor_Kulichenko.mp4) · [Открыть приложение](https://victorkvs.github.io/Vibe-coding/)
+
+</td>
+<td width="50%" valign="top">
+
+### 🖼️ ДЗ-8 · Media & Voice
+
+Lite фиксирует состояние загрузки изображения. Pro выделен в отдельный контур для голосового backend.
+
+**Рост:** текстовый продукт → мультимодальная платформа.
+
+[Обзор ДЗ-8](submissions/DZ-08/README.md) · [Lite](submissions/DZ-08/LITE/README.md) · [Pro](submissions/DZ-08/PRO/README.md)
+
+</td>
+</tr>
+</table>
+
+## 🏆 Флагман: BOOK·CRAFT
+
+<p align="center">
+  <a href="submissions/DZ-06/demo/DZ6_BOOKCRAFT_Viktor_Kulichenko.mp4">
+    <img src="submissions/DZ-06/screenshots/08-fantasy-genre-and-result.jpg" width="820" alt="BOOK CRAFT фантастический сценарий">
+  </a>
+</p>
+
+<p align="center">
+  <a href="submissions/DZ-06/demo/DZ6_BOOKCRAFT_Viktor_Kulichenko.mp4">
+    <img src="https://img.shields.io/badge/▶_СМОТРЕТЬ_ВИДЕО-BOOK·CRAFT-7C5CFC?style=for-the-badge" alt="Смотреть BOOK CRAFT">
+  </a>
+</p>
+
+| Возможность | Реализация |
+|---|---|
+| AI-генерация | локальный GigaChat3-10B и внешний Model Gateway |
+| Управление сюжетом | вступление, развитие и финал |
+| Память мира | герои, события, карта и паспорта персонажей |
+| Два формата | сценарий книги и сценарий видеоролика |
+| Работа с данными | база знаний, импорт и экспорт |
+| Надёжность | автосохранение, MIN/MED/MAX, UI и recovery-проверки |
+
+## 🧪 Инженерная зрелость
 
 ```mermaid
 flowchart TD
-    R["Главная витрина"] --> D5["ДЗ-5 · AI-секретарь"]
-    R --> D6["ДЗ-6 · BOOK·CRAFT"]
-    R --> D8L["ДЗ-8 Lite · Image status"]
-    R --> D8P["ДЗ-8 Pro · Voice backend"]
-    D5 --> E5["Код · Notebook · скрины · видео"]
-    D6 --> E6["Код · тесты · build · скрины"]
-    D8L --> E8L["Код · тест · скрин"]
-    D8P --> E8P["ТЗ · backend · видео"]
+    IDEA["Идея и prompt"] --> MVP["Рабочий MVP"]
+    MVP --> CONTRACT["Контракты данных"]
+    CONTRACT --> TESTS["Приёмочные тесты"]
+    TESTS --> BUILD["Production build"]
+    BUILD --> EVIDENCE["Скриншоты и видео"]
+    EVIDENCE --> SUBMIT["Карточка сдачи"]
 ```
 
-Каждая карточка отделяет обязательные требования преподавателя от дополнительных продуктовых функций. В репозиторий не добавляются реальные токены, пользовательские транскрипты, runtime-файлы, модели, `node_modules` и production-сборки.
+| Практика | Где подтверждается |
+|---|---|
+| воспроизводимый запуск | README и стартовые сценарии проектов |
+| формальные критерии | MIN / MED / MAX и UI-проверки |
+| визуальные доказательства | `submissions/*/screenshots` |
+| демонстрация | видео ДЗ-6 и последовательность ДЗ-5 |
+| секреты вне Git | `.gitignore`, переменные окружения и Colab Secrets |
+| разделение продукта и сдачи | исходники в `DZ_*`, карточки в `submissions/` |
+
+## 📁 Навигация по репозиторию
+
+```text
+Vibe-coding/
+├── DZ_4_Menus_buttons_dialog_scripts/          # AI Travel Premium
+├── DZ_5_Integrations_files,_Sheets,_external_APIs/ # AI-секретарь
+├── DZ_6_WeWeb_Lovable/                         # BOOK·CRAFT
+├── submissions/                                # чистые карточки сдачи
+│   ├── DZ-04/
+│   ├── DZ-05/
+│   ├── DZ-06/
+│   └── DZ-08/
+├── assets/                                     # медиа туристического агента
+└── DZ/                                         # архив исходных учебных материалов
+```
+
+- [Открыть единый каталог сдач](submissions/README.md)
+- [Открыть ДЗ-4](submissions/DZ-04/README.md)
+- [Открыть ДЗ-5](submissions/DZ-05/README.md)
+- [Открыть ДЗ-6](submissions/DZ-06/README.md)
+- [Открыть ДЗ-8](submissions/DZ-08/README.md)
+
+## 🔐 Правила репозитория
+
+- реальные API-токены, ключи и service-account JSON не публикуются;
+- `node_modules`, `dist`, логи и runtime-файлы исключаются;
+- пользовательские транскрипты и приватные записи не входят в учебную витрину;
+- большие модели хранятся локально, в Git фиксируется только способ подключения;
+- статусы «готово» выставляются только при наличии кода и доказательств.
+
+---
+
+<p align="center">
+  <strong>Vibe Coding здесь — это путь от идеи к проверяемому AI-продукту.</strong>
+</p>
