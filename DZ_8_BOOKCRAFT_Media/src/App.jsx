@@ -30,7 +30,6 @@ import {
   ShieldAlert,
   Activity,
   Bug,
-  Github,
 } from "lucide-react";
 import { GENRES, M1_DEMO, M1_WORLD } from "./m1-contract.js";
 
@@ -1206,7 +1205,7 @@ function Workspace({ mode, onBack }) {
               <Download size={15} /> Скачать журнал JSON
             </button>
             <button type="button" className="send-diagnostic" onClick={sendDiagnosticsToGitHub} disabled={diagnosticStatus === "sending"}>
-              <Github size={15} /> {diagnosticStatus === "sending" ? "Отправляю…" : "Отправить на проверку"}
+              <GitBranch size={15} /> {diagnosticStatus === "sending" ? "Отправляю…" : "Отправить на проверку"}
             </button>
             <button type="button" className="clear-diagnostic" onClick={clearDiagnostics}>Очистить</button>
             {diagnosticStatus === "sent" && <span className="diagnostic-success"><Check size={14} /> Issue создан</span>}
