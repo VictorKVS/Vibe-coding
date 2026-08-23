@@ -44,7 +44,7 @@ await check("MED", "локальная генерация обновляет т�
   for (const field of ["introduction", "development", "finale"]) {
     assert.ok(appSource.includes(field), `нет поля ${field}`);
   }
-  assert.match(appSource, /const endpoint = isLocal[\s\S]{0,80}\? "\/llm-api\/v1\/chat\/completions"/);
+  assert.match(appSource, /const endpoint = isLocal[\s\S]{0,120}\? "http:\/\/127\.0\.0\.1:8018\/api\/llm\/chat\/completions"/);
   assert.match(appSource, /setScript\(result\.script\)/);
   assert.match(appSource, /setScript\(\(current\) => \(\{ \.\.\.current, \[key\]: event\.target\.value \}\)\)/);
   assert.match(appSource, /book:[\s\S]*video:/);

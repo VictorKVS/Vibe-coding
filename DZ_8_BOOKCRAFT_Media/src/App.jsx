@@ -265,7 +265,7 @@ async function callModelCompletion({ messages, temperature, maxTokens, modelConf
   const isLocal = modelConfig.source === "local";
   const isGigaChat = !isLocal && modelConfig.externalProtocol === "gigachat";
   const endpoint = isLocal
-    ? "/llm-api/v1/chat/completions"
+    ? "http://127.0.0.1:8018/api/llm/chat/completions"
     : isGigaChat
       ? "/giga-cloud/v1/chat/completions"
       : modelConfig.externalEndpoint.trim();
@@ -273,10 +273,12 @@ async function callModelCompletion({ messages, temperature, maxTokens, modelConf
   if (!isLocal && !modelConfig.externalModel.trim()) throw new Error("Укажите ID модели внешнего агента");
   if (!isLocal && !modelConfig.apiKey.trim()) throw new Error("Укажите API-ключ внешнего агента");
   try {
+    const requestId = globalThis.crypto?.randomUUID?.() || `bookcraft-${Date.now()}-${Math.random().toString(16).slice(2)}`;
     const response = await fetch(endpoint, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
+        "X-Request-ID": requestId,
         ...(!isLocal ? { Authorization: `Bearer ${modelConfig.apiKey.trim()}` } : {}),
       },
       signal: controller.signal,
@@ -288,7 +290,26 @@ async function callModelCompletion({ messages, temperature, maxTokens, modelConf
         stream: false,
       }),
     });
-    if (!response.ok) throw new Error(`Агент вернул ошибку ${response.status}`);
+    if (!response.ok) {
+      let serverMessage = "";
+      try {
+        const payload = await response.json();
+        serverMessage = payload?.error?.message || payload?.detail || "";
+      } catch {
+        serverMessage = "";
+      }
+      if (response.status === 401) {
+        throw new Error("LM Studio требует API-токен. Отключите Require Authentication либо настройте токен");
+      }
+      if (response.status === 404) {
+        throw new Error("Endpoint модели не найден. Проверьте Local Server LM Studio");
+      }
+      if (response.status === 502 || response.status === 503) {
+        throw new Error("Локальный сервер модели недоступен. Запустите LM Studio Local Server на порту 1234");
+      }
+      const suffix = serverMessage ? `: ${serverMessage.slice(0, 240)}` : "";
+      throw new Error(`Модель вернула HTTP ${response.status}${suffix}`);
+    }
     const data = await response.json();
     const content = data?.choices?.[0]?.message?.content?.trim();
     if (!content) throw new Error("Модель вернула пустой ответ");
@@ -296,6 +317,9 @@ async function callModelCompletion({ messages, temperature, maxTokens, modelConf
   } catch (error) {
     if (error.name === "AbortError") {
       throw new Error(`Агент не ответил за ${Math.round(timeoutMs / 1000)} секунд`);
+    }
+    if (error instanceof TypeError && /fetch/i.test(error.message)) {
+      throw new Error("Нет соединения с моделью. Проверьте LM Studio и порт 1234");
     }
     throw error;
   } finally {
@@ -621,6 +645,8 @@ function Workspace({ mode, onBack }) {
   const [visualStyle, setVisualStyle] = useState("Кинематографичная книжная иллюстрация");
   const [gigaAccessToken, setGigaAccessToken] = useState("");
   const [modelConfig, setModelConfig] = useState(DEFAULT_MODEL_CONFIG);
+  const [availableLocalModels, setAvailableLocalModels] = useState(LOCAL_MODELS);
+  const [localModelDiscovery, setLocalModelDiscovery] = useState("pending");
   const [connectionStatus, setConnectionStatus] = useState("not-tested");
   const [isTestingConnection, setIsTestingConnection] = useState(false);
   const [illustrationPrompt, setIllustrationPrompt] = useState("");
@@ -660,6 +686,41 @@ function Workspace({ mode, onBack }) {
   const photoInputRef = useRef(null);
   const projectInputRef = useRef(null);
   const diagnosticSequenceRef = useRef(diagnostics.at(-1)?.sequence || 0);
+
+  useEffect(() => {
+    let cancelled = false;
+    async function discoverLoadedModels() {
+      try {
+        const response = await fetch("/llm-api/v1/models", { method: "GET" });
+        if (!response.ok) {
+          setLocalModelDiscovery(response.status === 401 ? "authentication-required" : "unavailable");
+          return;
+        }
+        const payload = await response.json();
+        const discovered = (Array.isArray(payload?.data) ? payload.data : [])
+          .filter((item) => item && typeof item.id === "string" && item.id.trim())
+          .map((item) => ({
+            id: item.id,
+            label: item.id,
+            capability: "загружена в LM Studio",
+          }));
+        if (cancelled) return;
+        if (discovered.length === 0) {
+          setLocalModelDiscovery("model-not-loaded");
+          return;
+        }
+        setAvailableLocalModels(discovered);
+        setLocalModelDiscovery("ready");
+        setModelConfig((current) => discovered.some((item) => item.id === current.localModel)
+          ? current
+          : { ...current, localModel: discovered[0].id });
+      } catch {
+        if (!cancelled) setLocalModelDiscovery("server-stopped");
+      }
+    }
+    discoverLoadedModels();
+    return () => { cancelled = true; };
+  }, []);
 
   function traceEvent(type, message, data = {}, level = "info") {
     diagnosticSequenceRef.current += 1;
@@ -754,9 +815,9 @@ function Workspace({ mode, onBack }) {
   );
   const activeModel = useMemo(
     () => modelConfig.source === "local"
-      ? LOCAL_MODELS.find((model) => model.id === modelConfig.localModel)?.label || "Локальная модель"
+      ? availableLocalModels.find((model) => model.id === modelConfig.localModel)?.label || "Локальная модель"
       : modelConfig.externalModel || modelConfig.externalAgent || "Внешний агент",
-    [modelConfig],
+    [modelConfig, availableLocalModels],
   );
 
   async function sendMessage() {
@@ -1083,6 +1144,16 @@ function Workspace({ mode, onBack }) {
         services[name] = { ok: false, error: probeError.message, durationMs: Math.round(performance.now() - startedAt) };
       }
     }
+    let pipelineTrace = [];
+    try {
+      const traceResponse = await fetch("http://127.0.0.1:8018/api/trace/recent?limit=120");
+      if (traceResponse.ok) {
+        const tracePayload = await traceResponse.json();
+        pipelineTrace = Array.isArray(tracePayload?.events) ? tracePayload.events : [];
+      }
+    } catch {
+      pipelineTrace = [];
+    }
     return {
       schema: "bookcraft-diagnostics/v1",
       createdAt: new Date().toISOString(),
@@ -1091,10 +1162,11 @@ function Workspace({ mode, onBack }) {
         source: modelConfig.source,
         model: modelConfig.source === "local" ? modelConfig.localModel : modelConfig.externalModel,
         protocol: modelConfig.externalProtocol,
-        endpoint: modelConfig.source === "external" ? modelConfig.externalEndpoint : "/llm-api/v1/chat/completions",
+        endpoint: modelConfig.source === "external" ? modelConfig.externalEndpoint : "http://127.0.0.1:8018/api/llm/chat/completions",
       },
       art: { scene: illustrationScene, style: visualStyle, hasImage: Boolean(illustrationUrl), hasToken: Boolean(gigaAccessToken.trim()) },
       services,
+      pipelineTrace,
       browser: { userAgent: navigator.userAgent, language: navigator.language, online: navigator.onLine, viewport: `${window.innerWidth}x${window.innerHeight}` },
       events: diagnostics,
       privacy: "API keys, access tokens, manuscript text, prompts, source files and images are excluded.",
@@ -1272,11 +1344,19 @@ function Workspace({ mode, onBack }) {
             <label className="model-field model-field-wide">
               <span>Модель из подтверждённого локального инвентаря</span>
               <select value={modelConfig.localModel} onChange={(event) => updateModelConfig("localModel", event.target.value)}>
-                {LOCAL_MODELS.map((model) => (
+                {availableLocalModels.map((model) => (
                   <option key={model.id} value={model.id}>{model.label} — {model.capability}</option>
                 ))}
               </select>
-              <small>Список ограничен моделями, ранее выявленными на вашем диске. Файл модели в проект не копируется.</small>
+              <small>
+                {localModelDiscovery === "ready"
+                  ? "Список получен из работающего API LM Studio."
+                  : localModelDiscovery === "authentication-required"
+                    ? "LM Studio требует API-токен. Для локального ДЗ отключите Require Authentication."
+                    : localModelDiscovery === "model-not-loaded"
+                      ? "LM Studio запущен, но модель не загружена."
+                      : "Показан сохранённый инвентарь. Запустите LM Studio на порту 1234 для точного списка."}
+              </small>
             </label>
           ) : (
             <div className="external-agent-grid">

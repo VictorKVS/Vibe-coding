@@ -26,7 +26,7 @@ checks = {
     "diagnostic redaction": '"[REDACTED]"',
     "local gh issue submission": '"gh", "issue", "create"',
     "event trace": '"ui.click"',
-    "diagnostic download": '"Скачать журнал JSON"',
+    "diagnostic download": "Скачать журнал JSON",
     "diagnostic review button": '"Отправить на проверку"',
 }
 

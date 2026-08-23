@@ -6,12 +6,16 @@ import os
 import re
 import subprocess
 import tempfile
+import time
+import uuid
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Annotated
 
 import httpx
-from fastapi import FastAPI, File, Form, Header, HTTPException, UploadFile
+from fastapi import FastAPI, File, Form, Header, HTTPException, Request, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 
 app = FastAPI(title="BOOK.CRAFT Media Gateway", version="0.1.0")
@@ -50,6 +54,110 @@ class Health(BaseModel):
     status: str
     stt: str
     model_roots: list[str]
+
+
+LM_STUDIO_BASE_URL = os.getenv("BOOKCRAFT_LLM_BASE_URL", "http://127.0.0.1:1234").rstrip("/")
+TRACE_ROOT = Path(os.getenv("BOOKCRAFT_TRACE_ROOT", Path(__file__).resolve().parents[1] / ".runtime" / "traces"))
+RUN_ID = os.getenv("BOOKCRAFT_RUN_ID", f"gateway-{uuid.uuid4().hex[:12]}")
+
+
+def write_trace(event: str, *, request_id: str | None = None, **data: object) -> None:
+    """Append metadata-only trace events. Prompts, manuscripts and secrets are never accepted."""
+    TRACE_ROOT.mkdir(parents=True, exist_ok=True)
+    record = {
+        "timestamp": datetime.now(UTC).isoformat(),
+        "run_id": RUN_ID,
+        "request_id": request_id,
+        "component": "media-gateway",
+        "event": event,
+        **data,
+    }
+    trace_file = TRACE_ROOT / f"gateway-{datetime.now(UTC):%Y%m%d}.jsonl"
+    with trace_file.open("a", encoding="utf-8") as stream:
+        stream.write(json.dumps(record, ensure_ascii=False, separators=(",", ":")) + "\n")
+
+
+@app.middleware("http")
+async def trace_http_request(request: Request, call_next):
+    request_id = request.headers.get("x-request-id", "").strip()[:80] or uuid.uuid4().hex
+    started = time.perf_counter()
+    write_trace("http.request.start", request_id=request_id, method=request.method, path=request.url.path)
+    try:
+        response = await call_next(request)
+    except Exception as error:
+        write_trace(
+            "http.request.exception",
+            request_id=request_id,
+            error_type=type(error).__name__,
+            duration_ms=round((time.perf_counter() - started) * 1000),
+        )
+        raise
+    response.headers["X-Request-ID"] = request_id
+    write_trace(
+        "http.request.finish",
+        request_id=request_id,
+        status_code=response.status_code,
+        duration_ms=round((time.perf_counter() - started) * 1000),
+    )
+    return response
+
+
+async def probe_lm_studio() -> dict[str, object]:
+    """Return a user-facing readiness state without leaking credentials."""
+    try:
+        async with httpx.AsyncClient(timeout=3.0) as client:
+            response = await client.get(f"{LM_STUDIO_BASE_URL}/v1/models")
+    except httpx.ConnectError:
+        return {
+            "status": "server-stopped",
+            "ready": False,
+            "message": "LM Studio API не запущен. Включите Local Server на порту 1234.",
+        }
+    except httpx.TimeoutException:
+        return {
+            "status": "timeout",
+            "ready": False,
+            "message": "LM Studio API не ответил за 3 секунды.",
+        }
+    except httpx.HTTPError:
+        return {
+            "status": "unreachable",
+            "ready": False,
+            "message": "Не удалось проверить LM Studio API.",
+        }
+
+    if response.status_code == 401:
+        return {
+            "status": "authentication-required",
+            "ready": False,
+            "message": "В LM Studio включён Require Authentication, но BOOK.CRAFT не настроен на API-токен.",
+        }
+    if not response.is_success:
+        return {
+            "status": "http-error",
+            "ready": False,
+            "http_status": response.status_code,
+            "message": f"LM Studio API вернул HTTP {response.status_code}.",
+        }
+
+    try:
+        models = response.json().get("data", [])
+    except (ValueError, AttributeError):
+        models = []
+    model_ids = [str(item.get("id")) for item in models if isinstance(item, dict) and item.get("id")]
+    if not model_ids:
+        return {
+            "status": "model-not-loaded",
+            "ready": False,
+            "models": [],
+            "message": "LM Studio работает, но ни одна модель не загружена.",
+        }
+    return {
+        "status": "ready",
+        "ready": True,
+        "models": model_ids,
+        "message": f"LM Studio готов. Загружено моделей: {len(model_ids)}.",
+    }
 
 
 def model_roots() -> list[Path]:
@@ -121,6 +229,68 @@ def health() -> Health:
         stt="ready" if stt_ready else "configuration-required",
         model_roots=[str(path) for path in model_roots()],
     )
+
+
+@app.get("/api/readiness")
+async def readiness() -> dict[str, object]:
+    llm = await probe_lm_studio()
+    return {
+        "status": "ready" if llm.get("ready") else "degraded",
+        "media_gateway": {"ready": True, "message": "Media Gateway готов."},
+        "llm": llm,
+    }
+
+
+@app.post("/api/llm/chat/completions")
+async def proxy_local_completion(request: Request) -> JSONResponse:
+    request_id = request.headers.get("x-request-id", "").strip()[:80] or uuid.uuid4().hex
+    try:
+        payload = await request.json()
+    except ValueError as error:
+        raise HTTPException(status_code=422, detail="Запрос модели должен содержать JSON.") from error
+    if not isinstance(payload, dict):
+        raise HTTPException(status_code=422, detail="Некорректный формат запроса модели.")
+
+    messages = payload.get("messages", [])
+    write_trace(
+        "llm.forward.start",
+        request_id=request_id,
+        model=str(payload.get("model", ""))[:160],
+        message_count=len(messages) if isinstance(messages, list) else 0,
+        max_tokens=payload.get("max_tokens"),
+    )
+    started = time.perf_counter()
+    try:
+        async with httpx.AsyncClient(timeout=httpx.Timeout(120.0, connect=5.0)) as client:
+            response = await client.post(f"{LM_STUDIO_BASE_URL}/v1/chat/completions", json=payload)
+    except httpx.ConnectError as error:
+        write_trace("llm.forward.error", request_id=request_id, category="server-stopped")
+        raise HTTPException(status_code=503, detail="LM Studio Local Server не запущен на порту 1234.") from error
+    except httpx.TimeoutException as error:
+        write_trace("llm.forward.error", request_id=request_id, category="timeout")
+        raise HTTPException(status_code=504, detail="Локальная модель не ответила за 120 секунд.") from error
+
+    duration_ms = round((time.perf_counter() - started) * 1000)
+    if response.status_code == 401:
+        write_trace("llm.forward.error", request_id=request_id, category="authentication-required", duration_ms=duration_ms)
+        raise HTTPException(status_code=401, detail="В LM Studio включён Require Authentication.")
+    if not response.is_success:
+        write_trace("llm.forward.error", request_id=request_id, category="model-http-error", upstream_status=response.status_code, duration_ms=duration_ms)
+        raise HTTPException(status_code=502, detail=f"LM Studio вернул HTTP {response.status_code}.")
+
+    write_trace("llm.forward.finish", request_id=request_id, upstream_status=response.status_code, duration_ms=duration_ms)
+    return JSONResponse(content=response.json(), headers={"X-Request-ID": request_id})
+
+
+@app.get("/api/trace/recent")
+def recent_trace(limit: int = 100) -> dict[str, object]:
+    safe_limit = max(1, min(limit, 500))
+    trace_file = TRACE_ROOT / f"gateway-{datetime.now(UTC):%Y%m%d}.jsonl"
+    if not trace_file.is_file():
+        return {"run_id": RUN_ID, "events": []}
+    lines = trace_file.read_text(encoding="utf-8").splitlines()[-safe_limit:]
+    events = [json.loads(line) for line in lines if line.strip()]
+    return {"run_id": RUN_ID, "events": events}
 
 
 @app.get("/api/models")
