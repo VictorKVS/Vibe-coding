@@ -22,6 +22,12 @@ checks = {
     "safe image extraction": "_extract_gigachat_image_id",
     "browser calls local gateway": 'http://127.0.0.1:8018/api/art/generate',
     "frontend checks data image": 'startsWith("data:image/")',
+    "diagnostic endpoint": '@app.post("/api/diagnostics/github")',
+    "diagnostic redaction": '"[REDACTED]"',
+    "local gh issue submission": '"gh", "issue", "create"',
+    "event trace": '"ui.click"',
+    "diagnostic download": '"Скачать журнал JSON"',
+    "diagnostic review button": '"Отправить на проверку"',
 }
 
 missing = [
@@ -42,4 +48,7 @@ print("PASS DZ8-MODELS: local GGUF inventory is exposed by the gateway")
 print("PASS DZ8-ART-MIN: selected text becomes an art prompt")
 print("PASS DZ8-ART-MED: GigaChat text2image returns a downloadable JPG")
 print("PASS DZ8-ART-MAX: token stays in memory and errors are user-safe")
-print("DZ-8 media acceptance: 7/7 checks green.")
+print("PASS DZ8-TRACE-MIN: clicks, model calls and failures enter one bounded journal")
+print("PASS DZ8-TRACE-MED: JSON export excludes tokens and manuscript content")
+print("PASS DZ8-TRACE-MAX: authenticated local gh creates a review Issue")
+print("DZ-8 media acceptance: 10/10 checks green.")
