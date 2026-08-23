@@ -33,7 +33,15 @@
   </a>
 </p>
 
-**Файл:** [DZ6_BOOKCRAFT_Viktor_Kulichenko.mp4](demo/DZ6_BOOKCRAFT_Viktor_Kulichenko.mp4) · 37,16 МБ
+<h2 align="center">🎬 ВИДЕО-ДЕМОНСТРАЦИЯ BOOK·CRAFT</h2>
+
+<h3 align="center">
+  <a href="demo/DZ6_BOOKCRAFT_Viktor_Kulichenko.mp4">▶️ ОТКРЫТЬ И СМОТРЕТЬ ВИДЕО</a>
+</h3>
+
+<p align="center">
+  <strong>DZ6_BOOKCRAFT_Viktor_Kulichenko.mp4 · 37,16 МБ</strong>
+</p>
 
 ## 🔗 Быстрые ссылки
 
