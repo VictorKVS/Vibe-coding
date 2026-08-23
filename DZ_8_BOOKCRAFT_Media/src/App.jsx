@@ -28,6 +28,9 @@ import {
   Heart,
   Laugh,
   ShieldAlert,
+  Activity,
+  Bug,
+  Github,
 } from "lucide-react";
 import { GENRES, M1_DEMO, M1_WORLD } from "./m1-contract.js";
 
@@ -101,6 +104,34 @@ const DEFAULT_MODEL_CONFIG = {
 };
 
 const PROJECT_STORAGE_KEY = "bookcraft.mvp.project.v1";
+const DIAGNOSTIC_STORAGE_KEY = "bookcraft.media.diagnostics.v1";
+const MAX_DIAGNOSTIC_EVENTS = 500;
+
+function safeDiagnosticValue(value, key = "") {
+  if (/token|key|authorization|secret|password/i.test(key)) return "[REDACTED]";
+  if (typeof value === "string") {
+    if (/^(?:Bearer\s+)?[A-Za-z0-9_-]{24,}\.?[A-Za-z0-9_-]*$/i.test(value.trim())) return "[REDACTED]";
+    return value.length > 500 ? `${value.slice(0, 500)}…` : value;
+  }
+  if (Array.isArray(value)) return value.slice(0, 20).map((item) => safeDiagnosticValue(item));
+  if (value && typeof value === "object") {
+    return Object.fromEntries(Object.entries(value).map(([name, item]) => [name, safeDiagnosticValue(item, name)]));
+  }
+  return value;
+}
+
+function describeControl(target) {
+  if (!(target instanceof Element)) return { control: "unknown" };
+  const control = target.closest("button, a, select, input, textarea, summary") || target;
+  const sensitive = control.matches('input[type="password"]') || /token|key|secret|password/i.test(control.getAttribute("name") || control.getAttribute("placeholder") || "");
+  return {
+    tag: control.tagName.toLowerCase(),
+    control: (control.getAttribute("aria-label") || control.textContent || control.getAttribute("placeholder") || control.id || control.className || "control").trim().replace(/\s+/g, " ").slice(0, 140),
+    id: control.id || undefined,
+    className: typeof control.className === "string" ? control.className.slice(0, 120) : undefined,
+    value: sensitive ? "[REDACTED]" : control.matches("select") ? control.value : undefined,
+  };
+}
 
 function loadSavedProject(mode) {
   try {
@@ -600,6 +631,16 @@ function Workspace({ mode, onBack }) {
   const [selectedExcerpt, setSelectedExcerpt] = useState("");
   const [savedAt, setSavedAt] = useState(initialProject?.savedAt || "");
   const [saveStatus, setSaveStatus] = useState(initialProject ? "restored" : "ready");
+  const [diagnostics, setDiagnostics] = useState(() => {
+    try {
+      const saved = JSON.parse(localStorage.getItem(DIAGNOSTIC_STORAGE_KEY) || "[]");
+      return Array.isArray(saved) ? saved.slice(-MAX_DIAGNOSTIC_EVENTS) : [];
+    } catch {
+      return [];
+    }
+  });
+  const [diagnosticStatus, setDiagnosticStatus] = useState("ready");
+  const [diagnosticIssueUrl, setDiagnosticIssueUrl] = useState("");
   const [characterProfiles, setCharacterProfiles] = useState(() => {
     if (initialProject?.characterProfiles) return initialProject.characterProfiles;
     try {
@@ -619,6 +660,47 @@ function Workspace({ mode, onBack }) {
   const fileInputRef = useRef(null);
   const photoInputRef = useRef(null);
   const projectInputRef = useRef(null);
+  const diagnosticSequenceRef = useRef(diagnostics.at(-1)?.sequence || 0);
+
+  function traceEvent(type, message, data = {}, level = "info") {
+    diagnosticSequenceRef.current += 1;
+    const event = {
+      sequence: diagnosticSequenceRef.current,
+      timestamp: new Date().toISOString(),
+      level,
+      type,
+      message,
+      data: safeDiagnosticValue(data),
+    };
+    setDiagnostics((items) => [...items, event].slice(-MAX_DIAGNOSTIC_EVENTS));
+    return event;
+  }
+
+  useEffect(() => {
+    const onClick = (event) => traceEvent("ui.click", "Нажатие элемента", describeControl(event.target));
+    const onChange = (event) => traceEvent("ui.change", "Изменение элемента", describeControl(event.target));
+    const onError = (event) => traceEvent("runtime.error", event.message || "Ошибка JavaScript", { filename: event.filename, lineno: event.lineno, colno: event.colno }, "error");
+    const onRejection = (event) => traceEvent("runtime.unhandledrejection", event.reason?.message || String(event.reason || "Необработанная ошибка"), {}, "error");
+    document.addEventListener("click", onClick, true);
+    document.addEventListener("change", onChange, true);
+    window.addEventListener("error", onError);
+    window.addEventListener("unhandledrejection", onRejection);
+    traceEvent("session.start", "Открыто рабочее пространство", { mode, restored: Boolean(initialProject) });
+    return () => {
+      document.removeEventListener("click", onClick, true);
+      document.removeEventListener("change", onChange, true);
+      window.removeEventListener("error", onError);
+      window.removeEventListener("unhandledrejection", onRejection);
+    };
+  }, []);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(DIAGNOSTIC_STORAGE_KEY, JSON.stringify(diagnostics));
+    } catch {
+      // Диагностика не должна останавливать работу редактора.
+    }
+  }, [diagnostics]);
 
   useEffect(() => {
     localStorage.setItem("bookcraft.sources", JSON.stringify(sources));
@@ -687,6 +769,14 @@ function Workspace({ mode, onBack }) {
     setIdea("");
     setError("");
     setIsLoading(true);
+    traceEvent("agent.request.start", "Отправлен запрос сценарному агенту", {
+      source: modelConfig.source,
+      model: modelConfig.source === "local" ? modelConfig.localModel : modelConfig.externalModel,
+      protocol: modelConfig.externalProtocol,
+      genre,
+      mode,
+      requestLength: cleanIdea.length,
+    });
 
     try {
       const result = await generateWithLocalModel({
@@ -704,7 +794,15 @@ function Workspace({ mode, onBack }) {
         ...items,
         { role: "assistant", text: result.assistantMessage },
       ]);
+      traceEvent("agent.request.success", "Сценарный агент обновил структуру", {
+        completedSections: Object.values(result.script || {}).filter(Boolean).length,
+      });
     } catch (requestError) {
+      traceEvent("agent.request.error", requestError.message, {
+        source: modelConfig.source,
+        model: modelConfig.source === "local" ? modelConfig.localModel : modelConfig.externalModel,
+        protocol: modelConfig.externalProtocol,
+      }, "error");
       setError(
         `${requestError.message}. Проверьте настройки выбранного агента.`,
       );
@@ -729,12 +827,18 @@ function Workspace({ mode, onBack }) {
       return { ...current, [field]: value };
     });
     setConnectionStatus("not-tested");
+    traceEvent("model.config", `Изменён параметр модели: ${field}`, { field, value: /key|token|secret|password/i.test(field) ? "[REDACTED]" : value });
   }
 
   async function testModelConnection() {
     setError("");
     setIsTestingConnection(true);
     setConnectionStatus("testing");
+    traceEvent("model.test.start", "Запущена проверка модели", {
+      source: modelConfig.source,
+      model: modelConfig.source === "local" ? modelConfig.localModel : modelConfig.externalModel,
+      protocol: modelConfig.externalProtocol,
+    });
     try {
       const response = await callModelCompletion({
         modelConfig,
@@ -744,7 +848,9 @@ function Workspace({ mode, onBack }) {
         timeoutMs: 30000,
       });
       setConnectionStatus(response ? "ready" : "failed");
+      traceEvent("model.test.success", "Модель ответила на контрольный запрос");
     } catch (connectionError) {
+      traceEvent("model.test.error", connectionError.message, {}, "error");
       setConnectionStatus("failed");
       setError(`Проверка агента: ${connectionError.message}`);
     } finally {
@@ -918,6 +1024,12 @@ function Workspace({ mode, onBack }) {
 
     setError("");
     setIsIllustrating(true);
+    traceEvent("art.generate.start", "Запущено создание иллюстрации", {
+      scene: illustrationScene,
+      style: visualStyle,
+      excerptLength: sceneText.length,
+      hasAccessToken: Boolean(gigaAccessToken.trim()),
+    });
     try {
       const sceneNames = {
         introduction: "Вступление",
@@ -940,6 +1052,7 @@ function Workspace({ mode, onBack }) {
       });
       if (illustrationUrl) URL.revokeObjectURL(illustrationUrl);
       setIllustrationUrl(nextUrl);
+      traceEvent("art.generate.success", "Иллюстрация создана", { scene: illustrationScene, style: visualStyle });
       setMessages((items) => [
         ...items,
         {
@@ -950,10 +1063,87 @@ function Workspace({ mode, onBack }) {
         },
       ]);
     } catch (illustrationError) {
+      traceEvent("art.generate.error", illustrationError.message, { scene: illustrationScene, style: visualStyle }, "error");
       setError(illustrationError.message);
     } finally {
       setIsIllustrating(false);
     }
+  }
+
+  async function buildDiagnosticBundle() {
+    const services = {};
+    for (const [name, url] of Object.entries({
+      mediaGateway: "http://127.0.0.1:8018/api/health",
+      localModel: "http://127.0.0.1:1234/v1/models",
+    })) {
+      const startedAt = performance.now();
+      try {
+        const response = await fetch(url, { method: "GET" });
+        services[name] = { ok: response.ok, status: response.status, durationMs: Math.round(performance.now() - startedAt) };
+      } catch (probeError) {
+        services[name] = { ok: false, error: probeError.message, durationMs: Math.round(performance.now() - startedAt) };
+      }
+    }
+    return {
+      schema: "bookcraft-diagnostics/v1",
+      createdAt: new Date().toISOString(),
+      application: { mode, genre, completedSections: completed, wordCount, saveStatus, connectionStatus },
+      model: {
+        source: modelConfig.source,
+        model: modelConfig.source === "local" ? modelConfig.localModel : modelConfig.externalModel,
+        protocol: modelConfig.externalProtocol,
+        endpoint: modelConfig.source === "external" ? modelConfig.externalEndpoint : "/llm-api/v1/chat/completions",
+      },
+      art: { scene: illustrationScene, style: visualStyle, hasImage: Boolean(illustrationUrl), hasToken: Boolean(gigaAccessToken.trim()) },
+      services,
+      browser: { userAgent: navigator.userAgent, language: navigator.language, online: navigator.onLine, viewport: `${window.innerWidth}x${window.innerHeight}` },
+      events: diagnostics,
+      privacy: "API keys, access tokens, manuscript text, prompts, source files and images are excluded.",
+    };
+  }
+
+  async function downloadDiagnostics() {
+    setDiagnosticStatus("collecting");
+    const bundle = await buildDiagnosticBundle();
+    const url = URL.createObjectURL(new Blob([JSON.stringify(bundle, null, 2)], { type: "application/json" }));
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `bookcraft-diagnostics-${new Date().toISOString().replace(/[:.]/g, "-")}.json`;
+    link.click();
+    URL.revokeObjectURL(url);
+    traceEvent("diagnostics.download", "Диагностический журнал сохранён в файл", { eventCount: diagnostics.length });
+    setDiagnosticStatus("downloaded");
+  }
+
+  async function sendDiagnosticsToGitHub() {
+    setDiagnosticStatus("sending");
+    setDiagnosticIssueUrl("");
+    try {
+      const bundle = await buildDiagnosticBundle();
+      const response = await fetch("http://127.0.0.1:8018/api/diagnostics/github", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(bundle),
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(data.detail || `GitHub Gateway вернул ${response.status}`);
+      setDiagnosticIssueUrl(data.issue_url);
+      setDiagnosticStatus("sent");
+      traceEvent("diagnostics.github.success", "Диагностика отправлена в GitHub", { issueUrl: data.issue_url });
+      window.open(data.issue_url, "_blank", "noopener,noreferrer");
+    } catch (sendError) {
+      setDiagnosticStatus("failed");
+      setError(`Отправка диагностики: ${sendError.message}`);
+      traceEvent("diagnostics.github.error", sendError.message, {}, "error");
+    }
+  }
+
+  function clearDiagnostics() {
+    setDiagnostics([]);
+    diagnosticSequenceRef.current = 0;
+    localStorage.removeItem(DIAGNOSTIC_STORAGE_KEY);
+    setDiagnosticIssueUrl("");
+    setDiagnosticStatus("ready");
   }
 
   return (
@@ -986,6 +1176,44 @@ function Workspace({ mode, onBack }) {
           <RotateCcw size={15} /> Новый сценарий
         </button>
       </header>
+
+      <details className="diagnostic-panel">
+        <summary>
+          <span><Activity size={16} /> Трассировка работы программы</span>
+          <small className={diagnostics.some((item) => item.level === "error") ? "has-errors" : ""}>
+            {diagnostics.length} событий · {diagnostics.filter((item) => item.level === "error").length} ошибок
+          </small>
+        </summary>
+        <div className="diagnostic-content">
+          <div className="diagnostic-explanation">
+            <Bug size={20} />
+            <div>
+              <strong>Автоматический журнал действий и ошибок</strong>
+              <p>Фиксируются кнопки, выбор модели, этапы запросов, ответы сервисов и ошибки. Токены, ключи и текст рукописи исключены.</p>
+            </div>
+          </div>
+          <div className="diagnostic-events" aria-live="polite">
+            {diagnostics.slice(-8).reverse().map((item) => (
+              <div className={`diagnostic-event ${item.level}`} key={item.sequence}>
+                <time>{new Date(item.timestamp).toLocaleTimeString("ru-RU")}</time>
+                <span>{item.type}</span>
+                <strong>{item.message}</strong>
+              </div>
+            ))}
+          </div>
+          <div className="diagnostic-actions">
+            <button type="button" onClick={downloadDiagnostics} disabled={diagnosticStatus === "collecting"}>
+              <Download size={15} /> Скачать журнал JSON
+            </button>
+            <button type="button" className="send-diagnostic" onClick={sendDiagnosticsToGitHub} disabled={diagnosticStatus === "sending"}>
+              <Github size={15} /> {diagnosticStatus === "sending" ? "Отправляю…" : "Отправить на проверку"}
+            </button>
+            <button type="button" className="clear-diagnostic" onClick={clearDiagnostics}>Очистить</button>
+            {diagnosticStatus === "sent" && <span className="diagnostic-success"><Check size={14} /> Issue создан</span>}
+            {diagnosticIssueUrl && <a href={diagnosticIssueUrl} target="_blank" rel="noreferrer">Открыть отчёт</a>}
+          </div>
+        </div>
+      </details>
 
       <section
         className="genre-bar genre-spectrum"
