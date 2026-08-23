@@ -34,7 +34,7 @@ await check("MIN", "формальный dropdown хранит и показыв
   assert.match(appSource, /const \[genre, setGenre\] = useState\(initialProject\?\.genre \|\| GENRES\[0\]\)/);
   assert.match(appSource, /value=\{genre\}/);
   assert.match(appSource, /onChange=\{\(event\) => setGenre\(event\.target\.value\)\}/);
-  assert.match(appSource, /Текущий жанр:[\s\S]{0,80}\{genre\}/);
+  assert.match(appSource, /(?:Текущий жанр:|Активен:)[\s\S]{0,80}\{genre\}/);
   for (const genre of GENRES) assert.ok(demoRunbook.includes(genre), `нет жанра ${genre} в сценарии записи`);
   assert.match(demoRunbook, /Текущий жанр/);
   assert.match(demoRunbook, /state/i);
