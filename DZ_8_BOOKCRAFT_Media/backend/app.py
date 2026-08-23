@@ -1,13 +1,16 @@
 from __future__ import annotations
 
+import base64
 import json
 import os
+import re
 import subprocess
 import tempfile
 from pathlib import Path
 from typing import Annotated
 
-from fastapi import FastAPI, File, Form, HTTPException, UploadFile
+import httpx
+from fastapi import FastAPI, File, Form, Header, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
@@ -28,6 +31,19 @@ SUPPORTED_AUDIO = {
     "audio/ogg", "audio/webm", "audio/mp4", "audio/x-m4a",
 }
 MAX_AUDIO_BYTES = 25 * 1024 * 1024
+
+
+class ArtRequest(BaseModel):
+    prompt: str
+    model: str = "GigaChat"
+    filename: str = "bookcraft-illustration.jpg"
+
+
+class ArtResponse(BaseModel):
+    image_data_url: str
+    mime_type: str
+    filename: str
+    prompt: str
 
 
 class Health(BaseModel):
@@ -169,3 +185,122 @@ async def chat(
         "image_attached": image is not None,
         "status": "accepted",
     }
+
+
+def _extract_gigachat_image_id(message: str) -> str | None:
+    match = re.search(r'<img[^>]+src=["\']([^"\']+)["\']', message, flags=re.IGNORECASE)
+    return match.group(1) if match else None
+
+
+def _gigachat_verify_setting() -> bool | str:
+    ca_bundle = os.getenv("GIGACHAT_CA_BUNDLE", "").strip()
+    return ca_bundle if ca_bundle else True
+
+
+@app.post("/api/art/generate", response_model=ArtResponse)
+async def generate_art(
+    payload: ArtRequest,
+    authorization: Annotated[str | None, Header()] = None,
+) -> ArtResponse:
+    prompt = payload.prompt.strip()
+    if not prompt:
+        raise HTTPException(status_code=422, detail="Арт-промпт не должен быть пустым.")
+
+    if not authorization or not authorization.lower().startswith("bearer "):
+        raise HTTPException(
+            status_code=401,
+            detail="Вставьте временный access token GigaChat.",
+        )
+
+    access_token = authorization.split(" ", 1)[1].strip()
+    if not access_token:
+        raise HTTPException(status_code=401, detail="Access token GigaChat пуст.")
+
+    headers = {
+        "Authorization": f"Bearer {access_token}",
+        "Accept": "application/json",
+    }
+    request_body = {
+        "model": payload.model,
+        "messages": [
+            {
+                "role": "system",
+                "content": (
+                    "Ты художник-иллюстратор BOOK.CRAFT. Создай один выразительный "
+                    "кинематографичный кадр строго по описанию, без текста и водяных знаков."
+                ),
+            },
+            {"role": "user", "content": f"Нарисуй иллюстрацию: {prompt}"},
+        ],
+        "function_call": "auto",
+    }
+
+    timeout = httpx.Timeout(210.0, connect=30.0)
+    try:
+        async with httpx.AsyncClient(
+            base_url="https://api.giga.chat",
+            timeout=timeout,
+            verify=_gigachat_verify_setting(),
+            follow_redirects=True,
+        ) as client:
+            completion = await client.post(
+                "/v1/chat/completions",
+                headers={**headers, "Content-Type": "application/json"},
+                json=request_body,
+            )
+            if completion.status_code == 401:
+                raise HTTPException(
+                    status_code=401,
+                    detail="Access token GigaChat недействителен или истёк.",
+                )
+            if completion.status_code == 429:
+                raise HTTPException(
+                    status_code=429,
+                    detail="Лимит GigaChat временно исчерпан. Повторите позже.",
+                )
+            if not completion.is_success:
+                raise HTTPException(
+                    status_code=502,
+                    detail=f"GigaChat Image вернул ошибку {completion.status_code}.",
+                )
+
+            result = completion.json()
+            message = result.get("choices", [{}])[0].get("message", {}).get("content", "")
+            image_id = _extract_gigachat_image_id(message)
+            if not image_id:
+                raise HTTPException(
+                    status_code=502,
+                    detail="GigaChat не вернул идентификатор изображения.",
+                )
+
+            image_response = await client.get(
+                f"/v1/files/{image_id}/content",
+                headers={**headers, "Accept": "image/jpeg"},
+            )
+            if not image_response.is_success:
+                raise HTTPException(
+                    status_code=502,
+                    detail=f"Не удалось скачать изображение ({image_response.status_code}).",
+                )
+    except HTTPException:
+        raise
+    except httpx.TimeoutException as error:
+        raise HTTPException(
+            status_code=504,
+            detail="GigaChat создаёт изображение слишком долго. Повторите запрос.",
+        ) from error
+    except httpx.HTTPError as error:
+        raise HTTPException(
+            status_code=502,
+            detail="Не удалось установить защищённое соединение с GigaChat.",
+        ) from error
+
+    mime_type = image_response.headers.get("content-type", "image/jpeg").split(";")[0]
+    encoded = base64.b64encode(image_response.content).decode("ascii")
+    safe_name = Path(payload.filename).name or "bookcraft-illustration.jpg"
+    return ArtResponse(
+        image_data_url=f"data:{mime_type};base64,{encoded}",
+        mime_type=mime_type,
+        filename=safe_name,
+        prompt=prompt,
+    )
