@@ -23,10 +23,53 @@ import {
   KeyRound,
   PlugZap,
   Settings,
+  Orbit,
+  Search,
+  Heart,
+  Laugh,
+  ShieldAlert,
 } from "lucide-react";
 import { GENRES, M1_DEMO, M1_WORLD } from "./m1-contract.js";
 
-const CHARACTER_COLORS = ["#a887ff", "#66e3b4", "#ff8abf", "#ffc765", "#65c7ff", "#ff846e"];
+const CHARACTER_COLORS = ["#d89a5b", "#e8c06a", "#6fa9d8", "#d06f72", "#89b68c", "#b68ad6"];
+
+const GENRE_PRESENTATION = {
+  "Фантастика": {
+    icon: Orbit,
+    color: "#7dd3fc",
+    glow: "rgba(56, 189, 248, .28)",
+    caption: "Иные миры · технологии · будущее",
+    symbol: "✦",
+  },
+  "Детектив": {
+    icon: Search,
+    color: "#fbbf24",
+    glow: "rgba(251, 191, 36, .25)",
+    caption: "Тайна · улики · расследование",
+    symbol: "⌕",
+  },
+  "Роман": {
+    icon: Heart,
+    color: "#fb7185",
+    glow: "rgba(251, 113, 133, .25)",
+    caption: "Чувства · выбор · отношения",
+    symbol: "♡",
+  },
+  "Комедия": {
+    icon: Laugh,
+    color: "#a3e635",
+    glow: "rgba(163, 230, 53, .22)",
+    caption: "Юмор · характеры · неожиданность",
+    symbol: "☺",
+  },
+  "Триллер": {
+    icon: ShieldAlert,
+    color: "#f97316",
+    glow: "rgba(249, 115, 22, .28)",
+    caption: "Опасность · напряжение · риск",
+    symbol: "⚠",
+  },
+};
 
 const LOCAL_MODELS = [
   { id: "gigachat-20b-a3b-q4", label: "GigaChat-20B A3B Instruct · Q4_K_M", capability: "текст" },
@@ -629,6 +672,8 @@ function Workspace({ mode, onBack }) {
   }, [mode, genre, script, messages, referenceMode, sources, characterProfiles]);
 
   const meta = STARTERS[mode];
+  const genreMeta = GENRE_PRESENTATION[genre] || GENRE_PRESENTATION["Фантастика"];
+  const GenreIcon = genreMeta.icon;
   const completed = useMemo(
     () => Object.values(script).filter((value) => value.trim()).length,
     [script],
@@ -952,7 +997,19 @@ function Workspace({ mode, onBack }) {
         </button>
       </header>
 
-      <section className="genre-bar">
+      <section
+        className="genre-bar genre-spectrum"
+        style={{ "--genre-color": genreMeta.color, "--genre-glow": genreMeta.glow }}
+      >
+        <div className="genre-emblem" aria-live="polite">
+          <span className="genre-emblem-symbol" aria-hidden="true">{genreMeta.symbol}</span>
+          <GenreIcon size={25} strokeWidth={1.65} />
+          <span>
+            <small>Жанровый профиль</small>
+            <strong>{genre}</strong>
+            <em>{genreMeta.caption}</em>
+          </span>
+        </div>
         <div className="genre-control">
           <label htmlFor="genre-select">Выберите жанр</label>
           <select
@@ -964,7 +1021,7 @@ function Workspace({ mode, onBack }) {
           </select>
         </div>
         <div className="current-genre">
-          <Check size={15} /> <span>Текущий жанр:</span> <strong>{genre}</strong>
+          <Check size={15} /> <span>Активен:</span> <strong>{genre}</strong>
         </div>
         <div className="workspace-stat"><span>Структура</span><strong>{completed}/3</strong></div>
         <div className="workspace-stat"><span>Объём</span><strong>{wordCount} слов</strong></div>
