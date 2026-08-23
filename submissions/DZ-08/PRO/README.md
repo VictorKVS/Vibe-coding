@@ -1,6 +1,31 @@
 # ДЗ-8 / PRO — голосовой запрос в backend
 
+> ✅ Создан отдельный проект [DZ_8_BOOKCRAFT_Media](../../../DZ_8_BOOKCRAFT_Media/): копия стабильного BOOK·CRAFT с новым локальным Media Gateway.
+
+<p align="center">
+  <a href="../../../DZ_8_BOOKCRAFT_Media/backend/app.py"><strong>🎙️ Открыть audio/STT backend</strong></a>
+  &nbsp;·&nbsp;
+  <a href="../../../DZ_8_BOOKCRAFT_Media/README.md"><strong>🧠 Открыть архитектуру студии</strong></a>
+  &nbsp;·&nbsp;
+  <a href="../../../DZ_8_BOOKCRAFT_Media/tests/test_media_contract.py"><strong>🧪 Открыть проверки</strong></a>
+</p>
+
 Отдельная карточка PRO-задания 2212. PRO не смешивается с визуальным заданием Lite.
+
+## Текущий результат
+
+- `audio` добавлен как необязательное поле;
+- непустой текст имеет приоритет и не запускает STT;
+- при пустом тексте локальный `whisper.cpp` создаёт расшифровку;
+- расшифровка подставляется в общий `user_message`;
+- ошибки STT, размер и тип audio обрабатываются безопасно;
+- endpoint `/api/models` ищет локальные GGUF только в разрешённых каталогах;
+- реальный token GigaChat в репозиторий не переносится.
+
+```powershell
+Set-Location "G:\1\Vibe coding\Vibe-coding\DZ_8_BOOKCRAFT_Media"
+python .\tests\test_media_contract.py
+```
 
 ## Цель
 
