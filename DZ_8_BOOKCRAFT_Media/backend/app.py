@@ -187,6 +187,119 @@ async def chat(
     }
 
 
+def _sanitize_diagnostic(value: object, key: str = "") -> object:
+    if re.search(r"token|key|authorization|secret|password", key, flags=re.IGNORECASE):
+        return "[REDACTED]"
+    if isinstance(value, str):
+        compact = value.strip()
+        if re.fullmatch(r"(?:Bearer\\s+)?[A-Za-z0-9_.-]{24,}", compact, flags=re.IGNORECASE):
+            return "[REDACTED]"
+        return value[:1000]
+    if isinstance(value, list):
+        return [_sanitize_diagnostic(item) for item in value[-500:]]
+    if isinstance(value, dict):
+        return {
+            str(item_key)[:100]: _sanitize_diagnostic(item_value, str(item_key))
+            for item_key, item_value in list(value.items())[:100]
+        }
+    if value is None or isinstance(value, (bool, int, float)):
+        return value
+    return str(value)[:500]
+
+
+@app.post("/api/diagnostics/github")
+def submit_diagnostics(payload: dict[str, object]) -> dict[str, str]:
+    """Create a redacted GitHub Issue using the locally authenticated GitHub CLI."""
+    sanitized = _sanitize_diagnostic(payload)
+    if not isinstance(sanitized, dict):
+        raise HTTPException(status_code=422, detail="Некорректный диагностический пакет.")
+
+    events = sanitized.get("events", [])
+    if not isinstance(events, list):
+        raise HTTPException(status_code=422, detail="В диагностике отсутствует список событий.")
+    error_count = sum(
+        1 for event in events
+        if isinstance(event, dict) and event.get("level") == "error"
+    )
+    created_at = str(sanitized.get("createdAt", "unknown"))[:32]
+    title = f"[BOOKCRAFT DIAGNOSTICS] {error_count} error(s) · {created_at}"
+    report_json = json.dumps(sanitized, ensure_ascii=False, indent=2)
+    if len(report_json) > 55000:
+        sanitized["events"] = events[-180:]
+        sanitized["truncated"] = True
+        report_json = json.dumps(sanitized, ensure_ascii=False, indent=2)
+
+    body = (
+        "## BOOK·CRAFT MEDIA — автоматический диагностический отчёт\n\n"
+        f"- Создан: `{created_at}`\n"
+        f"- Событий: **{len(events)}**\n"
+        f"- Ошибок: **{error_count}**\n"
+        "- Секреты и содержимое рукописи исключены перед отправкой.\n\n"
+        "<details><summary>Открыть JSON-трассировку</summary>\n\n"
+        "```json\n"
+        f"{report_json}\n"
+        "```\n"
+        "</details>\n"
+    )
+
+    repository = os.getenv("BOOKCRAFT_GITHUB_REPO", "VictorKVS/Vibe-coding").strip()
+    temporary_path: Path | None = None
+    try:
+        with tempfile.NamedTemporaryFile(
+            mode="w",
+            encoding="utf-8",
+            suffix=".md",
+            prefix="bookcraft-diagnostics-",
+            delete=False,
+        ) as report_file:
+            report_file.write(body)
+            temporary_path = Path(report_file.name)
+
+        completed = subprocess.run(
+            [
+                "gh", "issue", "create",
+                "--repo", repository,
+                "--title", title,
+                "--body-file", str(temporary_path),
+            ],
+            capture_output=True,
+            text=True,
+            encoding="utf-8",
+            errors="replace",
+            timeout=45,
+            check=False,
+        )
+    except FileNotFoundError as error:
+        raise HTTPException(
+            status_code=503,
+            detail=(
+                "GitHub CLI не найден. Установите gh, выполните gh auth login "
+                "или скачайте журнал JSON и приложите его вручную."
+            ),
+        ) from error
+    except subprocess.TimeoutExpired as error:
+        raise HTTPException(
+            status_code=504,
+            detail="GitHub не ответил за 45 секунд. Скачайте журнал JSON и повторите позже.",
+        ) from error
+    finally:
+        if temporary_path:
+            temporary_path.unlink(missing_ok=True)
+
+    if completed.returncode != 0:
+        safe_error = (completed.stderr or completed.stdout or "неизвестная ошибка").strip()
+        safe_error = re.sub(r"(gh[ops]_[A-Za-z0-9_]+)", "[REDACTED]", safe_error)
+        raise HTTPException(
+            status_code=503,
+            detail=f"GitHub CLI не отправил отчёт: {safe_error[:400]}",
+        )
+
+    issue_url = completed.stdout.strip().splitlines()[-1]
+    if not issue_url.startswith("https://github.com/"):
+        raise HTTPException(status_code=502, detail="GitHub CLI не вернул ссылку на Issue.")
+    return {"status": "sent", "issue_url": issue_url}
+
+
 def _extract_gigachat_image_id(message: str) -> str | None:
     match = re.search(r'<img[^>]+src=["\']([^"\']+)["\']', message, flags=re.IGNORECASE)
     return match.group(1) if match else None
