@@ -472,8 +472,8 @@ function extractImageId(content = "") {
   return content.match(/<img[^>]+src=["']([^"']+)["']/i)?.[1] || null;
 }
 
-async function generateGigaChatImage({ accessToken, prompt }) {
-  const response = await fetch("/giga-cloud/v1/chat/completions", {
+async function generateGigaChatImage({ accessToken, prompt, scene }) {
+  const response = await fetch("http://127.0.0.1:8018/api/art/generate", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -481,36 +481,25 @@ async function generateGigaChatImage({ accessToken, prompt }) {
     },
     body: JSON.stringify({
       model: "GigaChat",
-      messages: [
-        {
-          role: "system",
-          content:
-            "Ты художник-иллюстратор. Создай выразительный кинематографичный кадр строго по описанию.",
-        },
-        { role: "user", content: `Нарисуй иллюстрацию: ${prompt}` },
-      ],
-      function_call: "auto",
+      prompt,
+      filename: `bookcraft-${scene || "scene"}.jpg`,
     }),
   });
 
+  const data = await response.json().catch(() => ({}));
   if (!response.ok) {
-    const details = await response.text();
     throw new Error(
-      response.status === 401
+      data?.detail ||
+      (response.status === 401
         ? "Access token GigaChat недействителен или истёк"
-        : `GigaChat Image вернул ошибку ${response.status}: ${details.slice(0, 180)}`,
+        : `Media Gateway вернул ошибку ${response.status}`),
     );
   }
 
-  const data = await response.json();
-  const imageId = extractImageId(data?.choices?.[0]?.message?.content);
-  if (!imageId) throw new Error("GigaChat не вернул идентификатор изображения");
-
-  const imageResponse = await fetch(`/giga-cloud/v1/files/${imageId}/content`, {
-    headers: { Authorization: `Bearer ${accessToken}`, Accept: "image/jpeg" },
-  });
-  if (!imageResponse.ok) throw new Error(`Не удалось скачать изображение (${imageResponse.status})`);
-  return URL.createObjectURL(await imageResponse.blob());
+  if (!data.image_data_url?.startsWith("data:image/")) {
+    throw new Error("Media Gateway не вернул готовое изображение");
+  }
+  return data.image_data_url;
 }
 
 function StartScreen({ onSelect }) {
@@ -947,6 +936,7 @@ function Workspace({ mode, onBack }) {
       const nextUrl = await generateGigaChatImage({
         accessToken: gigaAccessToken.trim(),
         prompt,
+        scene: illustrationScene,
       });
       if (illustrationUrl) URL.revokeObjectURL(illustrationUrl);
       setIllustrationUrl(nextUrl);
@@ -1347,7 +1337,7 @@ function Workspace({ mode, onBack }) {
                 <div>
                   <span>AI ART · GIGACHAT</span>
                   <h3>Текст превращается в иллюстрацию</h3>
-                  <p>Локальная модель создаёт арт-промпт, облачная — настоящий кадр.</p>
+                  <p>Локальная модель готовит арт-промпт, защищённый Media Gateway получает настоящий JPG от GigaChat.</p>
                 </div>
               </header>
 
@@ -1460,7 +1450,7 @@ function Workspace({ mode, onBack }) {
                 </details>
               )}
               <small className="cloud-notice">
-                В облако отправляется только текст выбранной сцены и арт-промпт. Токен не сохраняется.
+                В GigaChat отправляется только готовый арт-промпт. Временный access token проходит через локальный Media Gateway и не сохраняется.
               </small>
             </article>
           </div>
