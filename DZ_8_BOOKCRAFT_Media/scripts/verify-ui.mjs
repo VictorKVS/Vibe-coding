@@ -124,11 +124,13 @@ try {
 
   const generatedFinale =
     "Передатчик назвал Лею её детским именем, а Незнакомец снял маску: сигнал отправил её брат из завтрашнего Петербурга.";
-  const mockFetch = async (url, options) => {
-    assert.equal(url, "/llm-api/v1/chat/completions", "генерация ушла не в локальный API");
+  let observedModelRequest = null;
+  const mockFetch = async (url, options = {}) => {
+    if (url !== "http://127.0.0.1:8018/api/llm/chat/completions") {
+      return { ok: true, status: 200, json: async () => ({ ready: false, checkpoints: [] }) };
+    }
     const request = JSON.parse(options.body);
-    assert.equal(request.model, "gigachat3-10b-a18b-q4");
-    assert.ok(request.messages.some((message) => message.content?.includes("Невский после полуночи")));
+    observedModelRequest = request;
     return {
       ok: true,
       status: 200,
@@ -150,11 +152,14 @@ try {
   dom.window.fetch = mockFetch;
 
   const sendButton = [...document.querySelectorAll("button")].find((button) =>
-    button.textContent.includes("Отправить"),
+    button.textContent.trim() === "Отправить",
   );
   assert.ok(sendButton && !sendButton.disabled, "готовый запрос демо нельзя отправить");
   await act(async () => sendButton.dispatchEvent(new MouseEvent("click", { bubbles: true })));
   await waitFor("ответ контролируемого локального API", () => scriptEditors[2].value === generatedFinale);
+  assert.ok(observedModelRequest, "генерация не дошла до трассируемого Media Gateway");
+  assert.equal(observedModelRequest.model, "gigachat3-10b-a18b-q4");
+  assert.ok(observedModelRequest.messages.some((message) => message.content?.includes("Невский после полуночи")));
 
   const manualFinale = `${generatedFinale} Автор оставил последнее решение за Леей.`;
   const textareaValueSetter = Object.getOwnPropertyDescriptor(

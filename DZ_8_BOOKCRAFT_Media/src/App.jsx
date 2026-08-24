@@ -120,7 +120,9 @@ function safeDiagnosticValue(value, key = "") {
 }
 
 function describeControl(target) {
-  if (!(target instanceof Element)) return { control: "unknown" };
+  // EventTarget exists both in browsers and jsdom. Avoid relying on the
+  // browser-only global Element so acceptance tests exercise the same path.
+  if (!target || typeof target.closest !== "function") return { control: "unknown" };
   const control = target.closest("button, a, select, input, textarea, summary") || target;
   const sensitive = control.matches('input[type="password"]') || /token|key|secret|password/i.test(control.getAttribute("name") || control.getAttribute("placeholder") || "");
   return {
@@ -1346,7 +1348,7 @@ function Workspace({ mode, onBack }) {
           </select>
         </div>
         <div className="current-genre">
-          <Check size={15} /> <span>Активен:</span> <strong>{genre}</strong>
+          <Check size={15} /> <span>Текущий жанр:</span> <strong>{genre}</strong>
         </div>
         <div className="workspace-stat"><span>Структура</span><strong>{completed}/3</strong></div>
         <div className="workspace-stat"><span>Объём</span><strong>{wordCount} слов</strong></div>
