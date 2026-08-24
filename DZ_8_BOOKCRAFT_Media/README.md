@@ -155,7 +155,21 @@ uvicorn backend.app:app --reload --port 8018
 Материалы сдачи находятся отдельно: [submissions/DZ-08](../submissions/DZ-08/README.md).
 
 
-## AI ART · GigaChat
+## AI ART · ComfyUI + GigaChat
+
+### Локальный ComfyUI (основной бесплатный режим)
+
+Завершите настройку ComfyUI Desktop и запустите локальную instance. Адрес `http://127.0.0.1:8188/system_stats` должен отвечать. Затем запустите `START_BOOKCRAFT_MEDIA.cmd` и в блоке иллюстраций выберите **Локальный ComfyUI · бесплатно** и checkpoint из найденного списка.
+
+Media Gateway вызывает `/prompt`, контролирует `/history/{prompt_id}`, получает файл через `/view` и возвращает его интерфейсу. Списки checkpoint и LoRA читаются через API ComfyUI, поэтому сайт подхватывает модели, которые видит ComfyUI.
+
+```powershell
+Invoke-RestMethod "http://127.0.0.1:8018/api/comfy/health" | ConvertTo-Json -Depth 6
+```
+
+Обычный запуск не блокирует текстовые функции, если ComfyUI выключен. Строгий `START_BOOKCRAFT_MEDIA.ps1 -Verify` требует готовности всех четырёх сервисов. GigaChat остаётся дополнительным облачным режимом и требует временный access token только при его выборе.
+
+### Облачный GigaChat
 
 Блок **«Текст превращается в иллюстрацию»** реализован как полный рабочий pipeline:
 

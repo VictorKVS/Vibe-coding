@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import asyncio
 import base64
 import json
 import os
@@ -50,6 +51,18 @@ class ArtResponse(BaseModel):
     prompt: str
 
 
+class ComfyArtRequest(BaseModel):
+    prompt: str
+    negative_prompt: str = "text, letters, watermark, logo, blurry, low quality"
+    checkpoint: str | None = None
+    width: int = 768
+    height: int = 768
+    steps: int = 24
+    cfg: float = 7.0
+    seed: int | None = None
+    filename_prefix: str = "BOOKCRAFT"
+
+
 class Health(BaseModel):
     status: str
     stt: str
@@ -57,6 +70,7 @@ class Health(BaseModel):
 
 
 LM_STUDIO_BASE_URL = os.getenv("BOOKCRAFT_LLM_BASE_URL", "http://127.0.0.1:1234").rstrip("/")
+COMFYUI_BASE_URL = os.getenv("BOOKCRAFT_COMFYUI_BASE_URL", "http://127.0.0.1:8188").rstrip("/")
 TRACE_ROOT = Path(os.getenv("BOOKCRAFT_TRACE_ROOT", Path(__file__).resolve().parents[1] / ".runtime" / "traces"))
 RUN_ID = os.getenv("BOOKCRAFT_RUN_ID", f"gateway-{uuid.uuid4().hex[:12]}")
 
@@ -158,6 +172,106 @@ async def probe_lm_studio() -> dict[str, object]:
         "models": model_ids,
         "message": f"LM Studio готов. Загружено моделей: {len(model_ids)}.",
     }
+
+
+async def probe_comfyui() -> dict[str, object]:
+    try:
+        async with httpx.AsyncClient(timeout=4.0) as client:
+            stats, checkpoint_info, lora_info = await asyncio.gather(
+                client.get(f"{COMFYUI_BASE_URL}/system_stats"),
+                client.get(f"{COMFYUI_BASE_URL}/object_info/CheckpointLoaderSimple"),
+                client.get(f"{COMFYUI_BASE_URL}/object_info/LoraLoader"),
+            )
+    except (httpx.ConnectError, httpx.TimeoutException, httpx.HTTPError):
+        return {"status": "server-stopped", "ready": False, "checkpoints": [], "loras": [], "message": "ComfyUI API не запущен на порту 8188."}
+    if not stats.is_success:
+        return {"status": "http-error", "ready": False, "checkpoints": [], "loras": [], "message": f"ComfyUI вернул HTTP {stats.status_code}."}
+
+    def choices(response: httpx.Response, node: str, field: str) -> list[str]:
+        try:
+            values = response.json()[node]["input"]["required"][field][0]
+            return [str(value) for value in values] if isinstance(values, list) else []
+        except (ValueError, KeyError, TypeError, IndexError):
+            return []
+
+    checkpoints = choices(checkpoint_info, "CheckpointLoaderSimple", "ckpt_name")
+    loras = choices(lora_info, "LoraLoader", "lora_name")
+    return {
+        "status": "ready" if checkpoints else "model-not-found",
+        "ready": bool(checkpoints),
+        "checkpoints": checkpoints,
+        "loras": loras,
+        "message": f"ComfyUI готов. Моделей: {len(checkpoints)}, LoRA: {len(loras)}." if checkpoints else "ComfyUI работает, но checkpoint не найден.",
+    }
+
+
+@app.get("/api/comfy/health")
+async def comfy_health() -> dict[str, object]:
+    return await probe_comfyui()
+
+
+def _comfy_workflow(payload: ComfyArtRequest, checkpoint: str, seed: int) -> dict[str, object]:
+    width = max(256, min(payload.width, 1536)) // 8 * 8
+    height = max(256, min(payload.height, 1536)) // 8 * 8
+    return {
+        "1": {"class_type": "CheckpointLoaderSimple", "inputs": {"ckpt_name": checkpoint}},
+        "2": {"class_type": "CLIPTextEncode", "inputs": {"text": payload.prompt.strip(), "clip": ["1", 1]}},
+        "3": {"class_type": "CLIPTextEncode", "inputs": {"text": payload.negative_prompt.strip(), "clip": ["1", 1]}},
+        "4": {"class_type": "EmptyLatentImage", "inputs": {"width": width, "height": height, "batch_size": 1}},
+        "5": {"class_type": "KSampler", "inputs": {"seed": seed, "steps": max(4, min(payload.steps, 60)), "cfg": max(1.0, min(payload.cfg, 20.0)), "sampler_name": "euler", "scheduler": "normal", "denoise": 1.0, "model": ["1", 0], "positive": ["2", 0], "negative": ["3", 0], "latent_image": ["4", 0]}},
+        "6": {"class_type": "VAEDecode", "inputs": {"samples": ["5", 0], "vae": ["1", 2]}},
+        "7": {"class_type": "SaveImage", "inputs": {"filename_prefix": re.sub(r"[^A-Za-z0-9_-]", "-", payload.filename_prefix)[:60] or "BOOKCRAFT", "images": ["6", 0]}},
+    }
+
+
+@app.post("/api/comfy/generate")
+async def generate_comfy_art(payload: ComfyArtRequest, request: Request) -> dict[str, object]:
+    request_id = request.headers.get("x-request-id", "").strip()[:80] or uuid.uuid4().hex
+    if not payload.prompt.strip():
+        raise HTTPException(status_code=422, detail="Промпт иллюстрации не должен быть пустым.")
+    health_state = await probe_comfyui()
+    if not health_state.get("ready"):
+        write_trace("comfy.generate.error", request_id=request_id, category=health_state.get("status"))
+        raise HTTPException(status_code=503, detail=str(health_state.get("message")))
+    checkpoints = health_state.get("checkpoints", [])
+    checkpoint = payload.checkpoint or (checkpoints[0] if checkpoints else None)
+    if not checkpoint or checkpoint not in checkpoints:
+        raise HTTPException(status_code=422, detail="Выбранный checkpoint отсутствует в ComfyUI.")
+    seed = payload.seed if payload.seed is not None else int.from_bytes(os.urandom(6), "big")
+    workflow = _comfy_workflow(payload, checkpoint, seed)
+    write_trace("comfy.generate.start", request_id=request_id, checkpoint=checkpoint, width=payload.width, height=payload.height, steps=payload.steps, prompt_length=len(payload.prompt))
+    started = time.perf_counter()
+    try:
+        async with httpx.AsyncClient(timeout=httpx.Timeout(15.0, connect=5.0)) as client:
+            queued = await client.post(f"{COMFYUI_BASE_URL}/prompt", json={"prompt": workflow, "client_id": request_id})
+            if not queued.is_success:
+                raise HTTPException(status_code=502, detail=f"ComfyUI отклонил workflow: HTTP {queued.status_code}.")
+            prompt_id = str(queued.json().get("prompt_id", ""))
+            if not prompt_id:
+                raise HTTPException(status_code=502, detail="ComfyUI не вернул идентификатор задания.")
+            history_item = None
+            for _ in range(210):
+                await asyncio.sleep(1)
+                history = await client.get(f"{COMFYUI_BASE_URL}/history/{prompt_id}")
+                if history.is_success and prompt_id in history.json():
+                    history_item = history.json()[prompt_id]
+                    break
+            if history_item is None:
+                raise HTTPException(status_code=504, detail="ComfyUI не завершил изображение за 210 секунд.")
+            images = history_item.get("outputs", {}).get("7", {}).get("images", [])
+            if not images:
+                raise HTTPException(status_code=502, detail="ComfyUI завершил workflow без изображения.")
+            image = images[0]
+            rendered = await client.get(f"{COMFYUI_BASE_URL}/view", params={"filename": image["filename"], "subfolder": image.get("subfolder", ""), "type": image.get("type", "output")})
+            rendered.raise_for_status()
+    except httpx.ConnectError as error:
+        raise HTTPException(status_code=503, detail="ComfyUI API остановлен во время генерации.") from error
+    except httpx.TimeoutException as error:
+        raise HTTPException(status_code=504, detail="ComfyUI не ответил вовремя.") from error
+    mime_type = rendered.headers.get("content-type", "image/png").split(";", 1)[0]
+    duration_ms = round((time.perf_counter() - started) * 1000)
+    write_trace("comfy.generate.finish", request_id=request_id, checkpoint=checkpoint, duration_ms=duration_ms, output_count=1)
+    return {"image_data_url": f"data:{mime_type};base64,{base64.b64encode(rendered.content).decode('ascii')}", "mime_type": mime_type, "filename": image["filename"], "checkpoint": checkpoint, "seed": seed, "prompt_id": prompt_id, "duration_ms": duration_ms}
 
 
 def model_roots() -> list[Path]:

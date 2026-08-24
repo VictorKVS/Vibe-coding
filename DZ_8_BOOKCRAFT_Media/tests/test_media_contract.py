@@ -22,6 +22,13 @@ checks = {
     "safe image extraction": "_extract_gigachat_image_id",
     "browser calls local gateway": 'http://127.0.0.1:8018/api/art/generate',
     "frontend checks data image": 'startsWith("data:image/")',
+    "Comfy health endpoint": '@app.get("/api/comfy/health")',
+    "Comfy generation endpoint": '@app.post("/api/comfy/generate")',
+    "Comfy checkpoint discovery": 'CheckpointLoaderSimple',
+    "Comfy LoRA discovery": 'LoraLoader',
+    "Comfy queue": 'f"{COMFYUI_BASE_URL}/prompt"',
+    "Comfy history": 'f"{COMFYUI_BASE_URL}/history/{prompt_id}"',
+    "local art default": 'useState("comfy")',
     "diagnostic endpoint": '@app.post("/api/diagnostics/github")',
     "diagnostic redaction": '"[REDACTED]"',
     "local gh issue submission": '"gh", "issue", "create"',
@@ -48,6 +55,7 @@ print("PASS DZ8-MODELS: local GGUF inventory is exposed by the gateway")
 print("PASS DZ8-ART-MIN: selected text becomes an art prompt")
 print("PASS DZ8-ART-MED: GigaChat text2image returns a downloadable JPG")
 print("PASS DZ8-ART-MAX: token stays in memory and errors are user-safe")
+print("PASS DZ8-COMFY: checkpoints, LoRA, queue, history and image output use the local API")
 print("PASS DZ8-TRACE-MIN: clicks, model calls and failures enter one bounded journal")
 print("PASS DZ8-TRACE-MED: JSON export excludes tokens and manuscript content")
 print("PASS DZ8-TRACE-MAX: authenticated local gh creates a review Issue")

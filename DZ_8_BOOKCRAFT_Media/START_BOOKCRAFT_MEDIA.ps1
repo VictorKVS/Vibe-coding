@@ -7,6 +7,7 @@ $Python = Join-Path $ProjectRoot ".venv\Scripts\python.exe"
 $BackendUrl = "http://127.0.0.1:8018/api/health"
 $ReadinessUrl = "http://127.0.0.1:8018/api/readiness"
 $LlmModelsUrl = "http://127.0.0.1:1234/v1/models"
+$ComfyUrl = "http://127.0.0.1:8188/system_stats"
 $AppUrl = "http://127.0.0.1:5173"
 
 Set-Location -LiteralPath $ProjectRoot
@@ -158,7 +159,30 @@ if (-not (Test-Url $BackendUrl)) {
 }
 Write-Ok "Media Gateway http://127.0.0.1:8018"
 
-Write-Step "4/5 Local model"
+Write-Step "4/6 Image generator"
+if (-not (Test-Url $ComfyUrl 3)) {
+    $comfyCandidates = @(
+        (Join-Path $env:LOCALAPPDATA "Programs\ComfyUI\ComfyUI.exe"),
+        (Join-Path $env:LOCALAPPDATA "Programs\Comfy Desktop\Comfy Desktop.exe"),
+        (Join-Path $env:LOCALAPPDATA "Comfy-Desktop\ComfyUI.exe")
+    ) | Where-Object { Test-Path -LiteralPath $_ }
+    $comfyDesktop = $comfyCandidates | Select-Object -First 1
+    if ($comfyDesktop) {
+        Write-Host "   Starting ComfyUI Desktop; its local instance must finish loading..." -ForegroundColor Yellow
+        Start-Process -FilePath $comfyDesktop | Out-Null
+        [void](Wait-ForUrl $ComfyUrl 20)
+    }
+}
+if (Test-Url $ComfyUrl 3) {
+    Write-Ok "ComfyUI http://127.0.0.1:8188"
+} elseif ($Verify) {
+    Stop-Launch "ComfyUI API is not running on port 8188." "Open ComfyUI Desktop, start the local instance, then rerun with -Verify."
+} else {
+    Write-Host "   OPTIONAL  ComfyUI is not running; text works, local illustrations are disabled." -ForegroundColor Yellow
+    Write-RunTrace "service.degraded" "optional" "ComfyUI 8188 is not running"
+}
+
+Write-Step "5/6 Local model"
 $llm = Get-LlmState
 if ($llm.State -eq "authentication-required") {
     Stop-Launch "LM Studio requires an API token." "LM Studio > Developer > Server Settings: turn off Require Authentication for this local demo."
@@ -196,7 +220,7 @@ $llm = Get-LlmState
 if ($llm.State -ne "ready") { Stop-Launch "Local model readiness is $($llm.State)." "Check LM Studio Local Server." }
 Write-Ok "Local model: $($llm.Models -join ', ')"
 
-Write-Step "5/5 BOOK.CRAFT interface"
+Write-Step "6/6 BOOK.CRAFT interface"
 if (-not (Test-Url $AppUrl)) {
     if (Test-TcpPort 5173) {
         Stop-Launch "Port 5173 is occupied but does not serve BOOK.CRAFT." "Close the old Node/Vite process, then run again."
@@ -219,6 +243,7 @@ Write-Host "`nBOOK.CRAFT MEDIA IS READY" -ForegroundColor Green
 Write-Host "  Frontend       READY  $AppUrl"
 Write-Host "  Media Gateway  READY  http://127.0.0.1:8018"
 Write-Host "  Local model    READY  $($llm.Models -join ', ')"
+Write-Host "  ComfyUI        $($(if (Test-Url $ComfyUrl 2) { 'READY' } else { 'OPTIONAL / OFF' }))  http://127.0.0.1:8188"
 Write-Host "  Logs                 $RuntimeRoot" -ForegroundColor DarkGray
 Write-RunTrace "launch.finish" "ready" $AppUrl
 Start-Process $AppUrl

@@ -7,7 +7,8 @@ backend = (ROOT / "backend" / "app.py").read_text(encoding="utf-8")
 frontend = (ROOT / "src" / "App.jsx").read_text(encoding="utf-8")
 
 checks = {
-    "three service endpoints": all(port in launcher for port in ("5173", "8018", "1234")),
+    "four service endpoints": all(port in launcher for port in ("5173", "8018", "1234", "8188")),
+    "Comfy optional normal and required verify": "OPTIONAL  ComfyUI" in launcher and 'elseif ($Verify)' in launcher,
     "LM auth classification": "authentication-required" in launcher and "Require Authentication" in launcher,
     "loaded model discovery": '"/llm-api/v1/models"' in frontend,
     "runtime model identifiers": "availableLocalModels" in frontend,

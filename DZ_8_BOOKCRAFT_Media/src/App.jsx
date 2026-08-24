@@ -556,6 +556,26 @@ async function generateGigaChatImage({ accessToken, prompt, scene }) {
   return data.image_data_url;
 }
 
+async function generateComfyImage({ prompt, scene, checkpoint }) {
+  const response = await fetch("http://127.0.0.1:8018/api/comfy/generate", {
+    method: "POST",
+    headers: { "Content-Type": "application/json", "X-Request-ID": createRequestId() },
+    body: JSON.stringify({
+      prompt,
+      checkpoint: checkpoint || null,
+      filename_prefix: `BOOKCRAFT-${scene || "scene"}`,
+      width: 768,
+      height: 768,
+      steps: 24,
+      cfg: 7,
+    }),
+  });
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok) throw new Error(data?.detail || `ComfyUI вернул ошибку ${response.status}`);
+  if (!data.image_data_url?.startsWith("data:image/")) throw new Error("ComfyUI не вернул готовое изображение");
+  return data.image_data_url;
+}
+
 function StartScreen({ onSelect }) {
   return (
     <main className="start-shell">
@@ -643,6 +663,9 @@ function Workspace({ mode, onBack }) {
   const [referenceMode, setReferenceMode] = useState(initialProject?.referenceMode || "original");
   const [illustrationScene, setIllustrationScene] = useState("development");
   const [visualStyle, setVisualStyle] = useState("Кинематографичная книжная иллюстрация");
+  const [artProvider, setArtProvider] = useState("comfy");
+  const [comfyCheckpoints, setComfyCheckpoints] = useState([]);
+  const [comfyCheckpoint, setComfyCheckpoint] = useState("");
   const [gigaAccessToken, setGigaAccessToken] = useState("");
   const [modelConfig, setModelConfig] = useState(DEFAULT_MODEL_CONFIG);
   const [availableLocalModels, setAvailableLocalModels] = useState(LOCAL_MODELS);
@@ -719,6 +742,19 @@ function Workspace({ mode, onBack }) {
       }
     }
     discoverLoadedModels();
+    return () => { cancelled = true; };
+  }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+    fetch("http://127.0.0.1:8018/api/comfy/health")
+      .then((response) => response.json())
+      .then((payload) => {
+        if (cancelled || !Array.isArray(payload?.checkpoints)) return;
+        setComfyCheckpoints(payload.checkpoints);
+        setComfyCheckpoint((current) => current || payload.checkpoints[0] || "");
+      })
+      .catch(() => {});
     return () => { cancelled = true; };
   }, []);
 
@@ -1077,7 +1113,7 @@ function Workspace({ mode, onBack }) {
       setError("Сначала создайте или заполните выбранную часть сценария.");
       return;
     }
-    if (!gigaAccessToken.trim()) {
+    if (artProvider === "giga" && !gigaAccessToken.trim()) {
       setError("Для облачной иллюстрации вставьте временный access token GigaChat.");
       return;
     }
@@ -1087,6 +1123,7 @@ function Workspace({ mode, onBack }) {
     traceEvent("art.generate.start", "Запущено создание иллюстрации", {
       scene: illustrationScene,
       style: visualStyle,
+      provider: artProvider,
       excerptLength: sceneText.length,
       hasAccessToken: Boolean(gigaAccessToken.trim()),
     });
@@ -1105,11 +1142,9 @@ function Workspace({ mode, onBack }) {
         modelConfig,
       });
       setIllustrationPrompt(prompt);
-      const nextUrl = await generateGigaChatImage({
-        accessToken: gigaAccessToken.trim(),
-        prompt,
-        scene: illustrationScene,
-      });
+      const nextUrl = artProvider === "comfy"
+        ? await generateComfyImage({ prompt, scene: illustrationScene, checkpoint: comfyCheckpoint })
+        : await generateGigaChatImage({ accessToken: gigaAccessToken.trim(), prompt, scene: illustrationScene });
       if (illustrationUrl) URL.revokeObjectURL(illustrationUrl);
       setIllustrationUrl(nextUrl);
       traceEvent("art.generate.success", "Иллюстрация создана", { scene: illustrationScene, style: visualStyle });
@@ -1135,6 +1170,7 @@ function Workspace({ mode, onBack }) {
     for (const [name, url] of Object.entries({
       mediaGateway: "http://127.0.0.1:8018/api/health",
       localModel: "http://127.0.0.1:1234/v1/models",
+      comfyUI: "http://127.0.0.1:8018/api/comfy/health",
     })) {
       const startedAt = performance.now();
       try {
@@ -1642,13 +1678,20 @@ function Workspace({ mode, onBack }) {
               <header className="illustration-heading">
                 <div className="illustration-icon"><ImageIcon size={20} /></div>
                 <div>
-                  <span>AI ART · GIGACHAT</span>
+                  <span>AI ART · COMFYUI + GIGACHAT</span>
                   <h3>Текст превращается в иллюстрацию</h3>
-                  <p>Локальная модель готовит арт-промпт, защищённый Media Gateway получает настоящий JPG от GigaChat.</p>
+                  <p>Локальный ComfyUI использует ваши checkpoint и LoRA без токена; GigaChat остаётся облачным резервом.</p>
                 </div>
               </header>
 
               <div className="illustration-controls">
+                <label>
+                  Генератор изображения
+                  <select value={artProvider} onChange={(event) => setArtProvider(event.target.value)}>
+                    <option value="comfy">Локальный ComfyUI · бесплатно</option>
+                    <option value="giga">Облачный GigaChat · токен</option>
+                  </select>
+                </label>
                 <label>
                   Источник кадра
                   <select value={illustrationScene} onChange={(event) => { setIllustrationScene(event.target.value); setSelectedExcerpt(""); }}>
@@ -1667,16 +1710,27 @@ function Workspace({ mode, onBack }) {
                     <option>Исторический реализм</option>
                   </select>
                 </label>
-                <label className="token-field">
-                  Временный access token GigaChat
-                  <input
-                    type="password"
-                    value={gigaAccessToken}
-                    onChange={(event) => setGigaAccessToken(event.target.value)}
-                    placeholder="Токен хранится только в памяти вкладки"
-                    autoComplete="off"
-                  />
-                </label>
+                {artProvider === "comfy" ? (
+                  <label className="token-field">
+                    Checkpoint ComfyUI
+                    <select value={comfyCheckpoint} onChange={(event) => setComfyCheckpoint(event.target.value)}>
+                      {comfyCheckpoints.length ? comfyCheckpoints.map((checkpoint) => (
+                        <option key={checkpoint} value={checkpoint}>{checkpoint}</option>
+                      )) : <option value="">Запустите ComfyUI на порту 8188</option>}
+                    </select>
+                  </label>
+                ) : (
+                  <label className="token-field">
+                    Временный access token GigaChat
+                    <input
+                      type="password"
+                      value={gigaAccessToken}
+                      onChange={(event) => setGigaAccessToken(event.target.value)}
+                      placeholder="Токен хранится только в памяти вкладки"
+                      autoComplete="off"
+                    />
+                  </label>
+                )}
                 <button
                   type="button"
                   className="illustrate-button"
