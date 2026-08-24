@@ -234,6 +234,8 @@ body::after {
 .composer button:hover { box-shadow: 0 0 28px rgba(152,117,255,.25); transform: translateY(-1px); }
 .composer button:active { transform: translateY(1px) scale(.98); filter: hue-rotate(75deg); }
 .composer button:disabled { opacity: .4; cursor: not-allowed; }
+.composer .audio-upload-button { background: linear-gradient(110deg, #9a6438, #d49a52, #334f76); animation: none; }
+.composer .audio-upload-button::after { display: none; }
 .error-box { margin: 0 16px 12px; padding: 10px 12px; border: 1px solid rgba(255, 100, 128, .28); border-radius: 10px; color: #ffbdc9; background: rgba(255, 80, 110, .08); font-size: 11px; }
 
 .model-gateway { position: relative; margin: 0 0 18px; border: 1px solid rgba(101,199,255,.22); border-radius: 18px; background: linear-gradient(145deg, rgba(21,22,45,.9), rgba(9,27,31,.78)); overflow: hidden; box-shadow: 0 20px 50px rgba(0,0,0,.18), 0 0 32px rgba(101,199,255,.05); }

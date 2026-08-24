@@ -125,7 +125,7 @@ if (-not (Test-Path -LiteralPath (Join-Path $ProjectRoot "node_modules"))) {
     & npm.cmd install --no-audit --no-fund
     if ($LASTEXITCODE -ne 0) { Stop-Launch "npm install failed." "Check network and npm output." }
 }
-& $Python -c "import fastapi, uvicorn, httpx, multipart" 2>$null
+& $Python -c "import fastapi, uvicorn, httpx, multipart, dotenv" 2>$null
 if ($LASTEXITCODE -ne 0) {
     Write-Host "   Installing Gateway dependencies (first run only)..." -ForegroundColor Yellow
     & $Python -m pip install -q -r (Join-Path $ProjectRoot "backend\requirements.txt")

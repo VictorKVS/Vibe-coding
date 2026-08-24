@@ -14,10 +14,13 @@ from pathlib import Path
 from typing import Annotated
 
 import httpx
+from dotenv import load_dotenv
 from fastapi import FastAPI, File, Form, Header, HTTPException, Request, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
+
+load_dotenv(Path(__file__).resolve().parents[1] / ".env")
 
 app = FastAPI(title="BOOK.CRAFT Media Gateway", version="0.1.0")
 app.add_middleware(
@@ -411,6 +414,50 @@ def recent_trace(limit: int = 100) -> dict[str, object]:
 def list_models() -> dict[str, object]:
     models = scan_local_models()
     return {"count": len(models), "models": models}
+
+
+@app.post("/api/stt/transcribe")
+async def transcribe_audio(
+    request: Request,
+    audio: Annotated[UploadFile, File()],
+) -> dict[str, object]:
+    """Decode an uploaded recording locally; neither audio nor transcript is traced."""
+    request_id = request.headers.get("x-request-id", "").strip()[:80] or uuid.uuid4().hex
+    if audio.content_type and audio.content_type not in SUPPORTED_AUDIO:
+        raise HTTPException(status_code=415, detail="Поддерживаются MP3, WAV, M4A, OGG и WebM.")
+    suffix = Path(audio.filename or "voice.webm").suffix.lower() or ".webm"
+    data = await audio.read(MAX_AUDIO_BYTES + 1)
+    if len(data) > MAX_AUDIO_BYTES:
+        raise HTTPException(status_code=413, detail="Аудиофайл больше 25 МБ.")
+    if not data:
+        raise HTTPException(status_code=422, detail="Аудиофайл пуст.")
+
+    write_trace(
+        "stt.transcribe.start",
+        request_id=request_id,
+        content_type=audio.content_type or "unknown",
+        size_bytes=len(data),
+    )
+    started = time.perf_counter()
+    try:
+        with tempfile.TemporaryDirectory(prefix="bookcraft-stt-") as directory:
+            audio_path = Path(directory) / f"voice{suffix}"
+            audio_path.write_bytes(data)
+            transcript = transcribe_with_whisper_cpp(audio_path).strip()
+    except (OSError, RuntimeError, subprocess.SubprocessError) as error:
+        write_trace("stt.transcribe.error", request_id=request_id, category=type(error).__name__)
+        raise HTTPException(status_code=422, detail=SAFE_STT_ERROR) from error
+    if not transcript:
+        raise HTTPException(status_code=422, detail=SAFE_STT_ERROR)
+
+    duration_ms = round((time.perf_counter() - started) * 1000)
+    write_trace(
+        "stt.transcribe.finish",
+        request_id=request_id,
+        duration_ms=duration_ms,
+        transcript_length=len(transcript),
+    )
+    return {"transcription": transcript, "duration_ms": duration_ms}
 
 
 @app.post("/api/chat")

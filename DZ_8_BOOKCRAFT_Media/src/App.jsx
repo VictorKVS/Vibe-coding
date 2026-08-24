@@ -106,6 +106,10 @@ const PROJECT_STORAGE_KEY = "bookcraft.mvp.project.v1";
 const DIAGNOSTIC_STORAGE_KEY = "bookcraft.media.diagnostics.v1";
 const MAX_DIAGNOSTIC_EVENTS = 500;
 
+function createRequestId() {
+  return globalThis.crypto?.randomUUID?.() || `bookcraft-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+}
+
 function safeDiagnosticValue(value, key = "") {
   if (/token|key|authorization|secret|password/i.test(key)) return "[REDACTED]";
   if (typeof value === "string") {
@@ -661,6 +665,7 @@ function Workspace({ mode, onBack }) {
     },
   ]);
   const [isLoading, setIsLoading] = useState(false);
+  const [isTranscribing, setIsTranscribing] = useState(false);
   const [error, setError] = useState("");
   const [referenceMode, setReferenceMode] = useState(initialProject?.referenceMode || "original");
   const [illustrationScene, setIllustrationScene] = useState("development");
@@ -710,6 +715,7 @@ function Workspace({ mode, onBack }) {
   const fileInputRef = useRef(null);
   const photoInputRef = useRef(null);
   const projectInputRef = useRef(null);
+  const audioInputRef = useRef(null);
   const diagnosticSequenceRef = useRef(diagnostics.at(-1)?.sequence || 0);
 
   useEffect(() => {
@@ -906,6 +912,40 @@ function Workspace({ mode, onBack }) {
       );
     } finally {
       setIsLoading(false);
+    }
+  }
+
+  async function uploadAudioForTranscription(event) {
+    const file = event.target.files?.[0];
+    event.target.value = "";
+    if (!file) return;
+    setError("");
+    setIsTranscribing(true);
+    traceEvent("stt.upload.start", "Аудиофайл передан на локальное распознавание", {
+      contentType: file.type || "unknown",
+      sizeBytes: file.size,
+    });
+    try {
+      const body = new FormData();
+      body.append("audio", file, file.name);
+      const response = await fetch("http://127.0.0.1:8018/api/stt/transcribe", {
+        method: "POST",
+        headers: { "X-Request-ID": createRequestId() },
+        body,
+      });
+      const payload = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(payload?.detail || `Распознавание вернуло ошибку ${response.status}`);
+      if (!payload.transcription?.trim()) throw new Error("Whisper не вернул расшифровку");
+      setIdea((current) => [current.trim(), payload.transcription.trim()].filter(Boolean).join("\n"));
+      traceEvent("stt.upload.success", "Расшифровка добавлена в редактор", {
+        transcriptLength: payload.transcription.length,
+        durationMs: payload.duration_ms,
+      });
+    } catch (transcriptionError) {
+      traceEvent("stt.upload.error", transcriptionError.message, {}, "error");
+      setError(`Распознавание аудио: ${transcriptionError.message}`);
+    } finally {
+      setIsTranscribing(false);
     }
   }
 
@@ -1600,6 +1640,13 @@ function Workspace({ mode, onBack }) {
           {error && <div className="error-box">{error}</div>}
 
           <div className="composer">
+            <input
+              ref={audioInputRef}
+              type="file"
+              accept="audio/mpeg,audio/mp3,audio/wav,audio/x-wav,audio/mp4,audio/x-m4a,audio/ogg,audio/webm,.mp3,.wav,.m4a,.ogg,.webm"
+              onChange={uploadAudioForTranscription}
+              hidden
+            />
             <div className="prompt-chips" aria-label="Быстрые команды">
               {["Предложи сильную завязку", "Усиль конфликт", "Сделай финал неожиданным"].map((prompt) => (
                 <button type="button" key={prompt} onClick={() => setIdea(prompt)}>{prompt}</button>
@@ -1617,6 +1664,15 @@ function Workspace({ mode, onBack }) {
               placeholder="Опишите идею, сюжет или задачу"
               rows={3}
             />
+            <button
+              type="button"
+              className="audio-upload-button"
+              onClick={() => audioInputRef.current?.click()}
+              disabled={isTranscribing || isLoading}
+            >
+              {isTranscribing ? <LoaderCircle size={17} className="spin" /> : <Upload size={17} />}
+              {isTranscribing ? "Распознаю аудио…" : "Загрузить MP3 и расшифровать"}
+            </button>
             <button onClick={sendMessage} disabled={!idea.trim() || isLoading}>
               <Send size={17} /> Отправить
             </button>
