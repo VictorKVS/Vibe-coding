@@ -1,4 +1,5 @@
 from pathlib import Path
+import re
 
 ROOT = Path(__file__).resolve().parents[1]
 launcher = (ROOT / "START_BOOKCRAFT_MEDIA.ps1").read_text(encoding="utf-8-sig")
@@ -23,6 +24,8 @@ checks = {
 }
 
 failed = [name for name, passed in checks.items() if not passed]
+if re.search(r'\\$[A-Za-z_][A-Za-z0-9_]*:', stopper):
+    failed.append("ambiguous PowerShell variable before colon")
 if failed:
     raise SystemExit("FAIL RELIABLE-START: " + ", ".join(failed))
 
