@@ -236,7 +236,22 @@ body::after {
 .composer button:disabled { opacity: .4; cursor: not-allowed; }
 .composer .audio-upload-button { background: linear-gradient(110deg, #9a6438, #d49a52, #334f76); animation: none; }
 .composer .audio-upload-button::after { display: none; }
+.composer .record-button { background: linear-gradient(110deg, #344e75, #467aa4, #4a9a88); animation: none; }
+.composer .record-button::after { display: none; }
+.composer .record-button.recording { color: #fff2f2; background: linear-gradient(110deg, #842f39, #c94a50); box-shadow: 0 0 24px rgba(201,74,80,.25); }
 .error-box { margin: 0 16px 12px; padding: 10px 12px; border: 1px solid rgba(255, 100, 128, .28); border-radius: 10px; color: #ffbdc9; background: rgba(255, 80, 110, .08); font-size: 11px; }
+
+.voice-studio { padding: 18px; border: 1px solid rgba(212,154,82,.24); border-radius: 16px; background: linear-gradient(145deg, rgba(48,31,24,.72), rgba(18,32,48,.74)); }
+.voice-studio > header { display: flex; align-items: flex-start; gap: 12px; }
+.voice-studio-icon { display: grid; place-items: center; width: 38px; height: 38px; flex: 0 0 auto; border-radius: 12px; color: #ffd39c; background: rgba(212,154,82,.14); }
+.voice-studio header span { color: #d49a52; font-size: 8px; font-weight: 800; letter-spacing: .12em; }
+.voice-studio h3 { margin: 4px 0; font-size: 14px; }
+.voice-studio p, .voice-studio > small { margin: 0; color: #817b86; font-size: 9px; line-height: 1.55; }
+.voice-controls { display: grid; grid-template-columns: 1fr 1fr auto; gap: 9px; align-items: end; margin: 14px 0 10px; }
+.voice-controls label { display: grid; gap: 6px; color: #a69eaa; font-size: 8px; text-transform: uppercase; letter-spacing: .08em; }
+.voice-controls select { min-width: 0; padding: 10px; color: var(--ink); border: 1px solid var(--line); border-radius: 10px; background: #171724; }
+.voice-controls button { display: flex; align-items: center; gap: 7px; padding: 10px 14px; border: 1px solid rgba(212,154,82,.35); border-radius: 10px; color: #ffe0b9; background: rgba(212,154,82,.12); cursor: pointer; font-weight: 700; }
+@media (max-width: 760px) { .voice-controls { grid-template-columns: 1fr; } }
 
 .model-gateway { position: relative; margin: 0 0 18px; border: 1px solid rgba(101,199,255,.22); border-radius: 18px; background: linear-gradient(145deg, rgba(21,22,45,.9), rgba(9,27,31,.78)); overflow: hidden; box-shadow: 0 20px 50px rgba(0,0,0,.18), 0 0 32px rgba(101,199,255,.05); }
 .model-gateway summary { display: flex; align-items: center; gap: 9px; padding: 15px 17px; cursor: pointer; color: #c8dfff; font-size: 11px; font-weight: 700; }

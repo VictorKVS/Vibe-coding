@@ -122,6 +122,19 @@ try {
   await act(async () => removePhotoButton.dispatchEvent(new MouseEvent("click", { bubbles: true })));
   assert.equal(photoCard.querySelector(".photo-uploaded-status"), null, "статус остался после удаления изображения");
 
+  const microphoneButton = [...document.querySelectorAll("button")].find((button) =>
+    button.textContent.includes("Диктовать с микрофона"),
+  );
+  assert.ok(microphoneButton, "нет кнопки записи голосовой диктовки");
+  const voiceStudio = document.querySelector(".voice-studio");
+  assert.ok(voiceStudio, "нет панели озвучивания");
+  const voiceSelect = voiceStudio.querySelector("select");
+  assert.deepEqual(
+    [...voiceSelect.options].map((option) => option.textContent),
+    ["Женщина", "Мужчина", "Девочка", "Мальчик"],
+    "панель должна содержать четыре голосовые роли",
+  );
+
   const generatedFinale =
     "Передатчик назвал Лею её детским именем, а Незнакомец снял маску: сигнал отправил её брат из завтрашнего Петербурга.";
   let observedModelRequest = null;
@@ -192,6 +205,7 @@ try {
   console.log("PASS MED-UI: демо получает одну сцену от локального API и сохраняет ручную правку");
   console.log("PASS MVP-RECOVERY: проект автосохраняется без API-ключей и готов к восстановлению");
   console.log("PASS DZ8-LITE: статус «Фото загружено» виден только при прикреплённом изображении");
+  console.log("PASS DZ8-AUDIO-UI: микрофон и четыре голосовые роли доступны в интерфейсе");
 } finally {
   await vite.close();
   dom.window.close();

@@ -30,10 +30,21 @@ import {
   ShieldAlert,
   Activity,
   Bug,
+  Mic,
+  Square,
+  Volume2,
+  VolumeX,
 } from "lucide-react";
 import { GENRES, M1_DEMO, M1_WORLD } from "./m1-contract.js";
 
 const CHARACTER_COLORS = ["#d89a5b", "#e8c06a", "#6fa9d8", "#d06f72", "#89b68c", "#b68ad6"];
+
+const VOICE_ROLES = {
+  woman: { label: "Женщина", rate: 0.95, pitch: 1.08 },
+  man: { label: "Мужчина", rate: 0.9, pitch: 0.78 },
+  girl: { label: "Девочка", rate: 1.03, pitch: 1.38 },
+  boy: { label: "Мальчик", rate: 1.02, pitch: 1.18 },
+};
 
 const GENRE_PRESENTATION = {
   "Фантастика": {
@@ -666,6 +677,10 @@ function Workspace({ mode, onBack }) {
   ]);
   const [isLoading, setIsLoading] = useState(false);
   const [isTranscribing, setIsTranscribing] = useState(false);
+  const [isRecording, setIsRecording] = useState(false);
+  const [isSpeaking, setIsSpeaking] = useState(false);
+  const [voiceRole, setVoiceRole] = useState("woman");
+  const [voiceSection, setVoiceSection] = useState("all");
   const [error, setError] = useState("");
   const [referenceMode, setReferenceMode] = useState(initialProject?.referenceMode || "original");
   const [illustrationScene, setIllustrationScene] = useState("development");
@@ -716,6 +731,9 @@ function Workspace({ mode, onBack }) {
   const photoInputRef = useRef(null);
   const projectInputRef = useRef(null);
   const audioInputRef = useRef(null);
+  const mediaRecorderRef = useRef(null);
+  const recordingStreamRef = useRef(null);
+  const recordingChunksRef = useRef([]);
   const diagnosticSequenceRef = useRef(diagnostics.at(-1)?.sequence || 0);
 
   useEffect(() => {
@@ -915,13 +933,12 @@ function Workspace({ mode, onBack }) {
     }
   }
 
-  async function uploadAudioForTranscription(event) {
-    const file = event.target.files?.[0];
-    event.target.value = "";
+  async function transcribeAudioFile(file, source = "upload") {
     if (!file) return;
     setError("");
     setIsTranscribing(true);
-    traceEvent("stt.upload.start", "Аудиофайл передан на локальное распознавание", {
+    traceEvent("stt.upload.start", "Аудио передано на локальное распознавание", {
+      source,
       contentType: file.type || "unknown",
       sizeBytes: file.size,
     });
@@ -947,6 +964,96 @@ function Workspace({ mode, onBack }) {
     } finally {
       setIsTranscribing(false);
     }
+  }
+
+  async function uploadAudioForTranscription(event) {
+    const file = event.target.files?.[0];
+    event.target.value = "";
+    await transcribeAudioFile(file, "file");
+  }
+
+  async function startVoiceRecording() {
+    if (!navigator.mediaDevices?.getUserMedia || typeof MediaRecorder === "undefined") {
+      setError("Этот браузер не поддерживает запись с микрофона. Используйте загрузку MP3.");
+      return;
+    }
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const recorder = new MediaRecorder(stream);
+      recordingStreamRef.current = stream;
+      recordingChunksRef.current = [];
+      recorder.ondataavailable = (event) => {
+        if (event.data?.size) recordingChunksRef.current.push(event.data);
+      };
+      recorder.onstop = async () => {
+        const mimeType = recorder.mimeType || "audio/webm";
+        const blob = new Blob(recordingChunksRef.current, { type: mimeType });
+        recordingStreamRef.current?.getTracks().forEach((track) => track.stop());
+        recordingStreamRef.current = null;
+        traceEvent("voice.record.finish", "Запись с микрофона завершена", { sizeBytes: blob.size, contentType: mimeType });
+        await transcribeAudioFile(new File([blob], "microphone.webm", { type: mimeType }), "microphone");
+      };
+      mediaRecorderRef.current = recorder;
+      recorder.start();
+      setIsRecording(true);
+      traceEvent("voice.record.start", "Начата запись с микрофона");
+    } catch (recordingError) {
+      traceEvent("voice.record.error", recordingError.message, {}, "error");
+      setError("Не удалось включить микрофон. Разрешите доступ в браузере или загрузите MP3.");
+    }
+  }
+
+  function stopVoiceRecording() {
+    const recorder = mediaRecorderRef.current;
+    if (recorder?.state === "recording") recorder.stop();
+    setIsRecording(false);
+  }
+
+  function getNarrationText() {
+    if (voiceSection === "selection" && selectedExcerpt.trim()) return selectedExcerpt.trim();
+    if (voiceSection !== "all") return script[voiceSection]?.trim() || "";
+    return [script.introduction, script.development, script.finale].filter((part) => part?.trim()).join("\n\n");
+  }
+
+  function stopNarration() {
+    window.speechSynthesis?.cancel();
+    setIsSpeaking(false);
+    traceEvent("tts.stop", "Озвучивание остановлено");
+  }
+
+  function speakNarration() {
+    const text = getNarrationText();
+    if (!text) {
+      setError("Для озвучивания сначала добавьте текст или выделите фрагмент.");
+      return;
+    }
+    if (!("speechSynthesis" in window) || typeof SpeechSynthesisUtterance === "undefined") {
+      setError("Системная озвучка недоступна в этом браузере.");
+      return;
+    }
+    window.speechSynthesis.cancel();
+    const preset = VOICE_ROLES[voiceRole];
+    const utterance = new SpeechSynthesisUtterance(text);
+    utterance.lang = "ru-RU";
+    utterance.rate = preset.rate;
+    utterance.pitch = preset.pitch;
+    const voices = window.speechSynthesis.getVoices();
+    const russianVoices = voices.filter((voice) => voice.lang?.toLowerCase().startsWith("ru"));
+    const preferred = voiceRole === "man" || voiceRole === "boy"
+      ? russianVoices.find((voice) => /male|pavel|maxim|alex/i.test(voice.name))
+      : russianVoices.find((voice) => /female|irina|svetlana|alena|milena/i.test(voice.name));
+    utterance.voice = preferred || russianVoices[0] || voices[0] || null;
+    utterance.onend = () => {
+      setIsSpeaking(false);
+      traceEvent("tts.finish", "Озвучивание завершено", { role: voiceRole, section: voiceSection, textLength: text.length });
+    };
+    utterance.onerror = (event) => {
+      setIsSpeaking(false);
+      traceEvent("tts.error", event.error || "speech-synthesis-error", { role: voiceRole }, "error");
+    };
+    setIsSpeaking(true);
+    traceEvent("tts.start", "Начато озвучивание", { role: voiceRole, section: voiceSection, textLength: text.length });
+    window.speechSynthesis.speak(utterance);
   }
 
   function updateModelConfig(field, value) {
@@ -1673,6 +1780,15 @@ function Workspace({ mode, onBack }) {
               {isTranscribing ? <LoaderCircle size={17} className="spin" /> : <Upload size={17} />}
               {isTranscribing ? "Распознаю аудио…" : "Загрузить MP3 и расшифровать"}
             </button>
+            <button
+              type="button"
+              className={`record-button ${isRecording ? "recording" : ""}`}
+              onClick={isRecording ? stopVoiceRecording : startVoiceRecording}
+              disabled={isTranscribing || isLoading}
+            >
+              {isRecording ? <Square size={16} /> : <Mic size={17} />}
+              {isRecording ? "Остановить и расшифровать" : "Диктовать с микрофона"}
+            </button>
             <button onClick={sendMessage} disabled={!idea.trim() || isLoading}>
               <Send size={17} /> Отправить
             </button>
@@ -1731,6 +1847,19 @@ function Workspace({ mode, onBack }) {
                 <CharacterHighlight text={script[key]} characters={characterProfiles} />
               </article>
             ))}
+
+            <article className="voice-studio" aria-label="Озвучивание текста">
+              <header>
+                <div className="voice-studio-icon"><Volume2 size={20} /></div>
+                <div><span>VOICE STUDIO · 4 РОЛИ</span><h3>Прослушать текст другим голосом</h3><p>Бесплатная системная озвучка работает локально в браузере; текст никуда не отправляется.</p></div>
+              </header>
+              <div className="voice-controls">
+                <label>Голос персонажа<select value={voiceRole} onChange={(event) => setVoiceRole(event.target.value)}>{Object.entries(VOICE_ROLES).map(([id, voice]) => <option key={id} value={id}>{voice.label}</option>)}</select></label>
+                <label>Что озвучить<select value={voiceSection} onChange={(event) => setVoiceSection(event.target.value)}><option value="all">Весь текст</option><option value="introduction">Вступление</option><option value="development">Развитие</option><option value="finale">Финал</option><option value="selection" disabled={!selectedExcerpt}>Выделенный фрагмент</option></select></label>
+                <button type="button" onClick={isSpeaking ? stopNarration : speakNarration}>{isSpeaking ? <VolumeX size={17} /> : <Volume2 size={17} />}{isSpeaking ? "Остановить" : "Озвучить"}</button>
+              </div>
+              <small>Детские роли — безопасные пресеты высоты и скорости системного голоса, а не копирование голоса реального ребёнка.</small>
+            </article>
 
             <article className="illustration-studio">
               <header className="illustration-heading">
