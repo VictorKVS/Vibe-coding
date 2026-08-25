@@ -11,6 +11,7 @@ checks = {
     "four service endpoints": all(port in launcher for port in ("5173", "8018", "1234", "8188")),
     "Comfy optional normal and required verify": "OPTIONAL  ComfyUI" in launcher and 'elseif ($Verify)' in launcher,
     "LM auth classification": "authentication-required" in launcher and "Require Authentication" in launcher,
+    "GigaChat template compatibility": '"--no-jinja", "--chat-template", "chatml"' in launcher,
     "loaded model discovery": '"/llm-api/v1/models"' in frontend,
     "runtime model identifiers": "availableLocalModels" in frontend,
     "readiness API": '@app.get("/api/readiness")' in backend,
