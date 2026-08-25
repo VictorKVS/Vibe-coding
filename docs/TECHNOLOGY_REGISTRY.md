@@ -47,7 +47,7 @@
 | `LOCAL-MODELS-001` | безопасный каталог GGUF из разрешённых корней | `DZ_8.../backend/app.py` | PROVEN | MED | обнаружение локальных моделей | capability detection, dedup и readiness |
 | `MEDIA-GATEWAY-001` | FastAPI gateway text/image/audio | `DZ_8.../backend/app.py` | PROVEN | MED | локальная граница UI и AI-сервисов | разнести adapters/routes/services |
 | `STT-WHISPERCPP-001` | локальный whisper.cpp adapter | `DZ_8.../backend/app.py` | CONFIG_REQUIRED | MIN | полностью локальное распознавание | installer, auto-discovery и AssemblyAI fallback |
-| `TTS-SILERO-001` | четыре ролевых профиля Silero и WAV | `DZ_8.../backend/app.py`, `INSTALL_SILERO_TTS.*` | IMPLEMENTED | MED | озвучка мужчины/женщины/мальчика/девочки | тест на целевом ПК, очередь и сборка сцен |
+| `TTS-BROWSER-001` | четыре ролевых профиля системной озвучки | `DZ_8.../src/App.jsx` | PROVEN | MIN | бесплатное локальное прослушивание текста | заменить пресеты настоящими голосами Silero и добавить WAV |
 | `COMFY-001` | ComfyUI API: checkpoints, LoRA, queue/history/view | `DZ_8.../backend/app.py` | CONFIG_REQUIRED | MED | локальная генерация иллюстраций | стабильный installer и optional-provider registry |
 | `GIGA-ART-001` | GigaChat `text2image` + скачивание JPG | `DZ_8.../backend/app.py` | IMPLEMENTED | MED | облачная иллюстрация выделенного текста | token exchange на backend и quota telemetry |
 | `TRACE-001` | единый ограниченный журнал UI/API/ошибок с очисткой секретов | `DZ_8.../src/App.jsx`, `backend/app.py` | PROVEN | MAX | диагностика всего pipeline | общий `trace_id`, JSONL и correlation across services |
