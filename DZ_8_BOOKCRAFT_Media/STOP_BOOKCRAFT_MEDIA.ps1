@@ -23,7 +23,7 @@ foreach ($name in @("ui", "gateway", "llm")) {
         Write-Host "STOPPED $name (PID $recordedPid)" -ForegroundColor Green
         Remove-Item -LiteralPath $pidFile -Force
     } else {
-        Write-Host "SKIPPED $name: PID $recordedPid no longer belongs to BOOK.CRAFT." -ForegroundColor Yellow
+        Write-Host "SKIPPED ${name}: PID $recordedPid no longer belongs to BOOK.CRAFT." -ForegroundColor Yellow
     }
 }
 
