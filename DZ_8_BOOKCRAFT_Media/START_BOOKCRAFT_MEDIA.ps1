@@ -205,7 +205,7 @@ if ($llm.State -eq "server-stopped") {
     $llmOut = Join-Path $RuntimeRoot "llm.out.log"
     $llmErr = Join-Path $RuntimeRoot "llm.err.log"
     $process = Start-Process -FilePath $llamaServer -ArgumentList @(
-        "-m", ('"' + $modelPath + '"'), "--host", "127.0.0.1", "--port", "1234", "-ngl", "99", "-c", "8192"
+        "-m", ('"' + $modelPath + '"'), "--host", "127.0.0.1", "--port", "1234", "-ngl", "99", "-c", "8192", "--no-jinja", "--chat-template", "chatml"
     ) -WorkingDirectory (Split-Path $llamaServer) -RedirectStandardOutput $llmOut -RedirectStandardError $llmErr -PassThru
     $process.Id | Set-Content -LiteralPath (Join-Path $RuntimeRoot "llm.pid")
     $ready = $false
