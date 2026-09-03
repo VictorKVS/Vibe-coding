@@ -48,9 +48,5 @@ jobs:
           python tests/test_reliable_start_contract.py
 
       - name: Reject obvious committed secrets
-        shell: bash
-        run: |
-          if grep -RInE --exclude-dir=node_modules --exclude-dir=dist --exclude='*.example' '(api[_-]?key|access[_-]?token|password)[[:space:]]*[:=][[:space:]]*["'"'][^"'"']{8,}' .; then
-            echo "Possible hard-coded secret found"
-            exit 1
-          fi
+        working-directory: .
+        run: python .github/scripts/bookcraft_secret_scan.py
