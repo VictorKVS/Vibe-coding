@@ -1,0 +1,56 @@
+name: BOOK CRAFT Media
+
+on:
+  push:
+    paths:
+      - "DZ_8_BOOKCRAFT_Media/**"
+      - ".github/workflows/bookcraft-media.yml"
+  pull_request:
+    paths:
+      - "DZ_8_BOOKCRAFT_Media/**"
+      - ".github/workflows/bookcraft-media.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: DZ_8_BOOKCRAFT_Media
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: DZ_8_BOOKCRAFT_Media/package-lock.json
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install frontend
+        run: npm ci
+
+      - name: Verify contracts and UI
+        run: npm test
+
+      - name: Build production frontend
+        run: npm run build
+
+      - name: Verify backend source contracts
+        run: |
+          python tests/test_media_contract.py
+          python tests/test_reliable_start_contract.py
+
+      - name: Reject obvious committed secrets
+        shell: bash
+        run: |
+          if grep -RInE --exclude-dir=node_modules --exclude-dir=dist --exclude='*.example' '(api[_-]?key|access[_-]?token|password)[[:space:]]*[:=][[:space:]]*["'"'][^"'"']{8,}' .; then
+            echo "Possible hard-coded secret found"
+            exit 1
+          fi

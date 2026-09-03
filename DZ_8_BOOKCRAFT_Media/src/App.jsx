@@ -31,6 +31,8 @@ import {
   Activity,
   Bug,
   Mic,
+  Pause,
+  Play,
   Square,
   Volume2,
   VolumeX,
@@ -499,7 +501,7 @@ ${raw.slice(0, 12000)}`,
   };
 }
 
-async function createIllustrationPrompt({ genre, sceneTitle, sceneText, visualStyle, characterProfiles, modelConfig }) {
+async function createIllustrationPrompt({ genre, sceneTitle, sceneText, visualStyle, characterProfiles, modelConfig, revisionInstruction = "" }) {
   const characterContext = characterProfiles
     .filter((character) => character.name.trim())
     .map(
@@ -524,6 +526,9 @@ async function createIllustrationPrompt({ genre, sceneTitle, sceneText, visualSt
 Часть: ${sceneTitle}.
 Визуальный стиль: ${visualStyle}.
 Текст сцены: ${sceneText}
+
+Точная просьба по доработке кадра: ${revisionInstruction.trim() || "нет; создай первую версию"}.
+Если это доработка, сохрани всё, что пользователь явно не просил менять.
 
 Паспорта постоянных персонажей:
 ${characterContext || "Персонажи пока не описаны; не придумывай противоречащие сцене детали."}
@@ -679,6 +684,10 @@ function Workspace({ mode, onBack }) {
   const [isTranscribing, setIsTranscribing] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
   const [isSpeaking, setIsSpeaking] = useState(false);
+  const [isSpeechPaused, setIsSpeechPaused] = useState(false);
+  const [voiceVolume, setVoiceVolume] = useState(1);
+  const [voiceRate, setVoiceRate] = useState(1);
+  const [narrationProgress, setNarrationProgress] = useState(0);
   const [voiceRole, setVoiceRole] = useState("woman");
   const [voiceSection, setVoiceSection] = useState("all");
   const [error, setError] = useState("");
@@ -695,6 +704,7 @@ function Workspace({ mode, onBack }) {
   const [connectionStatus, setConnectionStatus] = useState("not-tested");
   const [isTestingConnection, setIsTestingConnection] = useState(false);
   const [illustrationPrompt, setIllustrationPrompt] = useState("");
+  const [illustrationRevision, setIllustrationRevision] = useState("");
   const [illustrationUrl, setIllustrationUrl] = useState("");
   const [uploadedPhoto, setUploadedPhoto] = useState(null);
   const [isIllustrating, setIsIllustrating] = useState(false);
@@ -734,6 +744,7 @@ function Workspace({ mode, onBack }) {
   const mediaRecorderRef = useRef(null);
   const recordingStreamRef = useRef(null);
   const recordingChunksRef = useRef([]);
+  const narrationRef = useRef({ utterance: null, text: "", offset: 0 });
   const diagnosticSequenceRef = useRef(diagnostics.at(-1)?.sequence || 0);
 
   useEffect(() => {
@@ -1017,11 +1028,14 @@ function Workspace({ mode, onBack }) {
 
   function stopNarration() {
     window.speechSynthesis?.cancel();
+    narrationRef.current = { utterance: null, text: "", offset: 0 };
     setIsSpeaking(false);
+    setIsSpeechPaused(false);
+    setNarrationProgress(0);
     traceEvent("tts.stop", "Озвучивание остановлено");
   }
 
-  function speakNarration() {
+  function speakNarration(startPercent = 0) {
     const text = getNarrationText();
     if (!text) {
       setError("Для озвучивания сначала добавьте текст или выделите фрагмент.");
@@ -1033,10 +1047,13 @@ function Workspace({ mode, onBack }) {
     }
     window.speechSynthesis.cancel();
     const preset = VOICE_ROLES[voiceRole];
-    const utterance = new SpeechSynthesisUtterance(text);
+    const offset = Math.max(0, Math.min(text.length - 1, Math.floor(text.length * (startPercent / 100))));
+    const spokenText = text.slice(offset);
+    const utterance = new SpeechSynthesisUtterance(spokenText);
     utterance.lang = "ru-RU";
-    utterance.rate = preset.rate;
+    utterance.rate = Math.max(0.5, Math.min(2, preset.rate * voiceRate));
     utterance.pitch = preset.pitch;
+    utterance.volume = voiceVolume;
     const voices = window.speechSynthesis.getVoices();
     const russianVoices = voices.filter((voice) => voice.lang?.toLowerCase().startsWith("ru"));
     const preferred = voiceRole === "man" || voiceRole === "boy"
@@ -1045,15 +1062,43 @@ function Workspace({ mode, onBack }) {
     utterance.voice = preferred || russianVoices[0] || voices[0] || null;
     utterance.onend = () => {
       setIsSpeaking(false);
+      setIsSpeechPaused(false);
+      setNarrationProgress(100);
       traceEvent("tts.finish", "Озвучивание завершено", { role: voiceRole, section: voiceSection, textLength: text.length });
+    };
+    utterance.onboundary = (event) => {
+      const absoluteIndex = offset + (event.charIndex || 0);
+      setNarrationProgress(Math.min(100, Math.round((absoluteIndex / text.length) * 100)));
     };
     utterance.onerror = (event) => {
       setIsSpeaking(false);
       traceEvent("tts.error", event.error || "speech-synthesis-error", { role: voiceRole }, "error");
     };
     setIsSpeaking(true);
-    traceEvent("tts.start", "Начато озвучивание", { role: voiceRole, section: voiceSection, textLength: text.length });
+    setIsSpeechPaused(false);
+    setNarrationProgress(startPercent);
+    narrationRef.current = { utterance, text, offset };
+    traceEvent("tts.start", "Начато озвучивание", { role: voiceRole, section: voiceSection, textLength: text.length, startPercent });
     window.speechSynthesis.speak(utterance);
+  }
+
+  function toggleNarrationPause() {
+    if (!isSpeaking || !window.speechSynthesis) return;
+    if (isSpeechPaused) {
+      window.speechSynthesis.resume();
+      setIsSpeechPaused(false);
+      traceEvent("tts.resume", "Озвучивание продолжено", { progress: narrationProgress });
+    } else {
+      window.speechSynthesis.pause();
+      setIsSpeechPaused(true);
+      traceEvent("tts.pause", "Озвучивание приостановлено", { progress: narrationProgress });
+    }
+  }
+
+  function seekNarration(event) {
+    const nextProgress = Number(event.target.value);
+    setNarrationProgress(nextProgress);
+    if (isSpeaking) speakNarration(nextProgress);
   }
 
   function updateModelConfig(field, value) {
@@ -1289,6 +1334,7 @@ function Workspace({ mode, onBack }) {
         visualStyle,
         characterProfiles,
         modelConfig,
+        revisionInstruction: illustrationRevision,
       });
       setIllustrationPrompt(prompt);
       const nextUrl = artProvider === "comfy"
@@ -1734,6 +1780,15 @@ function Workspace({ mode, onBack }) {
               <div className={`message ${message.role}`} key={`${message.role}-${index}`}>
                 {message.role === "assistant" && <Sparkles size={14} />}
                 <p>{message.text}</p>
+                {message.role === "assistant" && (
+                  <button
+                    type="button"
+                    className="reuse-message"
+                    onClick={() => setIdea((current) => [current.trim(), message.text].filter(Boolean).join("\n\n"))}
+                  >
+                    Вставить в команду
+                  </button>
+                )}
               </div>
             ))}
             {isLoading && (
@@ -1856,7 +1911,14 @@ function Workspace({ mode, onBack }) {
               <div className="voice-controls">
                 <label>Голос персонажа<select value={voiceRole} onChange={(event) => setVoiceRole(event.target.value)}>{Object.entries(VOICE_ROLES).map(([id, voice]) => <option key={id} value={id}>{voice.label}</option>)}</select></label>
                 <label>Что озвучить<select value={voiceSection} onChange={(event) => setVoiceSection(event.target.value)}><option value="all">Весь текст</option><option value="introduction">Вступление</option><option value="development">Развитие</option><option value="finale">Финал</option><option value="selection" disabled={!selectedExcerpt}>Выделенный фрагмент</option></select></label>
-                <button type="button" onClick={isSpeaking ? stopNarration : speakNarration}>{isSpeaking ? <VolumeX size={17} /> : <Volume2 size={17} />}{isSpeaking ? "Остановить" : "Озвучить"}</button>
+                <label>Громкость · {Math.round(voiceVolume * 100)}%<input aria-label="Громкость озвучивания" type="range" min="0" max="1" step="0.05" value={voiceVolume} onChange={(event) => setVoiceVolume(Number(event.target.value))} /></label>
+                <label>Скорость · {voiceRate.toFixed(1)}×<input aria-label="Скорость озвучивания" type="range" min="0.6" max="1.8" step="0.1" value={voiceRate} onChange={(event) => setVoiceRate(Number(event.target.value))} /></label>
+                <label className="voice-progress">Позиция · {narrationProgress}%<input aria-label="Позиция озвучивания" type="range" min="0" max="100" step="1" value={narrationProgress} onChange={seekNarration} /></label>
+                <div className="voice-transport">
+                  <button type="button" onClick={() => speakNarration(narrationProgress)} disabled={isSpeaking && !isSpeechPaused}><Play size={17} />{narrationProgress > 0 ? "Продолжить с позиции" : "Озвучить"}</button>
+                  <button type="button" onClick={toggleNarrationPause} disabled={!isSpeaking}>{isSpeechPaused ? <Play size={17} /> : <Pause size={17} />}{isSpeechPaused ? "Продолжить" : "Пауза"}</button>
+                  <button type="button" onClick={stopNarration} disabled={!isSpeaking && narrationProgress === 0}><VolumeX size={17} />Стоп</button>
+                </div>
               </div>
               <small>Детские роли — безопасные пресеты высоты и скорости системного голоса, а не копирование голоса реального ребёнка.</small>
             </article>
@@ -1897,6 +1959,15 @@ function Workspace({ mode, onBack }) {
                     <option>Исторический реализм</option>
                   </select>
                 </label>
+                <label className="revision-field">
+                  Что изменить в следующей версии
+                  <textarea
+                    value={illustrationRevision}
+                    onChange={(event) => setIllustrationRevision(event.target.value)}
+                    placeholder="Например: оставить композицию, сделать ночь, добавить дождь и не менять внешность героев"
+                    rows={3}
+                  />
+                </label>
                 {artProvider === "comfy" ? (
                   <label className="token-field">
                     Checkpoint ComfyUI
@@ -1925,7 +1996,7 @@ function Workspace({ mode, onBack }) {
                   disabled={isIllustrating || !script[illustrationScene]?.trim()}
                 >
                   {isIllustrating ? <LoaderCircle size={17} className="spin" /> : <Sparkles size={17} />}
-                  {isIllustrating ? "Создаю кадр…" : "Создать иллюстрацию"}
+                  {isIllustrating ? "Создаю кадр…" : illustrationUrl ? "Создать доработанную версию" : "Создать иллюстрацию"}
                 </button>
               </div>
 
