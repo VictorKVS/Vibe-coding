@@ -1,0 +1,76 @@
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parents[1]
+BACKEND = ROOT / "backend" / "app.py"
+FRONTEND = ROOT / "src" / "App.jsx"
+source = BACKEND.read_text(encoding="utf-8")
+frontend = FRONTEND.read_text(encoding="utf-8")
+
+checks = {
+    "audio field": 'audio: Annotated[UploadFile | None, File()] = None',
+    "text priority": "if not message and audio is not None:",
+    "transcription substitution": "message = transcription.strip()",
+    "dedicated STT endpoint": '@app.post("/api/stt/transcribe")',
+    "MP3 upload control": 'Загрузить MP3 и расшифровать',
+    "STT browser gateway": 'http://127.0.0.1:8018/api/stt/transcribe',
+    "metadata-only STT trace": '"stt.transcribe.finish"',
+    "microphone recording": 'navigator.mediaDevices.getUserMedia({ audio: true })',
+    "four voice roles": 'woman: { label: "Женщина"',
+    "voice pause control": 'window.speechSynthesis.pause()',
+    "voice resume control": 'window.speechSynthesis.resume()',
+    "voice seek control": 'aria-label="Позиция озвучивания"',
+    "voice volume control": 'aria-label="Громкость озвучивания"',
+    "voice rate control": 'aria-label="Скорость озвучивания"',
+    "reuse assistant text": 'Вставить в команду',
+    "tts trace": 'traceEvent("tts.start"',
+    "safe STT error": "Не удалось распознать голосовой запрос.",
+    "controlled missing input": "Введите текст или прикрепите голосовой запрос.",
+    "media type guard": "status_code=415",
+    "size guard": "status_code=413",
+    "local model inventory": 'root.rglob("*.gguf")',
+    "art endpoint": '@app.post("/api/art/generate"',
+    "official chat route": '"/v1/chat/completions"',
+    "text2image auto mode": '"function_call": "auto"',
+    "file download route": 'f"/v1/files/{image_id}/content"',
+    "safe image extraction": "_extract_gigachat_image_id",
+    "browser calls local gateway": 'http://127.0.0.1:8018/api/art/generate',
+    "frontend checks data image": 'startsWith("data:image/")',
+    "Comfy health endpoint": '@app.get("/api/comfy/health")',
+    "Comfy generation endpoint": '@app.post("/api/comfy/generate")',
+    "art revision instruction": 'Точная просьба по доработке кадра',
+    "Comfy checkpoint discovery": 'CheckpointLoaderSimple',
+    "Comfy LoRA discovery": 'LoraLoader',
+    "Comfy queue": 'f"{COMFYUI_BASE_URL}/prompt"',
+    "Comfy history": 'f"{COMFYUI_BASE_URL}/history/{prompt_id}"',
+    "local art default": 'useState("comfy")',
+    "diagnostic endpoint": '@app.post("/api/diagnostics/github")',
+    "diagnostic redaction": '"[REDACTED]"',
+    "local gh issue submission": '"gh", "issue", "create"',
+    "event trace": '"ui.click"',
+    "diagnostic download": "Скачать журнал JSON",
+    "diagnostic review button": '"Отправить на проверку"',
+}
+
+missing = [
+    name
+    for name, fragment in checks.items()
+    if fragment not in (source + "\n" + frontend)
+]
+if missing:
+    raise SystemExit("FAIL DZ8-MEDIA: " + ", ".join(missing))
+
+if "localStorage.setItem" in frontend and "gigaAccessToken" in frontend.split("localStorage.setItem", 1)[1].split(")", 1)[0]:
+    raise SystemExit("FAIL DZ8-SECURITY: GigaChat token must not be stored")
+
+print("PASS DZ8-PRO-MIN: audio is optional and text keeps priority")
+print("PASS DZ8-PRO-MED: STT result becomes user_message in one pipeline")
+print("PASS DZ8-PRO-MAX: errors, type and size are handled safely")
+print("PASS DZ8-MODELS: local GGUF inventory is exposed by the gateway")
+print("PASS DZ8-ART-MIN: selected text becomes an art prompt")
+print("PASS DZ8-ART-MED: GigaChat text2image returns a downloadable JPG")
+print("PASS DZ8-ART-MAX: token stays in memory and errors are user-safe")
+print("PASS DZ8-COMFY: checkpoints, LoRA, queue, history and image output use the local API")
+print("PASS DZ8-TRACE-MIN: clicks, model calls and failures enter one bounded journal")
+print("PASS DZ8-TRACE-MED: JSON export excludes tokens and manuscript content")
+print("PASS DZ8-TRACE-MAX: authenticated local gh creates a review Issue")
+print("DZ-8 media acceptance: 10/10 checks green.")

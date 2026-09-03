@@ -37,7 +37,14 @@ const LOCAL_MODELS = [
   { id: "llava16-mistral-7b", label: "LLaVA-1.6-Mistral-7B · Q4/Q5", capability: "текст + изображение" },
   { id: "llava-llama3-8b-int4", label: "LLaVA-Llama-3-8B · INT4", capability: "текст + изображение" },
   { id: "cogvlm-13b-f16", label: "CogVLM-13B-Chat · F16", capability: "текст + изображение" },
-  { id: "mythomax-l2-13b-q4", label: "MythoMax-L2-13B · Q4_K_S", capability: "творческий текст" },
+  { id: "mythomax-l2-13b-q4", label: "MythoMax-L2-13B · Q4_K_S", capability: "творческая проза" },
+];
+
+const GIGACHAT_MODELS = [
+  { id: "GigaChat-2", label: "GigaChat 2 Lite · быстро и экономно" },
+  { id: "GigaChat-2-Pro", label: "GigaChat 2 Pro · редактура и сложные инструкции" },
+  { id: "GigaChat-2-Max", label: "GigaChat 2 Max · максимум качества и креативности" },
+  { id: "GigaChat-3-Ultra", label: "GigaChat 3 Ultra · freemium для физических лиц" },
 ];
 
 const DEFAULT_MODEL_CONFIG = {
@@ -183,7 +190,12 @@ async function callModelCompletion({ messages, temperature, maxTokens, modelConf
   const controller = new AbortController();
   const timeout = window.setTimeout(() => controller.abort(), timeoutMs);
   const isLocal = modelConfig.source === "local";
-  const endpoint = isLocal ? "/llm-api/v1/chat/completions" : modelConfig.externalEndpoint.trim();
+  const isGigaChat = !isLocal && modelConfig.externalProtocol === "gigachat";
+  const endpoint = isLocal
+    ? "/llm-api/v1/chat/completions"
+    : isGigaChat
+      ? "/giga-cloud/v1/chat/completions"
+      : modelConfig.externalEndpoint.trim();
   if (!endpoint) throw new Error("Укажите endpoint внешнего агента");
   if (!isLocal && !modelConfig.externalModel.trim()) throw new Error("Укажите ID модели внешнего агента");
   if (!isLocal && !modelConfig.apiKey.trim()) throw new Error("Укажите API-ключ внешнего агента");
@@ -551,6 +563,7 @@ function Workspace({ mode, onBack }) {
   const [isTestingConnection, setIsTestingConnection] = useState(false);
   const [illustrationPrompt, setIllustrationPrompt] = useState("");
   const [illustrationUrl, setIllustrationUrl] = useState("");
+  const [uploadedPhoto, setUploadedPhoto] = useState(null);
   const [isIllustrating, setIsIllustrating] = useState(false);
   const [selectedExcerpt, setSelectedExcerpt] = useState("");
   const [savedAt, setSavedAt] = useState(initialProject?.savedAt || "");
@@ -572,6 +585,7 @@ function Workspace({ mode, onBack }) {
     }
   });
   const fileInputRef = useRef(null);
+  const photoInputRef = useRef(null);
   const projectInputRef = useRef(null);
 
   useEffect(() => {
@@ -583,6 +597,13 @@ function Workspace({ mode, onBack }) {
       if (illustrationUrl) URL.revokeObjectURL(illustrationUrl);
     },
     [illustrationUrl],
+  );
+
+  useEffect(
+    () => () => {
+      if (uploadedPhoto?.url) URL.revokeObjectURL(uploadedPhoto.url);
+    },
+    [uploadedPhoto],
   );
 
   useEffect(() => {
@@ -659,7 +680,20 @@ function Workspace({ mode, onBack }) {
   }
 
   function updateModelConfig(field, value) {
-    setModelConfig((current) => ({ ...current, [field]: value }));
+    setModelConfig((current) => {
+      if (field === "externalProtocol" && value === "gigachat") {
+        return {
+          ...current,
+          externalAgent: "GigaChat API",
+          externalProtocol: value,
+          externalEndpoint: "https://api.giga.chat/v1/chat/completions",
+          externalModel: current.externalModel.startsWith("GigaChat")
+            ? current.externalModel
+            : GIGACHAT_MODELS[0].id,
+        };
+      }
+      return { ...current, [field]: value };
+    });
     setConnectionStatus("not-tested");
   }
 
@@ -708,6 +742,32 @@ function Workspace({ mode, onBack }) {
     event.target.value = "";
   }
 
+  function attachPhoto(event) {
+    const file = event.target.files?.[0];
+    event.target.value = "";
+    if (!file) return;
+    if (!file.type.startsWith("image/")) {
+      setError("Выберите изображение в формате PNG, JPEG или WEBP.");
+      return;
+    }
+    if (file.size > 10 * 1024 * 1024) {
+      setError("Изображение больше 10 МБ. Выберите файл меньшего размера.");
+      return;
+    }
+    setError("");
+    setUploadedPhoto((current) => {
+      if (current?.url) URL.revokeObjectURL(current.url);
+      return { name: file.name, url: URL.createObjectURL(file) };
+    });
+  }
+
+  function removePhoto() {
+    setUploadedPhoto((current) => {
+      if (current?.url) URL.revokeObjectURL(current.url);
+      return null;
+    });
+  }
+
   function resetWorkspace() {
     setScript(EMPTY_SCRIPT);
     setMessages([
@@ -719,6 +779,7 @@ function Workspace({ mode, onBack }) {
     setError("");
     if (illustrationUrl) URL.revokeObjectURL(illustrationUrl);
     setIllustrationUrl("");
+    removePhoto();
     setIllustrationPrompt("");
     setSelectedExcerpt("");
     localStorage.removeItem(PROJECT_STORAGE_KEY);
@@ -953,19 +1014,42 @@ function Workspace({ mode, onBack }) {
                 <span>Протокол</span>
                 <select value={modelConfig.externalProtocol} onChange={(event) => updateModelConfig("externalProtocol", event.target.value)}>
                   <option value="openai-compatible">OpenAI-compatible Chat Completions</option>
+                  <option value="gigachat">GigaChat API · api.giga.chat</option>
                 </select>
               </label>
               <label className="model-field model-field-wide">
                 <span>Endpoint</span>
-                <input value={modelConfig.externalEndpoint} onChange={(event) => updateModelConfig("externalEndpoint", event.target.value)} placeholder="https://host/v1/chat/completions" />
+                <input
+                  value={modelConfig.externalEndpoint}
+                  onChange={(event) => updateModelConfig("externalEndpoint", event.target.value)}
+                  placeholder="https://host/v1/chat/completions"
+                  readOnly={modelConfig.externalProtocol === "gigachat"}
+                />
+                {modelConfig.externalProtocol === "gigachat" && (
+                  <small>Локальный Vite proxy безопасно направляет запрос на https://api.giga.chat/v1/chat/completions.</small>
+                )}
               </label>
               <label className="model-field">
-                <span>ID модели</span>
-                <input value={modelConfig.externalModel} onChange={(event) => updateModelConfig("externalModel", event.target.value)} placeholder="model-name" />
+                <span>Модель</span>
+                {modelConfig.externalProtocol === "gigachat" ? (
+                  <select value={modelConfig.externalModel} onChange={(event) => updateModelConfig("externalModel", event.target.value)}>
+                    {GIGACHAT_MODELS.map((model) => (
+                      <option key={model.id} value={model.id}>{model.label}</option>
+                    ))}
+                  </select>
+                ) : (
+                  <input value={modelConfig.externalModel} onChange={(event) => updateModelConfig("externalModel", event.target.value)} placeholder="model-name" />
+                )}
               </label>
               <label className="model-field">
-                <span><KeyRound size={12} /> API-ключ</span>
-                <input type="password" autoComplete="off" value={modelConfig.apiKey} onChange={(event) => updateModelConfig("apiKey", event.target.value)} placeholder="Ключ не сохраняется" />
+                <span><KeyRound size={12} /> {modelConfig.externalProtocol === "gigachat" ? "Access token GigaChat" : "API-ключ"}</span>
+                <input
+                  type="password"
+                  autoComplete="off"
+                  value={modelConfig.apiKey}
+                  onChange={(event) => updateModelConfig("apiKey", event.target.value)}
+                  placeholder={modelConfig.externalProtocol === "gigachat" ? "Временный токен на 30 минут" : "Ключ не сохраняется"}
+                />
               </label>
             </div>
           )}
@@ -973,10 +1057,10 @@ function Workspace({ mode, onBack }) {
           <div className="model-gateway-footer">
             <button type="button" onClick={testModelConnection} disabled={isTestingConnection}>
               {isTestingConnection ? <LoaderCircle size={14} className="spin" /> : <PlugZap size={14} />}
-              Проверить подключение
+              Подключить модель
             </button>
             <span className={`connection-status ${connectionStatus}`}>
-              {connectionStatus === "ready" ? "READY · агент отвечает" : connectionStatus === "failed" ? "FAIL · проверьте параметры" : connectionStatus === "testing" ? "Проверка…" : "Соединение не проверено"}
+              {connectionStatus === "ready" ? "READY · модель подключена" : connectionStatus === "failed" ? "FAIL · проверьте параметры" : connectionStatus === "testing" ? "Подключение…" : "Модель ещё не подключена"}
             </span>
             <small>Ключ хранится только в памяти открытой вкладки, не записывается в localStorage и не включается в экспорт.</small>
           </div>
@@ -1257,6 +1341,43 @@ function Workspace({ mode, onBack }) {
                   <button type="button" onClick={() => setSelectedExcerpt("")}>Использовать весь раздел</button>
                 </div>
               )}
+
+              <section className={`photo-upload-card ${uploadedPhoto ? "has-photo" : ""}`} aria-label="Загрузка изображения">
+                {uploadedPhoto && (
+                  <div className="photo-uploaded-status" role="status">
+                    <Check size={15} /> Фото загружено
+                  </div>
+                )}
+                <input
+                  ref={photoInputRef}
+                  type="file"
+                  accept="image/png,image/jpeg,image/webp,image/*"
+                  hidden
+                  onChange={attachPhoto}
+                />
+                {uploadedPhoto ? (
+                  <>
+                    <img src={uploadedPhoto.url} alt="Прикреплённое пользователем изображение" />
+                    <div className="photo-upload-meta">
+                      <span>{uploadedPhoto.name}</span>
+                      <button type="button" onClick={removePhoto}>
+                        <Trash2 size={14} /> Удалить фото
+                      </button>
+                    </div>
+                  </>
+                ) : (
+                  <button type="button" className="photo-upload-empty" onClick={() => photoInputRef.current?.click()}>
+                    <Upload size={22} />
+                    <strong>Добавить изображение</strong>
+                    <span>После выбора файла появится зелёная надпись «Фото загружено»</span>
+                  </button>
+                )}
+                {uploadedPhoto && (
+                  <button type="button" className="replace-photo-button" onClick={() => photoInputRef.current?.click()}>
+                    <Upload size={14} /> Заменить
+                  </button>
+                )}
+              </section>
 
               <div className={`illustration-preview ${illustrationUrl ? "has-image" : ""}`}>
                 {illustrationUrl ? (

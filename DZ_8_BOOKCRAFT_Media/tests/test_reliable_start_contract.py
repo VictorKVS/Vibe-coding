@@ -1,0 +1,33 @@
+from pathlib import Path
+import re
+
+ROOT = Path(__file__).resolve().parents[1]
+launcher = (ROOT / "START_BOOKCRAFT_MEDIA.ps1").read_text(encoding="utf-8-sig")
+stopper = (ROOT / "STOP_BOOKCRAFT_MEDIA.ps1").read_text(encoding="utf-8-sig")
+backend = (ROOT / "backend" / "app.py").read_text(encoding="utf-8")
+frontend = (ROOT / "src" / "App.jsx").read_text(encoding="utf-8")
+
+checks = {
+    "four service endpoints": all(port in launcher for port in ("5173", "8018", "1234", "8188")),
+    "Comfy optional normal and required verify": "OPTIONAL  ComfyUI" in launcher and 'elseif ($Verify)' in launcher,
+    "LM auth classification": "authentication-required" in launcher and "Require Authentication" in launcher,
+    "GigaChat template compatibility": '"--no-jinja", "--chat-template", "chatml"' in launcher,
+    "loaded model discovery": '"/llm-api/v1/models"' in frontend,
+    "runtime model identifiers": "availableLocalModels" in frontend,
+    "readiness API": '@app.get("/api/readiness")' in backend,
+    "safe runtime logs": 'RuntimeRoot = Join-Path $ProjectRoot ".runtime"' in launcher,
+    "launcher JSONL trace": "Write-RunTrace" in launcher and "run_id" in launcher,
+    "gateway request correlation": '"X-Request-ID"' in frontend and '"X-Request-ID"' in backend,
+    "metadata-only LLM trace": '"llm.forward.start"' in backend and "message_count" in backend,
+    "trace review endpoint": '@app.get("/api/trace/recent")' in backend,
+    "owned process shutdown": "no longer belongs to BOOK.CRAFT" in stopper,
+    "no blind process kill": "Get-CimInstance Win32_Process" in stopper,
+}
+
+failed = [name for name, passed in checks.items() if not passed]
+if re.search(r'\\$[A-Za-z_][A-Za-z0-9_]*:', stopper):
+    failed.append("ambiguous PowerShell variable before colon")
+if failed:
+    raise SystemExit("FAIL RELIABLE-START: " + ", ".join(failed))
+
+print(f"PASS RELIABLE-START: {len(checks)}/{len(checks)} launch and shutdown gates green")
