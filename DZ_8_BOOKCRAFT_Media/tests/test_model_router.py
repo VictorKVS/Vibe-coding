@@ -1,4 +1,4 @@
-from backend.model_router_app import AUTO_MODEL_ID, choose_model
+from backend.model_router_app import AUTO_MODEL_ID, _is_chat_model, choose_model
 
 
 def test_manual_model_choice_is_preserved():
@@ -89,3 +89,20 @@ def test_auto_vision_requires_loaded_vision_model():
         assert str(error) == "capability-not-loaded"
     else:
         raise AssertionError("vision request without vision model must fail")
+
+
+def test_non_chat_service_models_are_excluded():
+    assert not _is_chat_model("whisper-large-v3-turbo")
+    assert not _is_chat_model("text-embedding-bge-m3")
+    assert not _is_chat_model("text-embedding-nomic-embed-text-v1.5")
+    assert _is_chat_model("llava-1.6-mistral-7b")
+    assert _is_chat_model("qwen2.5-coder-14b-instruct")
+
+
+def test_choose_model_ignores_non_chat_candidates():
+    route = choose_model(
+        AUTO_MODEL_ID,
+        [{"role": "user", "content": "Коротко объясни этот текст."}],
+        ["whisper-large-v3-turbo", "text-embedding-bge-m3", "llava-1.6-mistral-7b"],
+    )
+    assert route["model"] == "llava-1.6-mistral-7b"
