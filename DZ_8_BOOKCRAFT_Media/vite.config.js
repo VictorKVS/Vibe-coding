@@ -9,7 +9,7 @@ export default defineConfig({
     strictPort: true,
     proxy: {
       "/llm-api": {
-        target: "http://127.0.0.1:1234",
+        target: "http://127.0.0.1:8018",
         changeOrigin: true,
         rewrite: (path) => path.replace(/^\/llm-api/, ""),
       },
