@@ -11,14 +11,36 @@ def test_manual_model_choice_is_preserved():
     assert route["mode"] == "manual"
 
 
-def test_auto_prefers_mistral_for_general_text():
+def test_auto_prefers_plain_mistral_over_llava_mistral_for_general_text():
     route = choose_model(
         AUTO_MODEL_ID,
-        [{"role": "user", "content": "Объясни кратко идею этого текста."}],
-        ["llava-v1.6-mistral-7b", "qwen2.5-14b", "mistral-7b-instruct"],
+        [{"role": "user", "content": "Explain this idea briefly."}],
+        ["llava-1.6-mistral-7b", "qwen2.5-14b", "mistral-7b-instruct"],
     )
     assert route["model"] == "mistral-7b-instruct"
     assert route["mode"] == "auto"
+
+
+def test_auto_does_not_pin_russian_text_to_llava_mistral():
+    route = choose_model(
+        AUTO_MODEL_ID,
+        [{"role": "user", "content": "Коротко объясни идею этого текста."}],
+        [
+            "llava-1.6-mistral-7b",
+            "ai-sage_gigachat3-10b-a1.8b",
+            "qwen2.5-14b-instruct-1m",
+        ],
+    )
+    assert route["model"] == "ai-sage_gigachat3-10b-a1.8b"
+
+
+def test_auto_prefers_qwen_over_vision_model_for_general_non_russian_text():
+    route = choose_model(
+        AUTO_MODEL_ID,
+        [{"role": "user", "content": "Summarize the following paragraph."}],
+        ["llava-1.6-mistral-7b", "qwen2.5-14b-instruct-1m"],
+    )
+    assert route["model"] == "qwen2.5-14b-instruct-1m"
 
 
 def test_auto_prefers_coder_for_code_request():
@@ -106,3 +128,13 @@ def test_choose_model_ignores_non_chat_candidates():
         ["whisper-large-v3-turbo", "text-embedding-bge-m3", "llava-1.6-mistral-7b"],
     )
     assert route["model"] == "llava-1.6-mistral-7b"
+
+
+def test_router_source_contains_native_load_and_unload_contracts():
+    from pathlib import Path
+
+    source = (Path(__file__).resolve().parents[1] / "backend" / "model_router_app.py").read_text(encoding="utf-8")
+    assert "/api/v1/models/load" in source
+    assert "/api/v1/models/unload" in source
+    assert '@app.post("/api/models/switch")' in source
+    assert "loaded_instances" in source
