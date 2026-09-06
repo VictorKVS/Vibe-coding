@@ -76,7 +76,7 @@ $owned = @()
 if (-not (Test-Http $BackendUrl)) {
     $python = Resolve-Python $ProjectRoot
     $backendLog = Join-Path $RuntimeRoot "backend.log"
-    $process = Start-Process -FilePath $python -ArgumentList @("-m", "uvicorn", "backend.app:app", "--host", "127.0.0.1", "--port", "8018") -WorkingDirectory $ProjectRoot -RedirectStandardOutput $backendLog -RedirectStandardError (Join-Path $RuntimeRoot "backend.err.log") -WindowStyle Hidden -PassThru
+    $process = Start-Process -FilePath $python -ArgumentList @("-m", "uvicorn", "backend.model_router_app:app", "--host", "127.0.0.1", "--port", "8018") -WorkingDirectory $ProjectRoot -RedirectStandardOutput $backendLog -RedirectStandardError (Join-Path $RuntimeRoot "backend.err.log") -WindowStyle Hidden -PassThru
     $owned += [ordered]@{ name = "bookcraft-backend"; pid = $process.Id; started_at = (Get-Date).ToUniversalTime().ToString("o") }
 }
 
@@ -109,8 +109,10 @@ $comfyReady = Test-Http $ComfyUrl
 if ($llmReady) { Write-Host "READY  LM Studio  http://127.0.0.1:1234" -ForegroundColor Green }
 else { Write-Host "OPTIONAL  LM Studio не готов; возможны состояния model-not-loaded или authentication-required (Require Authentication)." -ForegroundColor Yellow }
 if ($comfyReady) { Write-Host "READY  ComfyUI  http://127.0.0.1:8188" -ForegroundColor Green }
-elseif ($Verify) { throw "ComfyUI обязателен в режиме -Verify, но API не отвечает." }
-else { Write-Host "OPTIONAL  ComfyUI не запущен; текст и системный звук продолжат работать." -ForegroundColor Yellow }
+else {
+    Write-Host "OPTIONAL  ComfyUI не запущен; текст, STT и Model Router продолжат работать." -ForegroundColor Yellow
+    Write-RunTrace "service.degraded" "optional" "ComfyUI 8188 is not running"
+}
 
 # Compatibility arguments retained for managed llama.cpp profiles:
 $GigaChatCompatibility = @("--no-jinja", "--chat-template", "chatml")
@@ -122,4 +124,5 @@ if ($frontendReady) { Start-Process $AppUrl }
 Write-Host ""
 Write-Host "BOOK.CRAFT: $AppUrl"
 Write-Host "MindForge:   $MindForgeUrl"
-Write-Host "Sound:      microphone -> Whisper; text -> system voice; Piper/Silero planned"
+Write-Host "Models:      manual selection or AUTO router via LM Studio"
+Write-Host "Sound:       microphone/file -> Whisper; text -> selected local model"
