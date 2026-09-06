@@ -13,6 +13,20 @@ from fastapi.responses import JSONResponse
 from .app import LM_STUDIO_BASE_URL, app, write_trace
 
 AUTO_MODEL_ID = "auto"
+NON_CHAT_MODEL_MARKERS = (
+    "whisper",
+    "embedding",
+    "embed-",
+    "nomic-embed",
+    "rerank",
+    "bge-",
+)
+
+
+def _is_chat_model(model_id: str) -> bool:
+    """Keep STT/embedding/rerank services out of the chat router catalog."""
+    value = model_id.strip().lower()
+    return bool(value) and not any(marker in value for marker in NON_CHAT_MODEL_MARKERS)
 
 
 def _model_capabilities(model_id: str) -> set[str]:
@@ -92,7 +106,10 @@ def _request_features(messages: Any) -> dict[str, Any]:
 
 def choose_model(requested_model: str, messages: Any, available_models: list[str]) -> dict[str, str]:
     """Resolve manual or automatic model selection with an explainable reason."""
-    available = [item for item in available_models if isinstance(item, str) and item.strip()]
+    available = [
+        item for item in available_models
+        if isinstance(item, str) and _is_chat_model(item)
+    ]
     if not available:
         raise ValueError("no-models")
 
@@ -165,9 +182,11 @@ async def _fetch_loaded_models() -> list[str]:
     except ValueError as error:
         raise HTTPException(status_code=502, detail="LM Studio вернул некорректный список моделей.") from error
     return [
-        str(item.get("id")).strip()
+        model_id
         for item in payload.get("data", [])
-        if isinstance(item, dict) and str(item.get("id", "")).strip()
+        if isinstance(item, dict)
+        for model_id in [str(item.get("id", "")).strip()]
+        if _is_chat_model(model_id)
     ]
 
 
@@ -217,7 +236,7 @@ async def preview_model_route(request: Request) -> dict[str, str]:
             raise HTTPException(status_code=409, detail="Выбранная модель сейчас не загружена в LM Studio.") from error
         if code == "capability-not-loaded":
             raise HTTPException(status_code=409, detail="Для этого запроса не загружена подходящая модель.") from error
-        raise HTTPException(status_code=503, detail="В LM Studio не загружено ни одной модели.") from error
+        raise HTTPException(status_code=503, detail="В LM Studio не загружено ни одной chat-модели.") from error
 
 
 @app.post("/api/llm/chat/completions")
@@ -239,7 +258,7 @@ async def routed_local_completion(request: Request) -> JSONResponse:
             raise HTTPException(status_code=409, detail="Выбранная модель сейчас не загружена в LM Studio.") from error
         if code == "capability-not-loaded":
             raise HTTPException(status_code=409, detail="AUTO не нашёл загруженную модель с нужной возможностью.") from error
-        raise HTTPException(status_code=503, detail="В LM Studio не загружено ни одной модели.") from error
+        raise HTTPException(status_code=503, detail="В LM Studio не загружено ни одной chat-модели.") from error
 
     forwarded = dict(payload)
     forwarded["model"] = route["model"]
