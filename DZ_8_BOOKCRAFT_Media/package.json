@@ -7,7 +7,7 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "test": "node scripts/verify-entities.mjs && node scripts/verify-m1.mjs && node scripts/verify-ui.mjs",
+    "test": "node scripts/verify-entities.mjs && node scripts/verify-m1.mjs && node scripts/verify-ui.mjs && node scripts/verify-project-controls.mjs",
     "test:ui": "node scripts/verify-ui.mjs",
     "verify": "npm run test && npm run build"
   },
