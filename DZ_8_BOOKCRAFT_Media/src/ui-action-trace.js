@@ -287,6 +287,8 @@ function ensurePageBadge(page) {
     const diagnosis = traceRoot.querySelector(".trace-diagnosis");
     diagnosis?.insertAdjacentElement("beforebegin", badge);
   }
+  if (badge.dataset.pageTraceId === page.traceId && badge.textContent === page.label) return;
+  badge.dataset.pageTraceId = page.traceId;
   badge.textContent = page.label;
 }
 
