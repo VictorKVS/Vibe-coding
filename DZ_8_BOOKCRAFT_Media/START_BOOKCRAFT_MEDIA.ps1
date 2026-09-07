@@ -157,7 +157,7 @@ Ensure-FrontendDependencies $ProjectRoot
 
 if (-not (Test-Http $BackendUrl)) {
     $backendLog = Join-Path $RuntimeRoot "backend.log"
-    $process = Start-Process -FilePath $python -ArgumentList @("-m", "uvicorn", "backend.model_router_resilient_app:app", "--host", "127.0.0.1", "--port", "8018") -WorkingDirectory $ProjectRoot -RedirectStandardOutput $backendLog -RedirectStandardError (Join-Path $RuntimeRoot "backend.err.log") -WindowStyle Hidden -PassThru
+    $process = Start-Process -FilePath $python -ArgumentList @("-m", "uvicorn", "backend.observed_router_app:app", "--host", "127.0.0.1", "--port", "8018") -WorkingDirectory $ProjectRoot -RedirectStandardOutput $backendLog -RedirectStandardError (Join-Path $RuntimeRoot "backend.err.log") -WindowStyle Hidden -PassThru
     $owned += [ordered]@{ name = "bookcraft-backend"; pid = $process.Id; started_at = (Get-Date).ToUniversalTime().ToString("o") }
 }
 
@@ -205,4 +205,5 @@ Write-Host ""
 Write-Host "BOOK.CRAFT: $AppUrl"
 Write-Host "MindForge:   $MindForgeUrl"
 Write-Host "Models:      manual selection or resilient AUTO router via LM Studio"
+Write-Host "Trace:       live panel + .runtime\traces\gateway-YYYYMMDD.jsonl"
 Write-Host "Sound:       microphone/file -> Whisper; text -> selected local model"
