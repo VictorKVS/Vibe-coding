@@ -39,10 +39,12 @@ checks = {
     "stale frontend listener cleanup": 'Stop-OwnedListener -Port 5173 -Name "frontend"' in stopper,
     "stale backend listener cleanup": 'Stop-OwnedListener -Port 8018 -Name "backend"' in stopper,
     "port cleanup ownership guard": "Test-BookcraftOwnedProcess" in stopper and "Get-NetTCPConnection" in stopper,
+    "reserved PID variable not assigned": re.search(r"(?im)^\s*\$pid\s*=", stopper) is None,
+    "listener owner uses safe variable": "$ownerProcessId = [int]$listener.OwningProcess" in stopper,
 }
 
 failed = [name for name, passed in checks.items() if not passed]
-if re.search(r'\\$[A-Za-z_][A-Za-z0-9_]*:', stopper):
+if re.search(r'\$[A-Za-z_][A-Za-z0-9_]*:', stopper):
     failed.append("ambiguous PowerShell variable before colon")
 if failed:
     raise SystemExit("FAIL RELIABLE-START: " + ", ".join(failed))
