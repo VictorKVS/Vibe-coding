@@ -21,6 +21,7 @@ const checks = {
   "successful transition traced": trace.includes('postTrace("action.ready"'),
   "stuck transition traced": trace.includes('postTrace("action.stuck"'),
   "subpage identity traced": trace.includes('page_trace_id'),
+  "page badge render is idempotent": trace.includes('badge.dataset.pageTraceId === page.traceId') && trace.includes('badge.dataset.pageTraceId = page.traceId'),
   "UI action trace mounted": main.includes('mountUiActionTrace();'),
   "UI action feed mounted": main.includes('mountUiActionFeed();') && feed.includes('ДЕЙСТВИЯ UI'),
   "server UI trace endpoint exists": observed.includes('@app.post("/api/trace/ui-event")'),
