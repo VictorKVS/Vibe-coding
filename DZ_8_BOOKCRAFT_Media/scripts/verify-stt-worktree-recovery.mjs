@@ -8,7 +8,7 @@ const app = fs.readFileSync(new URL("../src/App.jsx", import.meta.url), "utf8");
 const checks = {
   "proven whisper executable key preserved": launcher.includes('Get-DotEnvValue $EnvFile "WHISPER_CPP_EXE"') && backend.includes('os.getenv("WHISPER_CPP_EXE"'),
   "proven whisper model key preserved": launcher.includes('Get-DotEnvValue $EnvFile "WHISPER_MODEL_PATH"') && backend.includes('os.getenv("WHISPER_MODEL_PATH"'),
-  "only STT paths inherited from prior worktree": launcher.includes("Only the two proven local STT paths are inherited") && !launcher.includes("GIGACHAT_ACCESS_TOKEN"),
+  "only STT paths inherited from prior worktree": launcher.includes('Get-DotEnvValue $EnvFile "WHISPER_CPP_EXE"') && launcher.includes('Get-DotEnvValue $EnvFile "WHISPER_MODEL_PATH"') && !launcher.includes("GIGACHAT_ACCESS_TOKEN"),
   "ignored env worktree recovery exists": launcher.includes("Git worktrees do not copy ignored .env files") && launcher.includes('DZ_8_BOOKCRAFT_Media\\.env'),
   "recovered values inherited by backend": launcher.includes('$env:WHISPER_CPP_EXE = $WhisperExe') && launcher.includes('$env:WHISPER_MODEL_PATH = $WhisperModel'),
   "whisper executable auto-discovery": launcher.includes("function Find-WhisperExecutable") && launcher.includes("whisper-cli.exe"),
