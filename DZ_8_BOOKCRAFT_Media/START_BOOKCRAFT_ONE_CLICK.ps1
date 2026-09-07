@@ -3,12 +3,16 @@ param()
 
 $ErrorActionPreference = "Stop"
 $ProjectRoot = Split-Path -Parent $MyInvocation.MyCommand.Path
+$RuntimeRoot = Join-Path $ProjectRoot ".runtime"
+$SttCacheFile = Join-Path $RuntimeRoot "stt-local-runtime.json"
 $LmStudioExe = Join-Path $env:LOCALAPPDATA "Programs\LM Studio\LM Studio.exe"
 $LmsCandidates = @(
     (Join-Path $env:LOCALAPPDATA "Programs\LM Studio\resources\app\.webpack\lms.exe"),
     (Join-Path $env:USERPROFILE ".lmstudio\bin\lms.exe")
 )
 $LmsExe = $LmsCandidates | Where-Object { Test-Path -LiteralPath $_ } | Select-Object -First 1
+
+New-Item -ItemType Directory -Force -Path $RuntimeRoot | Out-Null
 
 function Test-Http([string]$Url, [int]$TimeoutSec = 2) {
     try {
@@ -53,28 +57,120 @@ function Test-SttFiles([string]$WhisperExe, [string]$WhisperModel) {
     )
 }
 
+function Set-SttRuntime([string]$WhisperExe, [string]$WhisperModel, [string]$Label, [switch]$Persist) {
+    if (-not (Test-SttFiles $WhisperExe $WhisperModel)) { return $false }
+    $env:WHISPER_CPP_EXE = $WhisperExe
+    $env:WHISPER_MODEL_PATH = $WhisperModel
+    Write-Host "READY  Local Whisper STT  [$Label]" -ForegroundColor Green
+    Write-Host "       EXE   $WhisperExe" -ForegroundColor DarkGray
+    Write-Host "       MODEL $WhisperModel" -ForegroundColor DarkGray
+    if ($Persist) {
+        [ordered]@{
+            whisper_cpp_exe = $WhisperExe
+            whisper_model_path = $WhisperModel
+            discovered_at = (Get-Date).ToUniversalTime().ToString("o")
+        } | ConvertTo-Json | Set-Content -LiteralPath $SttCacheFile -Encoding UTF8
+    }
+    return $true
+}
+
 function Import-SttConfig([string]$EnvFile, [string]$Label) {
     $whisperExe = Get-DotEnvValue $EnvFile "WHISPER_CPP_EXE"
     $whisperModel = Get-DotEnvValue $EnvFile "WHISPER_MODEL_PATH"
-    if (-not (Test-SttFiles $whisperExe $whisperModel)) { return $false }
+    return Set-SttRuntime $whisperExe $whisperModel $Label -Persist
+}
 
-    # Only the two proven local STT paths are inherited. API keys/tokens are never copied.
-    $env:WHISPER_CPP_EXE = $whisperExe
-    $env:WHISPER_MODEL_PATH = $whisperModel
-    Write-Host "READY  Local Whisper STT  [$Label]" -ForegroundColor Green
-    return $true
+function Import-CachedSttRuntime {
+    if (-not (Test-Path -LiteralPath $SttCacheFile)) { return $false }
+    try {
+        $cached = Get-Content -LiteralPath $SttCacheFile -Raw | ConvertFrom-Json
+        return Set-SttRuntime ([string]$cached.whisper_cpp_exe) ([string]$cached.whisper_model_path) "cached auto-discovery"
+    } catch {
+        Remove-Item -LiteralPath $SttCacheFile -Force -ErrorAction SilentlyContinue
+        return $false
+    }
+}
+
+function Find-WhisperExecutable([string[]]$SearchRoots) {
+    $command = Get-Command whisper-cli.exe -ErrorAction SilentlyContinue
+    if ($command -and (Test-Path -LiteralPath $command.Source -PathType Leaf)) { return [string]$command.Source }
+
+    $direct = @(
+        "G:\1\whisper.cpp\build\bin\Release\whisper-cli.exe",
+        "G:\1\whisper.cpp\build\bin\whisper-cli.exe",
+        (Join-Path $env:USERPROFILE "whisper.cpp\build\bin\Release\whisper-cli.exe"),
+        (Join-Path $env:USERPROFILE "whisper.cpp\build\bin\whisper-cli.exe"),
+        (Join-Path $env:LOCALAPPDATA "whisper.cpp\build\bin\Release\whisper-cli.exe")
+    )
+    foreach ($candidate in $direct) {
+        if ($candidate -and (Test-Path -LiteralPath $candidate -PathType Leaf)) { return $candidate }
+    }
+
+    foreach ($root in $SearchRoots | Select-Object -Unique) {
+        if (-not $root -or -not (Test-Path -LiteralPath $root -PathType Container)) { continue }
+        foreach ($name in @("whisper-cli.exe", "main.exe")) {
+            try {
+                $found = Get-ChildItem -LiteralPath $root -Filter $name -File -Recurse -ErrorAction SilentlyContinue | Select-Object -First 1
+                if ($found) { return [string]$found.FullName }
+            } catch {}
+        }
+    }
+    return $null
+}
+
+function Get-WhisperModelRank([string]$Name) {
+    $lower = $Name.ToLowerInvariant()
+    if ($lower -like "*large-v3-turbo*") { return 0 }
+    if ($lower -like "*large-v3*") { return 1 }
+    if ($lower -like "*large-v2*") { return 2 }
+    if ($lower -like "*medium*") { return 3 }
+    if ($lower -like "*small*") { return 4 }
+    if ($lower -like "*base*") { return 5 }
+    if ($lower -like "*tiny*") { return 6 }
+    return 20
+}
+
+function Find-WhisperModel([string]$WhisperExe, [string[]]$SearchRoots) {
+    $modelCandidates = @()
+
+    if ($WhisperExe) {
+        $cursor = Split-Path $WhisperExe -Parent
+        for ($depth = 0; $depth -lt 6 -and $cursor; $depth += 1) {
+            $modelsDir = Join-Path $cursor "models"
+            if (Test-Path -LiteralPath $modelsDir -PathType Container) {
+                try { $modelCandidates += @(Get-ChildItem -LiteralPath $modelsDir -Filter "ggml-*.bin" -File -ErrorAction SilentlyContinue) } catch {}
+            }
+            $parent = Split-Path $cursor -Parent
+            if (-not $parent -or $parent -eq $cursor) { break }
+            $cursor = $parent
+        }
+    }
+
+    if (-not $modelCandidates.Count) {
+        foreach ($root in $SearchRoots | Select-Object -Unique) {
+            if (-not $root -or -not (Test-Path -LiteralPath $root -PathType Container)) { continue }
+            try {
+                $modelCandidates += @(Get-ChildItem -LiteralPath $root -Filter "ggml-*.bin" -File -Recurse -ErrorAction SilentlyContinue)
+            } catch {}
+        }
+    }
+
+    if (-not $modelCandidates.Count) { return $null }
+    $ranked = $modelCandidates | Sort-Object @{ Expression = { Get-WhisperModelRank $_.Name } }, @{ Expression = { -$_.Length } }
+    return [string]($ranked | Select-Object -First 1).FullName
 }
 
 function Resolve-SttConfig {
     if (Test-SttFiles $env:WHISPER_CPP_EXE $env:WHISPER_MODEL_PATH) {
-        Write-Host "READY  Local Whisper STT  [process environment]" -ForegroundColor Green
+        [void](Set-SttRuntime $env:WHISPER_CPP_EXE $env:WHISPER_MODEL_PATH "process environment")
         return
     }
 
     $currentEnv = Join-Path $ProjectRoot ".env"
     if (Import-SttConfig $currentEnv "current .env") { return }
+    if (Import-CachedSttRuntime) { return }
 
-    # Git worktrees do not copy ignored .env files. Look for the previous BOOK.CRAFT
+    # Git worktrees do not copy ignored .env files. Look for a previous BOOK.CRAFT
     # worktree and inherit only WHISPER_CPP_EXE + WHISPER_MODEL_PATH from it.
     $repoRoot = Split-Path $ProjectRoot -Parent
     $workspaceRoot = Split-Path $repoRoot -Parent
@@ -86,14 +182,33 @@ function Resolve-SttConfig {
             if (Test-Path -LiteralPath $candidate) { $candidateEnvFiles += $candidate }
         }
     }
-
     foreach ($candidate in $candidateEnvFiles) {
         $label = "previous worktree: $([IO.Path]::GetFileName((Split-Path (Split-Path $candidate -Parent) -Parent)))"
         if (Import-SttConfig $candidate $label) { return }
     }
 
+    Write-Host "SEARCH Local Whisper STT runtime..." -ForegroundColor Cyan
+    $searchRoots = @($ProjectRoot, $repoRoot, $workspaceRoot)
+    if (Test-Path -LiteralPath "G:\1\whisper.cpp") { $searchRoots += "G:\1\whisper.cpp" }
+    if (Test-Path -LiteralPath (Join-Path $env:USERPROFILE "whisper.cpp")) { $searchRoots += (Join-Path $env:USERPROFILE "whisper.cpp") }
+
+    $whisperExe = Find-WhisperExecutable $searchRoots
+    if (-not $whisperExe) {
+        Write-Host "WAIT   Local Whisper STT: whisper-cli.exe not found." -ForegroundColor Yellow
+        Write-Host "       Recorder works, but transcription needs the local whisper.cpp executable." -ForegroundColor DarkGray
+        return
+    }
+
+    $whisperModel = Find-WhisperModel $whisperExe $searchRoots
+    if (-not $whisperModel) {
+        Write-Host "WAIT   Local Whisper STT: model ggml-*.bin not found." -ForegroundColor Yellow
+        Write-Host "       EXE found: $whisperExe" -ForegroundColor DarkGray
+        return
+    }
+
+    if (Set-SttRuntime $whisperExe $whisperModel "auto-discovered" -Persist) { return }
+
     Write-Host "WAIT   Local Whisper STT config not found. Microphone/MP3 transcription is unavailable." -ForegroundColor Yellow
-    Write-Host "       Expected WHISPER_CPP_EXE + WHISPER_MODEL_PATH from the proven BOOK.CRAFT setup." -ForegroundColor DarkGray
 }
 
 function Find-ComfyRoot {
@@ -122,8 +237,7 @@ if (Test-Path -LiteralPath $Stopper) {
     Start-Sleep -Seconds 1
 }
 
-# Restore the exact local Whisper paths used by the proven audio baseline before
-# launching the backend. The child process inherits these variables.
+# Restore or auto-discover the exact local Whisper runtime before launching the backend.
 Resolve-SttConfig
 
 # LM Studio UI is only a host process here; the user does not need to interact with it.
