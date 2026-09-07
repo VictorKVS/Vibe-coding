@@ -1,6 +1,7 @@
 import fs from "node:fs";
 
 const quick = fs.readFileSync(new URL("../src/sound-quick-capture.js", import.meta.url), "utf8");
+const observed = fs.readFileSync(new URL("../backend/observed_router_app.py", import.meta.url), "utf8");
 const main = fs.readFileSync(new URL("../src/main.jsx", import.meta.url), "utf8");
 
 const checks = {
@@ -9,6 +10,9 @@ const checks = {
   "MP3 story button visible": quick.includes("⬆ Рассказ MP3"),
   "audio types accepted": quick.includes(".mp3,.wav,.m4a,.ogg,.webm"),
   "local STT endpoint used": quick.includes("/api/stt/transcribe"),
+  "STT status endpoint used": quick.includes("/api/stt/status") && observed.includes('@app.get("/api/stt/status")'),
+  "Whisper preflight visible": quick.includes("WHISPER READY") && quick.includes("STT ERROR"),
+  "safe STT failure categories": observed.includes("exe-not-found") && observed.includes("model-not-found") && observed.includes("whisper-exit-error") && observed.includes("empty-transcript"),
   "microphone uses MediaRecorder": quick.includes("new MediaRecorder(stream"),
   "premium recorder shell exists": quick.includes("Премиум-диктофон") && quick.includes("BOOK·CRAFT VOICE STUDIO"),
   "live waveform uses analyser": quick.includes("createAnalyser()") && quick.includes("getByteTimeDomainData"),
@@ -28,4 +32,4 @@ const checks = {
 const failed = Object.entries(checks).filter(([, ok]) => !ok).map(([name]) => name);
 if (failed.length) throw new Error(`FAIL SOUND-QUICK-CAPTURE: ${failed.join(", ")}`);
 
-console.log(`PASS SOUND-QUICK-CAPTURE: ${Object.keys(checks).length}/${Object.keys(checks).length} premium recorder gates green.`);
+console.log(`PASS SOUND-QUICK-CAPTURE: ${Object.keys(checks).length}/${Object.keys(checks).length} premium recorder + STT diagnostics gates green.`);
