@@ -6,13 +6,14 @@ launcher = (ROOT / "START_BOOKCRAFT_MEDIA.ps1").read_text(encoding="utf-8-sig")
 stopper = (ROOT / "STOP_BOOKCRAFT_MEDIA.ps1").read_text(encoding="utf-8-sig")
 backend = (ROOT / "backend" / "app.py").read_text(encoding="utf-8")
 router_backend = (ROOT / "backend" / "model_router_app.py").read_text(encoding="utf-8")
+resilient_router = (ROOT / "backend" / "model_router_resilient_app.py").read_text(encoding="utf-8")
 frontend = (ROOT / "src" / "App.jsx").read_text(encoding="utf-8")
 vite = (ROOT / "vite.config.js").read_text(encoding="utf-8")
 
 checks = {
     "four service endpoints": all(port in launcher for port in ("5173", "8018", "1234", "8188")),
     "Comfy optional for text STT router": "OPTIONAL  ComfyUI" in launcher and "ComfyUI 8188 is not running" in launcher,
-    "router-aware backend launch": "backend.model_router_app:app" in launcher,
+    "resilient router backend launch": "backend.model_router_resilient_app:app" in launcher,
     "LM auth classification": "authentication-required" in launcher and "Require Authentication" in launcher,
     "GigaChat template compatibility": '"--no-jinja", "--chat-template", "chatml"' in launcher,
     "loaded model discovery": '"/llm-api/v1/models"' in frontend,
@@ -20,6 +21,8 @@ checks = {
     "model discovery routed through gateway": 'target: "http://127.0.0.1:8018"' in vite,
     "auto router catalog": '@app.get("/v1/models")' in router_backend and 'AUTO_MODEL_ID = "auto"' in router_backend,
     "manual selection preserved": '"mode": "manual"' in router_backend,
+    "AUTO failure quarantine": 'AUTO_FAILURE_TTL_SECONDS' in resilient_router and 'llm.route.quarantine' in resilient_router,
+    "AUTO fallback trace": 'llm.route.fallback' in resilient_router and 'fallbacks' in resilient_router,
     "readiness API": '@app.get("/api/readiness")' in backend,
     "safe runtime logs": 'RuntimeRoot = Join-Path $ProjectRoot ".runtime"' in launcher,
     "launcher JSONL trace": "Write-RunTrace" in launcher and "run_id" in launcher,
@@ -37,4 +40,4 @@ if re.search(r'\\$[A-Za-z_][A-Za-z0-9_]*:', stopper):
 if failed:
     raise SystemExit("FAIL RELIABLE-START: " + ", ".join(failed))
 
-print(f"PASS RELIABLE-START: {len(checks)}/{len(checks)} launch, router and shutdown gates green")
+print(f"PASS RELIABLE-START: {len(checks)}/{len(checks)} launch, resilient router and shutdown gates green")
