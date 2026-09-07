@@ -40,13 +40,15 @@ function Stop-OwnedListener([int]$Port, [string]$Name) {
     }
 
     foreach ($listener in $listeners) {
-        $pid = [int]$listener.OwningProcess
-        if ($pid -le 0) { continue }
-        if (Test-BookcraftOwnedProcess $pid) {
-            Stop-Process -Id $pid -Force -ErrorAction SilentlyContinue
-            Write-Host "STOPPED stale $Name listener on :$Port (PID $pid)" -ForegroundColor Green
+        # $PID is a built-in read-only PowerShell variable. PowerShell variable
+        # names are case-insensitive, so never use a local variable named $pid.
+        $ownerProcessId = [int]$listener.OwningProcess
+        if ($ownerProcessId -le 0) { continue }
+        if (Test-BookcraftOwnedProcess $ownerProcessId) {
+            Stop-Process -Id $ownerProcessId -Force -ErrorAction SilentlyContinue
+            Write-Host "STOPPED stale $Name listener on :$Port (PID $ownerProcessId)" -ForegroundColor Green
         } else {
-            Write-Host "SKIPPED :$Port listener PID $pid; it does not belong to this BOOK.CRAFT worktree." -ForegroundColor DarkGray
+            Write-Host "SKIPPED :$Port listener PID $ownerProcessId; it does not belong to this BOOK.CRAFT worktree." -ForegroundColor DarkGray
         }
     }
 }
