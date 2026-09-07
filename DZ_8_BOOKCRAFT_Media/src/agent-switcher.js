@@ -37,6 +37,19 @@ function allPresets() {
   return [...BUILTIN_PRESETS, ...readUserPresets()];
 }
 
+function presetSignature(presets = allPresets()) {
+  return JSON.stringify(
+    presets.map((item) => ({
+      id: item.id,
+      name: item.name,
+      protocol: item.protocol || "",
+      endpoint: item.endpoint || "",
+      model: item.model || "",
+      builtin: Boolean(item.builtin),
+    })),
+  );
+}
+
 function nativeSetValue(element, value) {
   if (!element) return;
   const prototype = element instanceof HTMLSelectElement
@@ -152,11 +165,18 @@ function buildSwitcher(gateway) {
   return root;
 }
 
-function renderPresetButtons(gateway, root) {
+function renderPresetButtons(gateway, root, force = false) {
   const holder = root.querySelector(".agent-switcher-presets");
   const status = root.querySelector(".agent-switcher-status");
   if (!holder || !status) return;
 
+  const presets = allPresets();
+  const signature = presetSignature(presets);
+  if (!force && holder.dataset.signature === signature) return;
+
+  // Set the guard before changing child nodes. MutationObserver may fire as a
+  // consequence of replaceChildren(), and the next scan must become a no-op.
+  holder.dataset.signature = signature;
   holder.replaceChildren();
   holder.style.cssText = "display:flex;gap:8px;flex-wrap:wrap;margin:9px 0";
 
@@ -172,7 +192,7 @@ function renderPresetButtons(gateway, root) {
   });
   holder.appendChild(localButton);
 
-  for (const preset of allPresets()) {
+  for (const preset of presets) {
     const button = document.createElement("button");
     button.type = "button";
     button.textContent = preset.name;
@@ -223,7 +243,7 @@ function wireActions(gateway, root) {
     const id = `user-${Date.now()}`;
     items.push({ id, name, ...config, builtin: false });
     writeUserPresets(items);
-    renderPresetButtons(gateway, root);
+    renderPresetButtons(gateway, root, true);
     status.textContent = `Пресет «${name}» сохранён. API-ключ не сохранялся.`;
     status.dataset.kind = "ready";
   });
@@ -243,7 +263,7 @@ function wireActions(gateway, root) {
       return;
     }
     writeUserPresets(next);
-    renderPresetButtons(gateway, root);
+    renderPresetButtons(gateway, root, true);
     status.textContent = `Пресет «${name}» удалён.`;
     status.dataset.kind = "ready";
   });
