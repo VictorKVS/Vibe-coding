@@ -52,6 +52,11 @@ def _safe_trace_data(value: Any, key: str = "") -> Any:
     return str(value)[:300]
 
 
+def _base_audio_content_type(content_type: str | None) -> str:
+    """Normalize browser MIME such as audio/webm;codecs=opus to audio/webm."""
+    return str(content_type or "").split(";", 1)[0].strip().lower()
+
+
 # Replace endpoints that need stronger observability / long-form behavior.
 app.router.routes[:] = [
     route
@@ -194,7 +199,14 @@ def _transcribe_long_audio(audio_path: Path) -> str:
 async def observed_long_audio_transcription(request: Request, audio: Annotated[UploadFile, File()]) -> dict[str, object]:
     """Transcribe short dictation or a long MP3 story without loading it all into RAM."""
     request_id = request.headers.get("x-request-id", "").strip()[:80] or uuid.uuid4().hex
-    if audio.content_type and audio.content_type not in SUPPORTED_AUDIO:
+    normalized_content_type = _base_audio_content_type(audio.content_type)
+    if normalized_content_type and normalized_content_type not in SUPPORTED_AUDIO:
+        write_trace(
+            "stt.transcribe.error",
+            request_id=request_id,
+            category="unsupported-media-type",
+            content_type=normalized_content_type[:80],
+        )
         raise HTTPException(status_code=415, detail="Поддерживаются MP3, WAV, M4A, OGG и WebM.")
 
     preflight = _stt_runtime_status()
@@ -224,7 +236,14 @@ async def observed_long_audio_transcription(request: Request, audio: Annotated[U
             if total_bytes == 0:
                 raise HTTPException(status_code=422, detail="Аудиофайл пуст.")
 
-            write_trace("stt.transcribe.start", request_id=request_id, content_type=audio.content_type or "unknown", size_bytes=total_bytes, long_form=total_bytes > 25 * 1024 * 1024, max_story_audio_mb=max_mb)
+            write_trace(
+                "stt.transcribe.start",
+                request_id=request_id,
+                content_type=normalized_content_type or "unknown",
+                size_bytes=total_bytes,
+                long_form=total_bytes > 25 * 1024 * 1024,
+                max_story_audio_mb=max_mb,
+            )
             transcript = _transcribe_long_audio(audio_path)
     except HTTPException:
         raise
