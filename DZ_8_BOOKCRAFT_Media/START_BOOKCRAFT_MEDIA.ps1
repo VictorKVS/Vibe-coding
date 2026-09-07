@@ -199,10 +199,21 @@ $GigaChatCompatibility = @("--no-jinja", "--chat-template", "chatml")
 Write-RunTrace "launch.finish" "complete" "frontend=$frontendReady backend=$backendReady mindforge=$mindForgeReady llm=$llmReady comfy=$comfyReady"
 
 if ($Verify -and (-not $backendReady -or -not $frontendReady)) { throw "Обязательные сервисы BOOK.CRAFT не готовы." }
-if ($frontendReady) { Start-Process $AppUrl }
+
+$BrowserUrl = "$AppUrl/?run=$RunId"
+if ($frontendReady) {
+    Write-Host "OPEN   BOOK.CRAFT  $BrowserUrl" -ForegroundColor Cyan
+    Write-RunTrace "browser.open" "requested" $BrowserUrl
+    try {
+        Start-Process $BrowserUrl | Out-Null
+    } catch {
+        Write-RunTrace "browser.open" "failed" $_.Exception.Message
+        Write-Host "WARNING  Browser was not opened automatically. Open: $BrowserUrl" -ForegroundColor Yellow
+    }
+}
 
 Write-Host ""
-Write-Host "BOOK.CRAFT: $AppUrl"
+Write-Host "BOOK.CRAFT: $BrowserUrl"
 Write-Host "MindForge:   $MindForgeUrl"
 Write-Host "Models:      manual selection or resilient AUTO router via LM Studio"
 Write-Host "Trace:       live panel + .runtime\traces\gateway-YYYYMMDD.jsonl"
