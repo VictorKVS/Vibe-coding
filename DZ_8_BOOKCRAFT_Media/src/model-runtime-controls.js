@@ -1,6 +1,7 @@
 const RUNTIME_API = "http://127.0.0.1:8018/api/models/runtime";
 const SWITCH_API = "http://127.0.0.1:8018/api/models/switch";
 const CATALOG_API = "/llm-api/v1/models";
+const LOCAL_SELECTION_KEY = "bookcraft.local.model.selection.v1";
 
 function sleep(ms) {
   return new Promise((resolve) => window.setTimeout(resolve, ms));
@@ -47,10 +48,11 @@ function ensureStatusNode(select) {
   return node;
 }
 
-function setStatus(select, text, kind = "info") {
+function setStatus(select, text, kind = "info", failedModel = "") {
   const node = ensureStatusNode(select);
   node.textContent = text;
   node.dataset.kind = kind;
+  node.dataset.failedModel = failedModel;
   node.style.borderColor = kind === "error"
     ? "rgba(255,100,100,.5)"
     : kind === "ready"
@@ -91,12 +93,25 @@ async function refreshOptionLabels(select) {
         : "AUTO выбран. Router загрузит подходящую модель при следующем запросе.",
       "info",
     );
+    return;
+  }
+
+  const statusNode = ensureStatusNode(select);
+  if (statusNode.dataset.kind === "error" && statusNode.dataset.failedModel === select.value) return;
+
+  if (loadedIds.has(select.value)) {
+    setStatus(select, `READY · ВЫБРАНА И В ПАМЯТИ: ${select.value}`, "ready");
+  } else {
+    setStatus(select, `ВЫБРАНА: ${select.value} · модель есть на диске, но сейчас не загружена.`, "info");
   }
 }
 
 async function switchSelectedModel(select) {
   const selected = select.value;
+  localStorage.setItem(LOCAL_SELECTION_KEY, selected || "auto");
+
   if (!selected || selected === "auto") {
+    setStatus(select, "AUTO выбран. Router сам выберет рабочую модель для следующего запроса.", "info");
     await refreshOptionLabels(select);
     return;
   }
@@ -114,10 +129,7 @@ async function switchSelectedModel(select) {
 
   if (!response.ok) {
     const detail = payload?.detail || `HTTP ${response.status}`;
-    setStatus(select, `LOAD FAILED · выбрана ${selected} · ${detail}`, "error");
-    await refreshOptionLabels(select);
-    // Важно: выбранное значение не меняем. Пользователь должен видеть,
-    // какую именно модель он попытался активировать.
+    setStatus(select, `LOAD FAILED · выбрана ${selected} · ${detail}`, "error", selected);
     return;
   }
 
@@ -137,13 +149,27 @@ function findLocalModelSelect() {
   return selects.find((select) => Array.from(select.options).some((option) => option.value === "auto")) || null;
 }
 
+function restoreSelection(select) {
+  if (select.dataset.bookcraftSelectionRestored === "1") return;
+  select.dataset.bookcraftSelectionRestored = "1";
+  const saved = localStorage.getItem(LOCAL_SELECTION_KEY);
+  if (!saved || saved === select.value) return;
+  if (!Array.from(select.options).some((option) => option.value === saved)) return;
+
+  // React контролирует select, поэтому восстанавливаем выбор через обычное change-событие.
+  select.value = saved;
+  select.dispatchEvent(new Event("change", { bubbles: true }));
+}
+
 function wireSelect(select) {
   if (select.dataset.bookcraftRuntimeWired === "1") return;
   select.dataset.bookcraftRuntimeWired = "1";
   select.addEventListener("change", () => {
-    // Даём React сначала сохранить controlled value.
+    const selected = select.value;
+    localStorage.setItem(LOCAL_SELECTION_KEY, selected || "auto");
     window.setTimeout(() => switchSelectedModel(select), 0);
   });
+  window.setTimeout(() => restoreSelection(select), 50);
   refreshOptionLabels(select).catch(() => {
     setStatus(select, "Не удалось получить runtime-состояние LM Studio.", "error");
   });
@@ -169,3 +195,7 @@ export function mountModelRuntimeControls() {
     if (select) refreshOptionLabels(select).catch(() => {});
   }, 5000);
 }
+
+export const MODEL_RUNTIME_KEYS = {
+  selection: LOCAL_SELECTION_KEY,
+};
