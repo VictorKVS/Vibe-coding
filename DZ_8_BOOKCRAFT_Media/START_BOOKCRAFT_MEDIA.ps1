@@ -93,7 +93,7 @@ function Find-Python311Plus {
 function Ensure-BookcraftPython([string]$Root) {
     foreach ($environmentName in @(".venv-runtime", ".venv")) {
         $venvPython = Join-Path $Root "$environmentName\Scripts\python.exe"
-        if (Test-BookcraftPython $venvPython) { return $venvPython }
+        if (Test-BookcraftPython $venvPython) { return [string]$venvPython }
     }
 
     $basePython = Find-Python311Plus
@@ -106,14 +106,14 @@ function Ensure-BookcraftPython([string]$Root) {
     Write-Host "SETUP  Python runtime: $basePython" -ForegroundColor Cyan
     Write-RunTrace "dependencies.python" "installing" $basePython
     if (Test-Path -LiteralPath $venvRoot) { Remove-Item -LiteralPath $venvRoot -Recurse -Force }
-    & $basePython -m venv $venvRoot
+    & $basePython -m venv $venvRoot | Out-Host
     if ($LASTEXITCODE -ne 0) { throw "Не удалось создать .venv-runtime." }
-    & $venvPython -m pip install --disable-pip-version-check -r (Join-Path $Root "backend\requirements.txt")
+    & $venvPython -m pip install --disable-pip-version-check -r (Join-Path $Root "backend\requirements.txt") | Out-Host
     if ($LASTEXITCODE -ne 0) { throw "Не удалось установить Python-зависимости BOOK.CRAFT." }
     if (-not (Test-BookcraftPython $venvPython)) { throw "Python runtime создан, но зависимости не прошли проверку." }
     Write-Host "READY  Python runtime" -ForegroundColor Green
     Write-RunTrace "dependencies.python" "ready" $venvPython
-    return $venvPython
+    return [string]$venvPython
 }
 
 function Ensure-FrontendDependencies([string]$Root) {
@@ -124,7 +124,7 @@ function Ensure-FrontendDependencies([string]$Root) {
     Write-RunTrace "dependencies.frontend" "installing" "npm ci"
     Push-Location $Root
     try {
-        & $npm ci
+        & $npm ci | Out-Host
         if ($LASTEXITCODE -ne 0) { throw "npm ci завершился с кодом $LASTEXITCODE" }
     } finally { Pop-Location }
     if (-not (Test-Path -LiteralPath $vite)) { throw "Vite не найден после npm ci." }
@@ -138,21 +138,21 @@ function Resolve-Python([string]$Root) {
         if (Test-Path -LiteralPath $venvPython) {
             try {
                 & $venvPython -c "import fastapi, uvicorn" *> $null
-                if ($LASTEXITCODE -eq 0) { return $venvPython }
+                if ($LASTEXITCODE -eq 0) { return [string]$venvPython }
             } catch {}
         }
     }
     $python = Get-Command python.exe -ErrorAction SilentlyContinue
-    if ($python) { return $python.Source }
+    if ($python) { return [string]$python.Source }
     $py = Get-Command py.exe -ErrorAction SilentlyContinue
-    if ($py) { return $py.Source }
+    if ($py) { return [string]$py.Source }
     throw "Python с FastAPI и Uvicorn не найден."
 }
 
 Set-Location -LiteralPath $ProjectRoot
 $owned = @()
 
-$python = Ensure-BookcraftPython $ProjectRoot
+$python = [string](Ensure-BookcraftPython $ProjectRoot | Select-Object -Last 1)
 Ensure-FrontendDependencies $ProjectRoot
 
 if (-not (Test-Http $BackendUrl)) {
@@ -162,7 +162,7 @@ if (-not (Test-Http $BackendUrl)) {
 }
 
 if (-not (Test-Http $AppUrl)) {
-    $npm = (Get-Command npm.cmd -ErrorAction Stop).Source
+    $npm = [string](Get-Command npm.cmd -ErrorAction Stop).Source
     $frontendLog = Join-Path $RuntimeRoot "frontend.log"
     $process = Start-Process -FilePath $npm -ArgumentList @("run", "dev", "--", "--host", "127.0.0.1") -WorkingDirectory $ProjectRoot -RedirectStandardOutput $frontendLog -RedirectStandardError (Join-Path $RuntimeRoot "frontend.err.log") -WindowStyle Hidden -PassThru
     $owned += [ordered]@{ name = "bookcraft-frontend"; pid = $process.Id; started_at = (Get-Date).ToUniversalTime().ToString("o") }
@@ -170,7 +170,7 @@ if (-not (Test-Http $AppUrl)) {
 
 if ((Test-Path -LiteralPath $MindForgeRoot) -and -not (Test-Http $MindForgeUrl)) {
     try {
-        $mindPython = Resolve-Python $MindForgeRoot
+        $mindPython = [string](Resolve-Python $MindForgeRoot | Select-Object -Last 1)
         $process = Start-Process -FilePath $mindPython -ArgumentList @("-m", "uvicorn", "services.api.main:app", "--host", "127.0.0.1", "--port", "8000") -WorkingDirectory $MindForgeRoot -RedirectStandardOutput (Join-Path $RuntimeRoot "mindforge.log") -RedirectStandardError (Join-Path $RuntimeRoot "mindforge.err.log") -WindowStyle Hidden -PassThru
         $owned += [ordered]@{ name = "mindforge-api"; pid = $process.Id; started_at = (Get-Date).ToUniversalTime().ToString("o") }
     } catch {
