@@ -36,6 +36,9 @@ checks = {
     "trace review endpoint": '@app.get("/api/trace/recent")' in backend,
     "owned process shutdown": "no longer belongs to BOOK.CRAFT" in stopper,
     "no blind process kill": "Get-CimInstance Win32_Process" in stopper,
+    "stale frontend listener cleanup": 'Stop-OwnedListener -Port 5173 -Name "frontend"' in stopper,
+    "stale backend listener cleanup": 'Stop-OwnedListener -Port 8018 -Name "backend"' in stopper,
+    "port cleanup ownership guard": "Test-BookcraftOwnedProcess" in stopper and "Get-NetTCPConnection" in stopper,
 }
 
 failed = [name for name, passed in checks.items() if not passed]
