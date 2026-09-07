@@ -5,8 +5,8 @@ $ErrorActionPreference = "Stop"
 $ProjectRoot = Split-Path -Parent $MyInvocation.MyCommand.Path
 $LmStudioExe = Join-Path $env:LOCALAPPDATA "Programs\LM Studio\LM Studio.exe"
 $LmsCandidates = @(
-    (Join-Path $env:USERPROFILE ".lmstudio\bin\lms.exe"),
-    (Join-Path $env:LOCALAPPDATA "Programs\LM Studio\resources\app\.webpack\lms.exe")
+    (Join-Path $env:LOCALAPPDATA "Programs\LM Studio\resources\app\.webpack\lms.exe"),
+    (Join-Path $env:USERPROFILE ".lmstudio\bin\lms.exe")
 )
 $LmsExe = $LmsCandidates | Where-Object { Test-Path -LiteralPath $_ } | Select-Object -First 1
 
