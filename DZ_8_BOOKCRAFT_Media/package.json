@@ -7,7 +7,7 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "test": "node scripts/verify-entities.mjs && node scripts/verify-m1.mjs && node scripts/verify-ui.mjs && node scripts/verify-project-controls.mjs && node scripts/verify-agent-switcher.mjs && node scripts/verify-live-trace.mjs && node scripts/verify-author-project-hub.mjs && node scripts/verify-fresh-project-start.mjs && node scripts/verify-ui-action-trace.mjs && node scripts/verify-narrative-engineering-ui.mjs",
+    "test": "node scripts/verify-entities.mjs && node scripts/verify-m1.mjs && node scripts/verify-ui.mjs && node scripts/verify-project-controls.mjs && node scripts/verify-agent-switcher.mjs && node scripts/verify-live-trace.mjs && node scripts/verify-author-project-hub.mjs && node scripts/verify-fresh-project-start.mjs && node scripts/verify-ui-action-trace.mjs && node scripts/verify-narrative-engineering-ui.mjs && node scripts/verify-sound-engineering.mjs",
     "test:ui": "node scripts/verify-ui.mjs",
     "verify": "npm run test && npm run build"
   },
