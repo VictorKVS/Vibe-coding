@@ -13,6 +13,7 @@ import { mountCoverLoginEnhancer } from "./cover-login-enhancer.js";
 import { mountProjectFormatBrowser } from "./project-format-browser.js";
 import { mountNarrativeEngineeringUi } from "./narrative-engineering-ui.js";
 import { mountSoundEngineeringUi } from "./sound-engineering-ui.js";
+import { mountSoundQuickCapture } from "./sound-quick-capture.js";
 import "./styles.css";
 
 prepareProjectHubStartup();
@@ -30,6 +31,7 @@ mountCoverLoginEnhancer();
 mountProjectFormatBrowser();
 mountNarrativeEngineeringUi();
 mountSoundEngineeringUi();
+mountSoundQuickCapture();
 mountModelRuntimeControls();
 mountAgentSwitcher();
 mountLiveTracePanel();
