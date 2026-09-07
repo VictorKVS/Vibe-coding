@@ -45,6 +45,13 @@ function Find-ComfyRoot {
 Write-Host "BOOK.CRAFT ONE CLICK" -ForegroundColor Cyan
 Write-Host "===================="
 
+# Always replace our own Gateway/UI processes so code updates are picked up.
+$Stopper = Join-Path $ProjectRoot "STOP_BOOKCRAFT_MEDIA.ps1"
+if (Test-Path -LiteralPath $Stopper) {
+    & $Stopper | Out-Host
+    Start-Sleep -Seconds 1
+}
+
 # LM Studio UI is only a host process here; the user does not need to interact with it.
 if (-not (Test-Http "http://127.0.0.1:1234/v1/models")) {
     if (-not (Get-Process -Name "LM Studio" -ErrorAction SilentlyContinue)) {
