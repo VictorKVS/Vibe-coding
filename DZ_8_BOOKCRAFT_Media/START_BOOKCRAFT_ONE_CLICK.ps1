@@ -26,6 +26,76 @@ function Wait-Http([string]$Url, [int]$Seconds) {
     return $false
 }
 
+function Get-DotEnvValue([string]$EnvFile, [string]$Name) {
+    if (-not $EnvFile -or -not (Test-Path -LiteralPath $EnvFile)) { return $null }
+    $escapedName = [regex]::Escape($Name)
+    foreach ($line in Get-Content -LiteralPath $EnvFile -ErrorAction SilentlyContinue) {
+        if ($line -match "^\s*$escapedName\s*=\s*(.*?)\s*$") {
+            $value = [string]$Matches[1]
+            if ($value.Length -ge 2) {
+                $first = $value.Substring(0, 1)
+                $last = $value.Substring($value.Length - 1, 1)
+                if (($first -eq '"' -and $last -eq '"') -or ($first -eq "'" -and $last -eq "'")) {
+                    $value = $value.Substring(1, $value.Length - 2)
+                }
+            }
+            return [Environment]::ExpandEnvironmentVariables($value)
+        }
+    }
+    return $null
+}
+
+function Test-SttFiles([string]$WhisperExe, [string]$WhisperModel) {
+    return [bool](
+        $WhisperExe -and $WhisperModel -and
+        (Test-Path -LiteralPath $WhisperExe -PathType Leaf) -and
+        (Test-Path -LiteralPath $WhisperModel -PathType Leaf)
+    )
+}
+
+function Import-SttConfig([string]$EnvFile, [string]$Label) {
+    $whisperExe = Get-DotEnvValue $EnvFile "WHISPER_CPP_EXE"
+    $whisperModel = Get-DotEnvValue $EnvFile "WHISPER_MODEL_PATH"
+    if (-not (Test-SttFiles $whisperExe $whisperModel)) { return $false }
+
+    # Only the two proven local STT paths are inherited. API keys/tokens are never copied.
+    $env:WHISPER_CPP_EXE = $whisperExe
+    $env:WHISPER_MODEL_PATH = $whisperModel
+    Write-Host "READY  Local Whisper STT  [$Label]" -ForegroundColor Green
+    return $true
+}
+
+function Resolve-SttConfig {
+    if (Test-SttFiles $env:WHISPER_CPP_EXE $env:WHISPER_MODEL_PATH) {
+        Write-Host "READY  Local Whisper STT  [process environment]" -ForegroundColor Green
+        return
+    }
+
+    $currentEnv = Join-Path $ProjectRoot ".env"
+    if (Import-SttConfig $currentEnv "current .env") { return }
+
+    # Git worktrees do not copy ignored .env files. Look for the previous BOOK.CRAFT
+    # worktree and inherit only WHISPER_CPP_EXE + WHISPER_MODEL_PATH from it.
+    $repoRoot = Split-Path $ProjectRoot -Parent
+    $workspaceRoot = Split-Path $repoRoot -Parent
+    $candidateEnvFiles = @()
+    if ($workspaceRoot -and (Test-Path -LiteralPath $workspaceRoot)) {
+        foreach ($directory in Get-ChildItem -LiteralPath $workspaceRoot -Directory -ErrorAction SilentlyContinue) {
+            if ($directory.FullName -eq $repoRoot) { continue }
+            $candidate = Join-Path $directory.FullName "DZ_8_BOOKCRAFT_Media\.env"
+            if (Test-Path -LiteralPath $candidate) { $candidateEnvFiles += $candidate }
+        }
+    }
+
+    foreach ($candidate in $candidateEnvFiles) {
+        $label = "previous worktree: $([IO.Path]::GetFileName((Split-Path (Split-Path $candidate -Parent) -Parent)))"
+        if (Import-SttConfig $candidate $label) { return }
+    }
+
+    Write-Host "WAIT   Local Whisper STT config not found. Microphone/MP3 transcription is unavailable." -ForegroundColor Yellow
+    Write-Host "       Expected WHISPER_CPP_EXE + WHISPER_MODEL_PATH from the proven BOOK.CRAFT setup." -ForegroundColor DarkGray
+}
+
 function Find-ComfyRoot {
     $candidates = @()
     if ($env:BOOKCRAFT_COMFYUI_ROOT) { $candidates += $env:BOOKCRAFT_COMFYUI_ROOT }
@@ -51,6 +121,10 @@ if (Test-Path -LiteralPath $Stopper) {
     & $Stopper | Out-Host
     Start-Sleep -Seconds 1
 }
+
+# Restore the exact local Whisper paths used by the proven audio baseline before
+# launching the backend. The child process inherits these variables.
+Resolve-SttConfig
 
 # LM Studio UI is only a host process here; the user does not need to interact with it.
 if (-not (Test-Http "http://127.0.0.1:1234/v1/models")) {
