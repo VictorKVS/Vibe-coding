@@ -19,11 +19,7 @@ function postTrace(event, data = {}) {
       "X-Request-ID": requestId,
     },
     keepalive: true,
-    body: JSON.stringify({
-      event,
-      source: "ui-action-trace",
-      data,
-    }),
+    body: JSON.stringify({ event, source: "ui-action-trace", data }),
   }).catch(() => null);
 }
 
@@ -49,7 +45,8 @@ function pageState() {
       scenes: "PAGE 3B · КОНСТРУКТОР СЦЕН",
       characters: "PAGE 3C · БАЗА ПЕРСОНАЖЕЙ",
       comic: "PAGE 3D · COMIC STORYBOARD",
-      video: "PAGE 3E · VIDEO PIPELINE",
+      sound: "PAGE 3E · SOUND ENGINEERING",
+      video: "PAGE 3F · VIDEO PIPELINE",
     };
     return { id: "page-3", traceId: `page-3:${view}`, number: 3, name: labels[view] || "РЕДАКТОР ПРОЕКТА", label: labels[view] || "PAGE 3 · РЕДАКТОР ПРОЕКТА" };
   }
@@ -112,11 +109,11 @@ function inferContract(control, page, type = "click") {
     return { expected: "запросить подтверждение → удалить проект → обновить библиотеку PAGE 2B", target_page: "page-2", verify: "project-count" };
   }
   if (engineeringView) {
-    const viewNames = { whole: "произведение целиком", scenes: "конструктор сцен", characters: "база персонажей", comic: "comic storyboard", video: "video pipeline" };
+    const viewNames = { whole: "произведение целиком", scenes: "конструктор сцен", characters: "база персонажей", comic: "comic storyboard", sound: "sound engineering", video: "video pipeline" };
     return { expected: `переключить инженерный workspace → ${viewNames[engineeringView] || engineeringView}; данные проекта должны остаться теми же`, target_page: "page-3" };
   }
   if (lower.includes("под капотом")) {
-    return { expected: "открыть инженерный drawer: модели, память, media backend, TRACE и диагностика", target_page: page.id };
+    return { expected: "открыть инженерный drawer: модели, память, media backend, TRACE, звук и диагностика", target_page: page.id };
   }
   if (lower.includes("редактировать по сценам")) {
     return { expected: "переключить PAGE 3A → PAGE 3B и показать карту сцен + редактируемую структуру", target_page: "page-3" };
@@ -142,11 +139,14 @@ function inferContract(control, page, type = "click") {
   if (lower.includes("отправить") && page.id === "page-3") {
     return { expected: "отправить запрос активному агенту → получить ответ → обновить произведение или показать ошибку", target_page: page.id };
   }
-  if (lower.includes("загрузить mp3") || lower.includes("расшифровать")) {
-    return { expected: "выбрать аудиофайл → STT → добавить расшифровку в рабочее поле", target_page: page.id };
+  if (lower.includes("аудио") || lower.includes("mp3") || lower.includes("расшифров")) {
+    return { expected: "выбрать аудио → локальный STT → получить расшифровку → показать её в SOUND ENGINEERING", target_page: page.id };
   }
-  if (lower.includes("диктовать") || lower.includes("микрофон")) {
-    return { expected: "получить доступ к микрофону → записать → STT → добавить текст", target_page: page.id };
+  if (lower.includes("микрофон") || lower.includes("записать") || lower.includes("диктовать")) {
+    return { expected: "получить доступ к микрофону → записать звук → STT → показать текст или точную ошибку", target_page: page.id };
+  }
+  if (lower.includes("проверить") && page.label.includes("SOUND")) {
+    return { expected: "озвучить тестовую фразу выбранным постоянным голосовым профилем персонажа", target_page: page.id };
   }
   if (lower.includes("создать иллюстрацию") || lower.includes("создать доработанную")) {
     return { expected: "собрать canon-aware арт-промпт → вызвать image backend → показать кадр либо точную ошибку", target_page: page.id };
@@ -176,7 +176,7 @@ function uiSnapshot() {
     workspace_visible: Boolean(document.querySelector(".workspace-shell")),
     author_hub_visible: Boolean(document.getElementById("bookcraft-author-hub") && !document.getElementById("bookcraft-author-hub").hidden),
     runtime_status: shortLabel(document.querySelector(".bookcraft-runtime-state")?.textContent || ""),
-    error_visible: Boolean(document.querySelector(".error-box, .auth-error:not(:empty)")),
+    error_visible: Boolean(document.querySelector(".error-box, .auth-error:not(:empty), .sound-status.error")),
   };
 }
 
@@ -279,7 +279,6 @@ function resolvePendingForPage(page) {
 function ensurePageBadge(page) {
   const traceRoot = document.getElementById("bookcraft-live-trace");
   if (!traceRoot) return;
-
   let badge = traceRoot.querySelector(".ui-page-trace-badge");
   if (!badge) {
     badge = document.createElement("div");
@@ -302,7 +301,6 @@ function prettifyTraceRows() {
     const name = String(event.event || "");
     const strong = row.querySelector("strong");
     if (!strong) continue;
-
     if (name === "ui.action.click") strong.textContent = `КЛИК «${event.control || "элемент"}» → ожидалось: ${event.expected || "изменение интерфейса"}`;
     else if (name === "ui.action.change") strong.textContent = `ИЗМЕНЕНО «${event.control || "элемент"}» → ожидалось: ${event.expected || "новое состояние"}`;
     else if (name === "ui.action.ready") strong.textContent = `ГОТОВО «${event.control || "действие"}» → ${event.result || event.page || "результат подтверждён"}`;
@@ -316,23 +314,16 @@ function prettifyTraceRows() {
 
 export function mountUiActionTrace() {
   let lastTraceId = "";
-
   const scanPage = () => {
     const page = pageState();
     ensurePageBadge(page);
     prettifyTraceRows();
     resolvePendingForPage(page);
-
     if (page.traceId !== lastTraceId && page.id !== "boot") {
       lastTraceId = page.traceId;
       const previous = sessionStorage.getItem(PAGE_STATE_KEY) || "";
       sessionStorage.setItem(PAGE_STATE_KEY, page.traceId);
-      postTrace("page.enter", {
-        page: page.label,
-        page_id: page.id,
-        page_trace_id: page.traceId,
-        previous_page_trace_id: previous,
-      });
+      postTrace("page.enter", { page: page.label, page_id: page.id, page_trace_id: page.traceId, previous_page_trace_id: previous });
     }
   };
 
@@ -354,7 +345,4 @@ export function mountUiActionTrace() {
   scanPage();
 }
 
-export const UI_ACTION_TRACE_KEYS = {
-  pending: PENDING_KEY,
-  page: PAGE_STATE_KEY,
-};
+export const UI_ACTION_TRACE_KEYS = { pending: PENDING_KEY, page: PAGE_STATE_KEY };
