@@ -17,6 +17,8 @@ const checks = {
   "custom openai-compatible preset": switcher.includes("OpenAI-compatible"),
   "api key excluded from presets": !/apiKey\s*:/.test(switcher),
   "user can save and delete presets": switcher.includes("Сохранить текущий внешний агент") && switcher.includes("Удалить мой пресет"),
+  "mutation observer redraw guarded": switcher.includes("holder.dataset.signature === signature") && switcher.includes("holder.dataset.signature = signature"),
+  "preset mutations can force one redraw": switcher.includes("renderPresetButtons(gateway, root, true)"),
 };
 
 const failed = Object.entries(checks).filter(([, value]) => !value).map(([name]) => name);
