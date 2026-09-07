@@ -12,6 +12,7 @@ import { mountNeutralStartScreen } from "./neutral-start-screen.js";
 import { mountCoverLoginEnhancer } from "./cover-login-enhancer.js";
 import { mountProjectFormatBrowser } from "./project-format-browser.js";
 import { mountNarrativeEngineeringUi } from "./narrative-engineering-ui.js";
+import { mountSoundEngineeringUi } from "./sound-engineering-ui.js";
 import "./styles.css";
 
 prepareProjectHubStartup();
@@ -28,6 +29,7 @@ mountNeutralStartScreen();
 mountCoverLoginEnhancer();
 mountProjectFormatBrowser();
 mountNarrativeEngineeringUi();
+mountSoundEngineeringUi();
 mountModelRuntimeControls();
 mountAgentSwitcher();
 mountLiveTracePanel();
