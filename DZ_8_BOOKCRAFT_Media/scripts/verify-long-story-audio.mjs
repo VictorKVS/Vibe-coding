@@ -10,6 +10,8 @@ const checks = {
   "proven whisper cli retained": observed.includes('WHISPER_CPP_EXE') && observed.includes('WHISPER_MODEL_PATH') && observed.includes('"-otxt"'),
   "long timeout configurable": observed.includes('BOOKCRAFT_STT_TIMEOUT_SECONDS') && observed.includes('7200'),
   "long form traced": observed.includes('long_form=total_bytes > 25 * 1024 * 1024'),
+  "MediaRecorder codec MIME normalized": observed.includes('split(";", 1)[0]') && observed.includes('normalized_content_type'),
+  "webm opus reaches supported audio check": observed.includes('_base_audio_content_type') && observed.includes('normalized_content_type not in SUPPORTED_AUDIO'),
 };
 
 const failed = Object.entries(checks).filter(([, ok]) => !ok).map(([name]) => name);
