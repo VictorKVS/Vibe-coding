@@ -9,6 +9,7 @@
 | ДЗ-6 | BOOK·CRAFT | React-продукт, локальная LLM и Model Gateway | ✅ готово | [Карточка](DZ-06/README.md) |
 | ДЗ-8 Lite | BOOK·CRAFT Media | загрузка изображения и честный UI-статус | ✅ готово | [Карточка](DZ-08/LITE/README.md) |
 | ДЗ-8 Pro | Voice Backend | audio → STT → user_message | 🎬 STT-демо и проверки | [Карточка](DZ-08/PRO/README.md) |
+| ДЗ-9 | BOOKCRAFT ONE | сценарии универсального бота, CRM-контекст, история и ошибки | 🧩 MVP и проверки | [Карточка](DZ-09/README.md) |
 
 ## Лестница развития
 
