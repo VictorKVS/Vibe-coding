@@ -2,6 +2,7 @@ export const MIME_CANDIDATES = [
   "audio/webm;codecs=opus",
   "audio/webm",
   "audio/ogg;codecs=opus",
+  "audio/mp4",
 ];
 
 export function preferredMime() {
@@ -52,9 +53,10 @@ export function audioBufferToWavBlob(buffer) {
   writeString(36, "data");
   view.setUint32(40, dataSize, true);
   let offset = 44;
+  const channelData = Array.from({ length: channels }, (_, channel) => buffer.getChannelData(channel));
   for (let frame = 0; frame < frames; frame += 1) {
     for (let channel = 0; channel < channels; channel += 1) {
-      const sample = Math.max(-1, Math.min(1, buffer.getChannelData(channel)[frame]));
+      const sample = Math.max(-1, Math.min(1, channelData[channel][frame]));
       view.setInt16(offset, sample < 0 ? sample * 0x8000 : sample * 0x7fff, true);
       offset += 2;
     }
@@ -93,6 +95,8 @@ export function trimToSelection(context, source, startSeconds, endSeconds) {
   return target;
 }
 
+const peakCache = new WeakMap();
+
 export function drawWaveform({ canvas, buffer, selection, playhead = 0 }) {
   const rect = canvas.getBoundingClientRect();
   const ratio = Math.max(1, window.devicePixelRatio || 1);
@@ -103,26 +107,33 @@ export function drawWaveform({ canvas, buffer, selection, playhead = 0 }) {
     canvas.height = heightPx;
   }
   const ctx = canvas.getContext("2d");
+  if (!ctx) return;
   ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
   ctx.clearRect(0, 0, rect.width, rect.height);
   if (!buffer) return;
   const data = buffer.getChannelData(0);
   const width = Math.max(1, Math.floor(rect.width));
-  const step = Math.max(1, Math.floor(data.length / width));
+  let peaks = peakCache.get(buffer);
+  if (!peaks || peaks.width !== width) {
+    peaks = { width, minimum: new Float32Array(width), maximum: new Float32Array(width) };
+    for (let x = 0; x < width; x += 1) {
+      const begin = Math.min(data.length - 1, Math.floor(x * data.length / width));
+      const finish = Math.min(data.length, Math.max(begin + 1, Math.floor((x + 1) * data.length / width)));
+      let min = 1, max = -1;
+      for (let index = begin; index < finish; index += 1) {
+        const value = data[index];
+        if (value < min) min = value;
+        if (value > max) max = value;
+      }
+      peaks.minimum[x] = min; peaks.maximum[x] = max;
+    }
+    peakCache.set(buffer, peaks);
+  }
   const center = rect.height / 2;
   ctx.beginPath();
   for (let x = 0; x < width; x += 1) {
-    const begin = x * step;
-    const finish = Math.min(data.length, begin + step);
-    let min = 1;
-    let max = -1;
-    for (let index = begin; index < finish; index += 1) {
-      const value = data[index];
-      if (value < min) min = value;
-      if (value > max) max = value;
-    }
-    ctx.moveTo(x, center + min * rect.height * 0.42);
-    ctx.lineTo(x, center + max * rect.height * 0.42);
+    ctx.moveTo(x, center + peaks.minimum[x] * rect.height * 0.42);
+    ctx.lineTo(x, center + peaks.maximum[x] * rect.height * 0.42);
   }
   ctx.strokeStyle = "rgba(74,230,177,.96)";
   ctx.lineWidth = 1;

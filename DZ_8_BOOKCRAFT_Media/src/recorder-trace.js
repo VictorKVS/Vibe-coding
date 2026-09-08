@@ -7,7 +7,7 @@ function sessionId() {
 
 function safeMeta(meta = {}) {
   return Object.fromEntries(Object.entries(meta).slice(0, 30).map(([key, value]) => {
-    if (/text|prompt|transcript|token|secret|password|authorization/i.test(key)) return [key, "[REDACTED]"];
+    if (/(?:^|_)(?:text|prompt|transcript|token|secret|password|authorization|api.?key|audio.?bytes|base64)(?:$|_)/i.test(key)) return [key, "[REDACTED]"];
     if (typeof value === "string") return [key, value.slice(0, 240)];
     if (typeof value === "number" || typeof value === "boolean" || value == null) return [key, value];
     return [key, String(value).slice(0, 240)];
@@ -24,7 +24,10 @@ export function createRecorderTrace(onChange = () => {}) {
   try {
     const saved = JSON.parse(localStorage.getItem(TRACE_KEY) || "null");
     if (Array.isArray(saved?.events)) {
-      state.events = saved.events.slice(-40);
+      state.events = saved.events.filter(event => event && Number.isFinite(event.seq) && typeof event.time === "string" && typeof event.event === "string" && typeof event.state === "string").slice(-40).map(event => ({
+        seq: event.seq, time: event.time, event: event.event.slice(0, 100),
+        state: event.state.slice(0, 40), kind: event.kind, meta: safeMeta(event.meta || {}),
+      }));
       state.sequence = Math.max(0, ...state.events.map((event) => Number(event.seq) || 0));
     }
   } catch {}
@@ -63,6 +66,7 @@ export function createRecorderTrace(onChange = () => {}) {
 
   const buildReport = ({ recorderState, runtime, audio, selection }) => ({
     schema: "bookcraft.recorder.trace.v3",
+    recorder_version: "3.1.0-hardened",
     generated_at: new Date().toISOString(),
     session_id: state.sessionId,
     recorder_state: recorderState,
@@ -70,6 +74,7 @@ export function createRecorderTrace(onChange = () => {}) {
     audio,
     selection,
     events: state.events,
+    final_error: state.events.filter(event => event.kind === "error").at(-1) || null,
   });
 
   return { state, trace, clear, buildReport };

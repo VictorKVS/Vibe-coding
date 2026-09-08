@@ -1,7 +1,8 @@
 import fs from "node:fs";
 import path from "node:path";
+import { fileURLToPath } from "node:url";
 
-const root = path.resolve(path.dirname(new URL(import.meta.url).pathname), "..");
+const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const page = fs.readFileSync(path.join(root, "src", "recorder-page.js"), "utf8");
 const audio = fs.readFileSync(path.join(root, "src", "recorder-audio.js"), "utf8");
 const trace = fs.readFileSync(path.join(root, "src", "recorder-trace.js"), "utf8");
@@ -18,7 +19,7 @@ const checks = {
   "wave selection": page.includes("pointerdown") && page.includes("pointermove") && page.includes("wave.selection"),
   "delete selection": page.includes("✂ Удалить выделенное") && page.includes("cutSelection"),
   "trim selection": page.includes("Обрезать до выделенного") && page.includes("trimToSelection"),
-  "undo redo": page.includes("edit.undo") && page.includes("edit.redo") && page.includes("↶ Отмена") && page.includes("↷ Вернуть"),
+  "undo redo": page.includes('history("undo")') && page.includes('history("redo")') && page.includes("↶ Отмена") && page.includes("↷ Вернуть"),
   "audio import and download": page.includes("Импорт MP3 / WAV / WebM") && page.includes("audio.download"),
   "wav export after edits": audio.includes("audioBufferToWavBlob") && audio.includes("RIFF") && audio.includes("WAVE"),
   "on-screen trace": page.includes("ТРАССИРОВКА / ОТЧЁТ") && page.includes("Копировать отчёт"),

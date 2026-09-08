@@ -1,6 +1,5 @@
 import {
   audioBufferToWavBlob,
-  cloneAudioBuffer,
   cutSelection,
   drawWaveform,
   formatBytes,
@@ -18,6 +17,7 @@ function injectStyles() {
   const style = document.createElement("style");
   style.id = STYLE_ID;
   style.textContent = `
+    .br-page .br-record{margin-inline:auto}.br-page .br-btn{font-size:12px;min-height:36px}.br-page .br-head p,.br-page .br-sub small,.br-page .br-stt span{font-size:12px;line-height:1.5}.br-page .br-event{font-size:11px}.br-page .br-toast{font-size:13px}.br-page .br-caption,.br-page .br-selection,.br-page .br-meta{font-size:11px}.br-page button:focus-visible{outline:2px solid #7dbbff;outline-offset:3px}.br-page .br-file{min-width:0;max-width:45%}.br-page .br-file strong{max-width:100%}
     .br-launch{position:fixed;right:20px;bottom:20px;z-index:11990;border:1px solid rgba(255,255,255,.14);border-radius:14px;padding:11px 15px;background:linear-gradient(145deg,rgba(18,29,46,.98),rgba(8,14,25,.98));color:#eef5ff;box-shadow:0 18px 55px rgba(0,0,0,.46);font:650 12px Inter,system-ui,sans-serif;cursor:pointer}
     .br-page{position:fixed;inset:0;z-index:12000;display:none;overflow:auto;background:radial-gradient(circle at 20% -10%,rgba(60,120,200,.18),transparent 36%),linear-gradient(180deg,#07101a,#050a12 70%);color:#eef5ff;font-family:Inter,system-ui,sans-serif}.br-page.open{display:block}
     .br-top{position:sticky;top:0;z-index:20;display:grid;grid-template-columns:1fr auto 1fr;align-items:center;padding:12px 18px;border-bottom:1px solid rgba(255,255,255,.07);background:rgba(7,13,23,.92);backdrop-filter:blur(18px)}
@@ -26,7 +26,7 @@ function injectStyles() {
     .br-state{display:inline-flex;align-items:center;gap:6px;padding:6px 9px;border-radius:999px;border:1px solid rgba(96,193,143,.18);background:rgba(56,154,105,.07);color:#9edeb9;font-size:9px}.br-state i{width:6px;height:6px;border-radius:50%;background:currentColor;box-shadow:0 0 10px currentColor}
     .br-shell{display:grid;grid-template-columns:minmax(0,1fr) 340px;gap:16px;max-width:1620px;margin:0 auto;padding:18px 20px 34px}.br-main{min-width:0}.br-card{border:1px solid rgba(255,255,255,.075);border-radius:19px;background:linear-gradient(165deg,rgba(16,26,42,.88),rgba(8,14,25,.88));box-shadow:0 18px 60px rgba(0,0,0,.24)}
     .br-wave-card{padding:16px}.br-head{display:flex;justify-content:space-between;gap:16px;align-items:flex-start;margin-bottom:12px}.br-kicker{font-size:9px;color:#7697c1;letter-spacing:.16em}.br-head h1{margin:4px 0;font-size:23px}.br-head p{margin:0;color:#71849b;font-size:10px}.br-file{text-align:right}.br-file strong{display:block;max-width:360px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:10px}.br-file span{display:block;margin-top:4px;color:#6e8198;font-size:9px}
-    .br-wave-wrap{position:relative;height:320px;overflow:hidden;border:1px solid rgba(255,255,255,.08);border-radius:17px;background:linear-gradient(rgba(255,255,255,.018) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.018) 1px,transparent 1px),radial-gradient(circle at 50% 115%,rgba(70,145,225,.12),transparent 50%),#07111c;background-size:100% 52px,72px 100%,auto,auto;user-select:none}.br-wave-wrap canvas{position:absolute;inset:0;width:100%;height:100%;cursor:crosshair}.br-empty{position:absolute;inset:0;display:grid;place-items:center;color:#53677f;text-align:center;font-size:11px;pointer-events:none}.br-time{position:absolute;left:14px;top:13px;padding:7px 10px;border-radius:9px;background:rgba(3,8,15,.66);font:700 23px ui-monospace,Consolas,monospace}.br-time small{display:block;margin-top:4px;font:9px Inter,system-ui,sans-serif;color:#70839a;text-transform:uppercase}.br-selection{position:absolute;right:14px;bottom:13px;padding:7px 9px;border-radius:9px;background:rgba(3,8,15,.66);font:9px ui-monospace,Consolas,monospace;color:#91a8c3}
+    .br-wave-wrap{position:relative;height:320px;overflow:hidden;border:1px solid rgba(255,255,255,.08);border-radius:17px;background:linear-gradient(rgba(255,255,255,.018) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.018) 1px,transparent 1px),radial-gradient(circle at 50% 115%,rgba(70,145,225,.12),transparent 50%),#07111c;background-size:100% 52px,72px 100%,auto,auto;user-select:none}.br-wave-wrap canvas{position:absolute;inset:0;width:100%;height:100%;cursor:crosshair;touch-action:none}.br-empty{position:absolute;inset:0;display:grid;place-items:center;color:#53677f;text-align:center;font-size:11px;pointer-events:none}.br-time{position:absolute;left:14px;top:13px;padding:7px 10px;border-radius:9px;background:rgba(3,8,15,.66);font:700 23px ui-monospace,Consolas,monospace}.br-time small{display:block;margin-top:4px;font:9px Inter,system-ui,sans-serif;color:#70839a;text-transform:uppercase}.br-selection{position:absolute;right:14px;bottom:13px;padding:7px 9px;border-radius:9px;background:rgba(3,8,15,.66);font:9px ui-monospace,Consolas,monospace;color:#91a8c3}
     .br-level{display:grid;grid-template-columns:105px 1fr 50px;gap:10px;align-items:center;margin-top:11px}.br-level label{font-size:9px;color:#74869c;text-transform:uppercase;letter-spacing:.12em}.br-bars{display:grid;grid-template-columns:repeat(30,1fr);gap:3px}.br-bars i{height:8px;border-radius:3px;background:rgba(255,255,255,.055)}.br-bars i.on{background:linear-gradient(90deg,#62c58d,#b6d765)}.br-bars i.hot{background:linear-gradient(90deg,#e7c451,#ef7a50)}.br-level output{text-align:right;color:#8da1b8;font:10px ui-monospace,Consolas,monospace}
     .br-transport{display:grid;grid-template-columns:1fr auto 1fr;gap:18px;align-items:center;padding:16px 8px 3px}.br-side{display:flex;gap:8px;align-items:center;flex-wrap:wrap}.br-side.right{justify-content:flex-end}.br-record-wrap{text-align:center}.br-record{width:94px;height:94px;border-radius:50%;border:1px solid rgba(255,255,255,.15);background:radial-gradient(circle at 35% 30%,#ff767a,#dd3341 66%,#951b29);box-shadow:0 0 0 10px rgba(255,255,255,.035),0 14px 42px rgba(215,45,60,.35),inset 0 1px 2px rgba(255,255,255,.38);cursor:pointer;display:grid;place-items:center}.br-record:before{content:"";width:30px;height:30px;border-radius:50%;background:#fff}.br-record.recording:before{width:26px;height:26px;border-radius:6px}.br-record:disabled{opacity:.4}.br-caption{margin-top:10px;color:#8497ad;font-size:9px;letter-spacing:.09em;text-transform:uppercase}
     .br-sub{margin-top:14px;padding:14px 16px}.br-sub-head{display:flex;justify-content:space-between;gap:12px;align-items:center;margin-bottom:10px}.br-sub h3{margin:0;font-size:11px;letter-spacing:.05em}.br-sub small{color:#71849a;font-size:9px}.br-sub audio{width:100%;height:38px;margin-top:8px}.br-meta{display:flex;justify-content:space-between;gap:12px;margin-top:8px;color:#71849b;font-size:9px}
@@ -71,79 +71,493 @@ function buildPage() {
         <section class="br-card br-stt"><div><strong>РАСПОЗНАВАНИЕ</strong><span>Этап 2. Здесь появится реальный прогресс Whisper, сегменты и ETA.</span></div><button class="br-btn" data-action="recognize" disabled>✦ Распознать · этап 2</button></section>
       </main>
       <aside class="br-card br-trace"><div class="br-trace-head"><h3>ТРАССИРОВКА / ОТЧЁТ</h3><p>Копируйте отчёт и присылайте мне. Аудио и будущий текст в трассу не попадают.</p></div><div class="br-diag"><div><span>Session</span><strong data-r="diag-session">—</strong></div><div><span>State</span><strong data-r="diag-state">EMPTY</strong></div><div><span>MediaRecorder</span><strong data-r="diag-media">—</strong></div><div><span>AudioContext</span><strong data-r="diag-audio">—</strong></div><div><span>MIME</span><strong data-r="diag-mime">—</strong></div><div><span>Events</span><strong data-r="diag-events">0</strong></div></div><div class="br-trace-actions"><button class="br-btn" data-action="copy-report">Копировать</button><button class="br-btn" data-action="clear-trace">Очистить</button></div><div class="br-events" data-r="events"></div></aside>
-    </div><div class="br-toast" data-r="toast"></div>`;
+    </div><div class="br-toast" data-r="toast" role="status" aria-live="polite"></div>`;
   document.body.append(launcher, page);
-  launcher.addEventListener("click", () => { page.classList.add("open"); page._recorder?.trace("ui.open", {}, "ready"); });
+  launcher.addEventListener("click", () => { page.classList.add("open"); page._recorder?.open(); });
   return page;
 }
 
 function makeController(page) {
   const q = (selector) => page.querySelector(selector);
   const qa = (selector) => Array.from(page.querySelectorAll(selector));
+  const audio = q('[data-r="preview"]');
+  const canvas = q('[data-r="wave"]');
   const AudioContextCtor = window.AudioContext || window.webkitAudioContext;
-  const audioContext = AudioContextCtor ? new AudioContextCtor() : null;
-  const state = { phase:"EMPTY", recorder:null, stream:null, chunks:[], recordStartedAt:0, elapsedBeforePause:0, timer:null, analyser:null, sourceNode:null, raf:null, buffer:null, blob:null, fileName:"", mime:"", recordMime:"", objectUrl:"", duration:0, playhead:0, selectionStart:null, selectionEnd:null, selecting:false, undo:[], redo:[] };
+  let audioContext = null;
+  let operation = 0;
+  let savedOverflow = "";
+  let returnFocus = null;
+  const state = {
+    phase: "EMPTY", recorder: null, stream: null, recordMime: "",
+    recordStartedAt: null, elapsedBeforePause: 0, timer: null,
+    sourceNode: null, analyser: null, raf: null, buffer: null, blob: null,
+    fileName: "", mime: "", objectUrl: "", duration: 0, playhead: 0,
+    selectionStart: null, selectionEnd: null, selecting: false,
+    undo: [], redo: [], original: null, dirty: false,
+  };
+  const busy = () => ["REQUESTING", "RECORDING", "PAUSED", "PROCESSING"].includes(state.phase);
+  const restingPhase = () => state.blob ? (state.undo.length ? "EDITING" : "RECORDED") : "EMPTY";
+  const toast = (message) => {
+    const node = q('[data-r="toast"]');
+    node.textContent = message;
+    node.classList.add("show");
+    clearTimeout(node._t);
+    node._t = setTimeout(() => node.classList.remove("show"), 6500);
+  };
   let tracer;
-
-  const toast = (message) => { const node=q('[data-r="toast"]'); node.textContent=message; node.classList.add("show"); clearTimeout(node._t); node._t=setTimeout(()=>node.classList.remove("show"),2400); };
   const traceRender = () => {
     if (!tracer) return;
-    q('[data-r="diag-session"]').textContent = tracer.state.sessionId.slice(0,8);
+    q('[data-r="diag-session"]').textContent = tracer.state.sessionId.slice(0, 8);
     q('[data-r="diag-state"]').textContent = state.phase;
     q('[data-r="diag-media"]').textContent = typeof MediaRecorder === "undefined" ? "NO" : "YES";
-    q('[data-r="diag-audio"]').textContent = audioContext ? "YES" : "NO";
+    q('[data-r="diag-audio"]').textContent = audioContext?.state || (AudioContextCtor ? "READY" : "NO");
     q('[data-r="diag-mime"]').textContent = state.recordMime || state.mime || "—";
     q('[data-r="diag-events"]').textContent = String(tracer.state.events.length);
-    q('[data-r="events"]').innerHTML = tracer.state.events.slice(-70).reverse().map((event)=>{ const meta=Object.entries(event.meta||{}).map(([k,v])=>`${k}=${v}`).join(" · "); return `<div class="br-event ${event.kind||""}"><b>#${event.seq} ${event.event}</b><small>${event.time.slice(11,23)} · ${event.state}${meta?` · ${meta}`:""}</small></div>`; }).join("");
+    // File names and browser errors are untrusted text, never HTML.
+    q('[data-r="events"]').replaceChildren(...tracer.state.events.slice(-70).reverse().map((event) => {
+      const row = document.createElement("div");
+      row.className = `br-event ${["error", "ready", "warn"].includes(event.kind) ? event.kind : ""}`;
+      const title = document.createElement("b");
+      title.textContent = `#${event.seq} ${event.event}`;
+      const detail = document.createElement("small");
+      detail.textContent = `${event.time.slice(11, 23)} · ${event.state} · ${Object.entries(event.meta).map(([k, v]) => `${k}=${v}`).join(" · ")}`;
+      row.append(title, detail);
+      return row;
+    }));
   };
   tracer = createRecorderTrace(traceRender);
-  const trace = (event,meta={},kind="") => tracer.trace(event,state.phase,meta,kind);
-
-  const setPhase = (phase,reason="") => { const before=state.phase; state.phase=phase; q('[data-r="state-badge"]').textContent=phase; q('[data-r="state"]').textContent={EMPTY:"готов к записи",RECORDING:"идёт запись",PAUSED:"пауза",RECORDED:"запись готова",EDITING:"редактирование",PLAYING:"прослушивание"}[phase]||phase.toLowerCase(); trace("state.change",{from:before,to:phase,reason},phase==="RECORDED"?"ready":""); refreshControls(); traceRender(); };
-  const recordElapsed = () => state.elapsedBeforePause + (state.recordStartedAt ? Date.now()-state.recordStartedAt : 0);
-  const updateClock = () => { const ms=(state.phase==="RECORDING"||state.phase==="PAUSED")?recordElapsed():state.playhead*1000; q('[data-r="timer"]').textContent=formatClock(ms); q('[data-r="clock"]').textContent=formatClock(ms); };
-  const startClock = () => { clearInterval(state.timer); updateClock(); state.timer=setInterval(updateClock,200); };
-  const stopClock = () => { clearInterval(state.timer); state.timer=null; updateClock(); };
-  const selection = () => { if(state.selectionStart==null||state.selectionEnd==null) return null; const start=Math.max(0,Math.min(state.selectionStart,state.selectionEnd)); const end=Math.min(state.duration,Math.max(state.selectionStart,state.selectionEnd)); return end-start>=0.025?{start,end}:null; };
-  const renderSelection = () => { const range=selection(); q('[data-r="selection"]').textContent=range?`${formatClock(range.start*1000)} → ${formatClock(range.end*1000)} · ${(range.end-range.start).toFixed(3)} сек`:"Выделение: —"; q('[data-r="edit-state"]').textContent=range?`${(range.end-range.start).toFixed(2)} сек выделено`:"нет выделения"; refreshControls(); };
-  const redraw = () => drawWaveform({canvas:q('[data-r="wave"]'),buffer:state.buffer,selection:selection(),playhead:state.playhead});
-  const showEmpty = (yes) => { q('[data-r="empty"]').style.display=yes?"grid":"none"; };
-  const updateLevel = (level) => { const bars=qa('.br-bars i'); const active=Math.round(Math.max(0,Math.min(1,level))*bars.length); bars.forEach((bar,index)=>{bar.classList.toggle("on",index<active);bar.classList.toggle("hot",index<active&&index>bars.length*.78);}); q('[data-r="level"]').textContent=`${Math.round(level*100)}%`; };
-  const stopVisualizer = () => { if(state.raf)cancelAnimationFrame(state.raf); state.raf=null; try{state.sourceNode?.disconnect?.();}catch{} state.sourceNode=null; state.analyser=null; updateLevel(0); };
-  const startVisualizer = (stream) => { if(!audioContext){trace("visualizer.unavailable",{},"warn");return;} try{audioContext.resume?.(); const analyser=audioContext.createAnalyser(); analyser.fftSize=2048; analyser.smoothingTimeConstant=.72; const source=audioContext.createMediaStreamSource(stream); source.connect(analyser); state.analyser=analyser; state.sourceNode=source; const data=new Uint8Array(analyser.fftSize); const draw=()=>{ if(!state.analyser)return; analyser.getByteTimeDomainData(data); const canvas=q('[data-r="wave"]'); const rect=canvas.getBoundingClientRect(); const ratio=Math.max(1,window.devicePixelRatio||1); canvas.width=Math.max(1,Math.floor(rect.width*ratio)); canvas.height=Math.max(1,Math.floor(rect.height*ratio)); const ctx=canvas.getContext("2d"); ctx.setTransform(ratio,0,0,ratio,0,0); ctx.clearRect(0,0,rect.width,rect.height); let power=0; ctx.beginPath(); data.forEach((value,index)=>{const n=(value-128)/128;power+=n*n;const x=index/(data.length-1)*rect.width;const y=rect.height/2+n*rect.height*.42;if(index===0)ctx.moveTo(x,y);else ctx.lineTo(x,y);});const rms=Math.sqrt(power/data.length);const level=Math.min(1,rms*5.4);ctx.strokeStyle=level>.78?"rgba(242,121,86,.95)":"rgba(85,229,178,.95)";ctx.lineWidth=2;ctx.stroke();updateLevel(level);state.raf=requestAnimationFrame(draw);}; draw();trace("visualizer.ready",{fft_size:analyser.fftSize},"ready");}catch(error){trace("visualizer.error",{error:error?.message||String(error)},"error");} };
-  const revokeUrl = () => { if(state.objectUrl)URL.revokeObjectURL(state.objectUrl); state.objectUrl=""; };
-  const setBlob = (blob,name,mime=blob?.type||"audio/wav") => { revokeUrl(); state.blob=blob; state.fileName=name||`bookcraft-${Date.now()}.wav`; state.mime=mime; state.objectUrl=URL.createObjectURL(blob); const audio=q('[data-r="preview"]'); audio.src=state.objectUrl; audio.load(); q('[data-r="file-name"]').textContent=state.fileName; q('[data-r="file-meta"]').textContent=`${state.mime||"audio"} · ${formatBytes(blob.size)}`; q('[data-r="format"]').textContent=`Формат: ${state.mime||"unknown"} · ${formatBytes(blob.size)}`; };
-  const decodeBlob = async (blob,source) => { if(!audioContext)throw new Error("AudioContext недоступен"); trace("audio.decode.start",{source,size_bytes:blob.size,content_type:blob.type||"unknown"}); const bytes=await blob.arrayBuffer(); const decoded=await audioContext.decodeAudioData(bytes.slice(0)); state.buffer=decoded; state.duration=decoded.duration; state.playhead=0; state.selectionStart=null; state.selectionEnd=null; q('[data-r="duration"]').textContent=`Длительность: ${formatClock(decoded.duration*1000)}`; showEmpty(false); renderSelection(); redraw(); trace("audio.decode.ready",{duration_ms:Math.round(decoded.duration*1000),channels:decoded.numberOfChannels,sample_rate:decoded.sampleRate},"ready"); };
-  const applyBuffer = (buffer,reason) => { state.buffer=buffer; state.duration=buffer.duration; state.playhead=Math.min(state.playhead,state.duration); const blob=audioBufferToWavBlob(buffer); const base=(state.fileName||`bookcraft-${Date.now()}`).replace(/\.[^.]+$/,""); setBlob(blob,`${base}-edited.wav`,"audio/wav"); q('[data-r="duration"]').textContent=`Длительность: ${formatClock(buffer.duration*1000)}`; state.selectionStart=null;state.selectionEnd=null;renderSelection();redraw();setPhase("EDITING",reason); };
-  const refreshControls = () => { const recording=state.phase==="RECORDING"; const paused=state.phase==="PAUSED"; const hasAudio=Boolean(state.blob&&state.buffer); const hasSelection=Boolean(selection()); q('[data-action="record"]').disabled=recording||paused; q('[data-action="pause-record"]').disabled=!(recording||paused); q('[data-action="pause-record"]').textContent=paused?"▶ Продолжить":"Ⅱ Пауза"; q('[data-action="stop"]').disabled=!(recording||paused); q('[data-action="play"]').disabled=!hasAudio||recording||paused; q('[data-action="delete-selection"]').disabled=!hasAudio||!hasSelection||recording||paused; q('[data-action="trim-selection"]').disabled=!hasAudio||!hasSelection||recording||paused; q('[data-action="clear-selection"]').disabled=!hasSelection; q('[data-action="undo"]').disabled=!state.undo.length||recording||paused; q('[data-action="redo"]').disabled=!state.redo.length||recording||paused; q('[data-action="download"]').disabled=!state.blob; q('[data-action="clear"]').disabled=!state.blob&&!(recording||paused); q('[data-action="import"]').disabled=recording||paused; q('[data-r="caption"]').textContent=recording?"Идёт запись":paused?"Пауза":hasAudio?"Новая запись":"Начать запись"; q('[data-action="record"]').classList.toggle("recording",recording); };
-  const clearAudio = (reason) => { try{if(state.recorder&&state.recorder.state!=="inactive")state.recorder.stop();}catch{} state.stream?.getTracks?.().forEach((track)=>track.stop()); state.stream=null;state.recorder=null;state.chunks=[];state.recordStartedAt=0;state.elapsedBeforePause=0;stopClock();stopVisualizer();revokeUrl();state.buffer=null;state.blob=null;state.fileName="";state.mime="";state.duration=0;state.playhead=0;state.selectionStart=null;state.selectionEnd=null;state.undo=[];state.redo=[];const audio=q('[data-r="preview"]');audio.removeAttribute("src");audio.load();q('[data-r="file-name"]').textContent="Новая запись";q('[data-r="file-meta"]').textContent="микрофон · локально";q('[data-r="duration"]').textContent="Длительность: —";q('[data-r="format"]').textContent="Формат: —";showEmpty(true);renderSelection();redraw();setPhase("EMPTY",reason);trace("audio.clear",{reason},"warn"); };
-
-  const startRecording = async () => { if(!navigator.mediaDevices?.getUserMedia||typeof MediaRecorder==="undefined"){trace("record.error",{code:"api-unavailable"},"error");toast("MediaRecorder / микрофон недоступен.");return;} trace("microphone.request",{}); try{const stream=await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:true,noiseSuppression:true,autoGainControl:true}});state.stream=stream;const mime=preferredMime();state.recordMime=mime||"browser-default";const recorder=mime?new MediaRecorder(stream,{mimeType:mime}):new MediaRecorder(stream);state.recorder=recorder;state.chunks=[];state.recordStartedAt=Date.now();state.elapsedBeforePause=0;state.undo=[];state.redo=[];state.selectionStart=null;state.selectionEnd=null;showEmpty(false);recorder.ondataavailable=(event)=>{if(event.data?.size)state.chunks.push(event.data);};recorder.onerror=(event)=>trace("record.media-error",{error:event?.error?.message||"MediaRecorder error"},"error");recorder.onstop=async()=>{const elapsed=recordElapsed();stopClock();stopVisualizer();stream.getTracks().forEach((track)=>track.stop());state.stream=null;const finalMime=recorder.mimeType||mime||"audio/webm";const blob=new Blob(state.chunks,{type:finalMime});state.chunks=[];state.recorder=null;state.recordStartedAt=0;state.elapsedBeforePause=elapsed;const ext=finalMime.includes("ogg")?"ogg":finalMime.includes("wav")?"wav":"webm";const name=`bookcraft-${new Date().toISOString().replace(/[:.]/g,"-")}.${ext}`;setBlob(blob,name,finalMime);trace("record.finish",{size_bytes:blob.size,content_type:finalMime,elapsed_ms:elapsed},"ready");try{await decodeBlob(blob,"microphone");setPhase("RECORDED","record-stop");toast("Запись готова. Можно слушать и редактировать.");}catch(error){setPhase("RECORDED","decode-failed");trace("audio.decode.error",{error:error?.message||String(error),content_type:finalMime},"error");toast("Запись сохранена, но браузер не построил редактируемую волну.");}};recorder.start(500);startVisualizer(stream);startClock();setPhase("RECORDING","record-start");trace("microphone.ready",{tracks:stream.getAudioTracks().length,content_type:recorder.mimeType||mime||"unknown"},"ready");}catch(error){trace("microphone.error",{name:error?.name||"Error",error:error?.message||String(error)},"error");toast("Не удалось включить микрофон. Проверьте разрешение браузера.");setPhase(state.blob?"RECORDED":"EMPTY","microphone-error");} };
-  const togglePause = () => { const recorder=state.recorder;if(!recorder)return;if(recorder.state==="recording"){state.elapsedBeforePause+=Date.now()-state.recordStartedAt;state.recordStartedAt=0;recorder.pause();stopClock();setPhase("PAUSED","record-pause");trace("record.pause",{elapsed_ms:state.elapsedBeforePause});}else if(recorder.state==="paused"){recorder.resume();state.recordStartedAt=Date.now();startClock();setPhase("RECORDING","record-resume");trace("record.resume",{elapsed_ms:state.elapsedBeforePause});} };
-  const stopRecording = () => { if(!state.recorder||state.recorder.state==="inactive")return;if(state.recordStartedAt){state.elapsedBeforePause+=Date.now()-state.recordStartedAt;state.recordStartedAt=0;}trace("record.stop.request",{elapsed_ms:state.elapsedBeforePause});state.recorder.stop(); };
-  const pushUndo = () => { if(!audioContext||!state.buffer)return;state.undo.push(cloneAudioBuffer(audioContext,state.buffer));if(state.undo.length>20)state.undo.shift();state.redo=[]; };
-  const deleteRange = () => { const range=selection();if(!range||!audioContext||!state.buffer)return;pushUndo();const before=state.duration;const next=cutSelection(audioContext,state.buffer,range.start,range.end);applyBuffer(next,"delete-selection");trace("edit.delete-selection",{start_ms:Math.round(range.start*1000),end_ms:Math.round(range.end*1000),removed_ms:Math.round((range.end-range.start)*1000),duration_before_ms:Math.round(before*1000),duration_after_ms:Math.round(next.duration*1000)},"ready"); };
-  const trimRange = () => { const range=selection();if(!range||!audioContext||!state.buffer)return;pushUndo();const before=state.duration;const next=trimToSelection(audioContext,state.buffer,range.start,range.end);applyBuffer(next,"trim-selection");trace("edit.trim-selection",{start_ms:Math.round(range.start*1000),end_ms:Math.round(range.end*1000),duration_before_ms:Math.round(before*1000),duration_after_ms:Math.round(next.duration*1000)},"ready"); };
-  const undo = () => { if(!state.undo.length||!audioContext||!state.buffer)return;state.redo.push(cloneAudioBuffer(audioContext,state.buffer));const previous=state.undo.pop();applyBuffer(previous,"undo");trace("edit.undo",{undo_left:state.undo.length,redo_count:state.redo.length},"ready"); };
-  const redo = () => { if(!state.redo.length||!audioContext||!state.buffer)return;state.undo.push(cloneAudioBuffer(audioContext,state.buffer));const next=state.redo.pop();applyBuffer(next,"redo");trace("edit.redo",{undo_count:state.undo.length,redo_left:state.redo.length},"ready"); };
-  const importAudio = async (file) => { if(!file)return;trace("import.start",{name:file.name,size_bytes:file.size,content_type:file.type||"unknown"});try{setBlob(file,file.name||`import-${Date.now()}`,file.type||"audio");await decodeBlob(file,"import");state.undo=[];state.redo=[];setPhase("RECORDED","import-ready");trace("import.ready",{name:file.name,duration_ms:Math.round(state.duration*1000),size_bytes:file.size},"ready");toast("Аудиофайл загружен.");}catch(error){trace("import.error",{name:file.name,error:error?.message||String(error)},"error");toast("Не удалось декодировать этот аудиофайл.");} };
-  const play = async () => { const audio=q('[data-r="preview"]');if(!audio.src)return;if(audio.paused){const range=selection();if(range&&(state.playhead<range.start||state.playhead>range.end))audio.currentTime=range.start;else if(state.playhead>0)audio.currentTime=state.playhead;try{await audio.play();setPhase("PLAYING","preview-play");trace("preview.play",{from_ms:Math.round(audio.currentTime*1000),selection:Boolean(range)});}catch(error){trace("preview.play.error",{error:error?.message||String(error)},"error");}}else audio.pause(); };
-  const report = () => { const range=selection();return tracer.buildReport({recorderState:state.phase,runtime:{user_agent:navigator.userAgent,media_recorder:typeof MediaRecorder!=="undefined",audio_context:Boolean(audioContext),get_user_media:Boolean(navigator.mediaDevices?.getUserMedia),record_mime:state.recordMime||null},audio:state.blob?{name:state.fileName,content_type:state.mime,size_bytes:state.blob.size,duration_ms:Math.round(state.duration*1000),channels:state.buffer?.numberOfChannels||null,sample_rate:state.buffer?.sampleRate||null}:null,selection:range?{start_ms:Math.round(range.start*1000),end_ms:Math.round(range.end*1000)}:null}); };
-  const copyReport = async () => { const text=JSON.stringify(report(),null,2);try{await navigator.clipboard.writeText(text);trace("report.copy",{characters:text.length},"ready");toast("Отчёт трассировки скопирован. Пришлите его мне.");}catch{const area=document.createElement("textarea");area.value=text;document.body.append(area);area.select();document.execCommand?.("copy");area.remove();trace("report.copy.fallback",{characters:text.length},"warn");toast("Отчёт скопирован резервным способом.");} };
-
-  const canvas=q('[data-r="wave"]'); const eventTime=(event)=>{if(!state.duration)return 0;const rect=canvas.getBoundingClientRect();const x=Math.max(0,Math.min(rect.width,event.clientX-rect.left));return x/Math.max(1,rect.width)*state.duration;};
-  canvas.addEventListener("pointerdown",(event)=>{if(!state.buffer||state.phase==="RECORDING"||state.phase==="PAUSED")return;canvas.setPointerCapture?.(event.pointerId);state.selecting=true;state.selectionStart=eventTime(event);state.selectionEnd=state.selectionStart;redraw();});
-  canvas.addEventListener("pointermove",(event)=>{if(!state.selecting)return;state.selectionEnd=eventTime(event);renderSelection();redraw();});
-  canvas.addEventListener("pointerup",(event)=>{if(!state.selecting)return;state.selecting=false;state.selectionEnd=eventTime(event);const range=selection();if(!range){state.playhead=state.selectionEnd||0;const audio=q('[data-r="preview"]');if(Number.isFinite(audio.duration))audio.currentTime=state.playhead;state.selectionStart=null;state.selectionEnd=null;trace("wave.seek",{position_ms:Math.round(state.playhead*1000)});}else trace("wave.selection",{start_ms:Math.round(range.start*1000),end_ms:Math.round(range.end*1000),duration_ms:Math.round((range.end-range.start)*1000)},"ready");renderSelection();redraw();});
-
-  q('[data-action="close"]').addEventListener("click",()=>{if(state.phase==="RECORDING"||state.phase==="PAUSED"){trace("ui.close.blocked",{reason:"recording-active"},"warn");toast("Сначала остановите запись.");return;}page.classList.remove("open");trace("ui.close",{});});
-  q('[data-action="record"]').addEventListener("click",startRecording); q('[data-action="pause-record"]').addEventListener("click",togglePause); q('[data-action="stop"]').addEventListener("click",stopRecording); q('[data-action="new"]').addEventListener("click",()=>clearAudio("new-recording")); q('[data-action="play"]').addEventListener("click",play); q('[data-action="delete-selection"]').addEventListener("click",deleteRange); q('[data-action="trim-selection"]').addEventListener("click",trimRange); q('[data-action="undo"]').addEventListener("click",undo); q('[data-action="redo"]').addEventListener("click",redo);
-  q('[data-action="clear-selection"]').addEventListener("click",()=>{state.selectionStart=null;state.selectionEnd=null;renderSelection();redraw();trace("wave.selection.clear",{});});
-  q('[data-action="import"]').addEventListener("click",()=>{trace("import.dialog.open",{});q('[data-r="file-input"]').click();}); q('[data-r="file-input"]').addEventListener("change",async(event)=>{const file=event.target.files?.[0];event.target.value="";await importAudio(file);});
-  q('[data-action="download"]').addEventListener("click",()=>{if(!state.blob||!state.objectUrl)return;const a=document.createElement("a");a.href=state.objectUrl;a.download=state.fileName||`bookcraft-${Date.now()}.wav`;document.body.append(a);a.click();a.remove();trace("audio.download",{name:a.download,size_bytes:state.blob.size},"ready");}); q('[data-action="clear"]').addEventListener("click",()=>clearAudio("delete")); qa('[data-action="copy-report"]').forEach((button)=>button.addEventListener("click",copyReport)); q('[data-action="clear-trace"]').addEventListener("click",()=>tracer.clear(state.phase)); q('[data-action="recognize"]').addEventListener("click",()=>{trace("stt.not-enabled",{stage:2},"warn");toast("Распознавание подключим следующим этапом.");});
-  const audio=q('[data-r="preview"]'); audio.addEventListener("play",()=>{if(state.phase!=="PLAYING")setPhase("PLAYING","native-play");}); audio.addEventListener("pause",()=>{state.playhead=Number(audio.currentTime)||0;if(state.blob&&state.phase==="PLAYING")setPhase(state.undo.length?"EDITING":"RECORDED","preview-pause");trace("preview.pause",{at_ms:Math.round(state.playhead*1000)});redraw();}); audio.addEventListener("timeupdate",()=>{state.playhead=Number(audio.currentTime)||0;const range=selection();if(range&&!audio.paused&&state.playhead>=range.end){audio.pause();audio.currentTime=range.start;state.playhead=range.start;trace("preview.selection-end",{end_ms:Math.round(range.end*1000)});}updateClock();redraw();}); audio.addEventListener("ended",()=>{state.playhead=0;setPhase(state.undo.length?"EDITING":"RECORDED","preview-ended");trace("preview.ended",{});redraw();}); audio.addEventListener("seeking",()=>{state.playhead=Number(audio.currentTime)||0;trace("preview.seek",{position_ms:Math.round(state.playhead*1000)});});
-  window.addEventListener("resize",()=>{if(state.buffer)redraw();});
-  page._recorder={trace,report}; trace("recorder.mount",{media_recorder:typeof MediaRecorder!=="undefined",audio_context:Boolean(audioContext),get_user_media:Boolean(navigator.mediaDevices?.getUserMedia)},"ready"); showEmpty(true); renderSelection(); refreshControls(); traceRender();
+  const trace = (event, meta = {}, kind = "") => tracer.trace(event, state.phase, meta, kind);
+  const fail = (event, error, message) => {
+    trace(event, { name: error?.name || "Error", error: error?.message || String(error) }, "error");
+    toast(message);
+  };
+  const context = () => {
+    if (!AudioContextCtor) throw new Error("AudioContext недоступен");
+    if (!audioContext || audioContext.state === "closed") audioContext = new AudioContextCtor();
+    return audioContext;
+  };
+  const suspendContext = () => {
+    if (audioContext?.state === "running") audioContext.suspend().catch(error => fail("audio.suspend.error", error, "Не удалось приостановить аудиоконтекст."));
+  };
+  const recordElapsed = () => state.elapsedBeforePause + (state.recordStartedAt === null ? 0 : performance.now() - state.recordStartedAt);
+  const updateClock = () => {
+    const value = ["RECORDING", "PAUSED", "PROCESSING"].includes(state.phase) ? recordElapsed() : state.playhead * 1000;
+    q('[data-r="timer"]').textContent = q('[data-r="clock"]').textContent = formatClock(value);
+  };
+  const stopClock = () => { clearInterval(state.timer); state.timer = null; updateClock(); };
+  const startClock = () => { stopClock(); state.timer = setInterval(updateClock, 200); };
+  const selection = () => {
+    if (state.selectionStart === null || state.selectionEnd === null) return null;
+    const start = Math.max(0, Math.min(state.selectionStart, state.selectionEnd));
+    const end = Math.min(state.duration, Math.max(state.selectionStart, state.selectionEnd));
+    return end - start >= 0.025 ? { start, end } : null;
+  };
+  const redraw = () => drawWaveform({ canvas, buffer: state.buffer, selection: selection(), playhead: state.playhead });
+  const refreshControls = () => {
+    const locked = busy();
+    const active = ["RECORDING", "PAUSED"].includes(state.phase);
+    const editable = Boolean(state.buffer) && !locked;
+    const range = Boolean(selection());
+    const enable = (name, enabled) => { q(`[data-action="${name}"]`).disabled = !enabled; };
+    enable("record", !locked);
+    enable("pause-record", active);
+    enable("stop", active || state.phase === "PLAYING");
+    enable("play", Boolean(state.blob) && !locked);
+    enable("delete-selection", editable && range);
+    enable("trim-selection", editable && range);
+    enable("clear-selection", editable && range);
+    enable("undo", !locked && state.undo.length > 0);
+    enable("redo", !locked && state.redo.length > 0);
+    enable("download", Boolean(state.blob) && !locked);
+    enable("clear", Boolean(state.blob) || locked);
+    enable("import", !locked);
+    audio.controls = !locked;
+    audio.hidden = locked || !state.blob;
+    q('[data-action="pause-record"]').textContent = state.phase === "PAUSED" ? "▶ Продолжить" : "Ⅱ Пауза";
+    q('[data-action="play"]').textContent = state.phase === "PLAYING" ? "Ⅱ Пауза воспроизведения" : "▶ Прослушать";
+    const caption = state.phase === "REQUESTING" ? "Разрешите микрофон" : state.phase === "PROCESSING" ? "Обработка аудио" : state.phase === "RECORDING" ? "Идёт запись" : state.phase === "PAUSED" ? "Пауза" : state.blob ? "Новая запись" : "Начать запись";
+    q('[data-r="caption"]').textContent = caption;
+    q('[data-action="record"]').setAttribute("aria-label", caption);
+    q('[data-action="record"]').classList.toggle("recording", state.phase === "RECORDING");
+  };
+  const setPhase = (phase, reason) => {
+    const from = state.phase;
+    state.phase = phase;
+    q('[data-r="state-badge"]').textContent = phase;
+    q('[data-r="state"]').textContent = { EMPTY: "готов к записи", REQUESTING: "ожидание микрофона", RECORDING: "идёт запись", PAUSED: "пауза", PROCESSING: "обработка аудио", RECORDED: "запись готова", EDITING: "редактирование", PLAYING: "прослушивание" }[phase];
+    refreshControls(); updateClock();
+    trace("state.change", { from, to: phase, reason }, phase === "RECORDED" ? "ready" : "");
+  };
+  const renderSelection = () => {
+    const range = selection();
+    q('[data-r="selection"]').textContent = range ? `${range.start.toFixed(3)} → ${range.end.toFixed(3)} сек` : "Выделение: —";
+    q('[data-r="edit-state"]').textContent = range ? `${(range.end - range.start).toFixed(3)} сек выделено` : "нет выделения";
+    refreshControls();
+  };
+  const updateLevel = (level) => {
+    const bars = qa('.br-bars i');
+    const active = Math.round(Math.max(0, Math.min(1, level)) * bars.length);
+    bars.forEach((bar, index) => { bar.classList.toggle("on", index < active); bar.classList.toggle("hot", index < active && index > bars.length * .78); });
+    q('[data-r="level"]').textContent = `${Math.round(level * 100)}%`;
+  };
+  const stopVisualizer = () => {
+    if (state.raf !== null) cancelAnimationFrame(state.raf);
+    state.raf = null;
+    state.sourceNode?.disconnect(); state.analyser?.disconnect();
+    state.sourceNode = state.analyser = null;
+    updateLevel(0);
+  };
+  const startVisualizer = (stream) => {
+    stopVisualizer();
+    try {
+      const ctx = context();
+      const analyser = ctx.createAnalyser();
+      analyser.fftSize = 2048;
+      analyser.smoothingTimeConstant = .72;
+      state.sourceNode = ctx.createMediaStreamSource(stream);
+      state.sourceNode.connect(analyser);
+      state.analyser = analyser;
+      const data = new Uint8Array(analyser.fftSize);
+      const draw = () => {
+        if (!state.analyser || state.phase !== "RECORDING") return;
+        analyser.getByteTimeDomainData(data);
+        const rect = canvas.getBoundingClientRect();
+        const ratio = Math.max(1, window.devicePixelRatio || 1);
+        canvas.width = Math.max(1, Math.floor(rect.width * ratio));
+        canvas.height = Math.max(1, Math.floor(rect.height * ratio));
+        const paint = canvas.getContext("2d");
+        if (!paint) return;
+        paint.setTransform(ratio, 0, 0, ratio, 0, 0); paint.clearRect(0, 0, rect.width, rect.height); paint.beginPath();
+        let power = 0;
+        data.forEach((value, index) => {
+          const n = (value - 128) / 128; power += n * n;
+          const x = index / (data.length - 1) * rect.width;
+          const y = rect.height / 2 + n * rect.height * .42;
+          if (index === 0) paint.moveTo(x, y); else paint.lineTo(x, y);
+        });
+        const level = Math.min(1, Math.sqrt(power / data.length) * 5.4);
+        paint.strokeStyle = level > .78 ? "#f27956" : "#55e5b2"; paint.lineWidth = 2; paint.stroke(); updateLevel(level);
+        state.raf = requestAnimationFrame(draw);
+      };
+      draw(); trace("visualizer.ready", { fft_size: analyser.fftSize }, "ready");
+    } catch (error) { fail("visualizer.error", error, "Не удалось построить живую волну; запись продолжается."); }
+  };
+  const stopTracks = (stream) => stream?.getTracks().forEach(track => track.stop());
+  const releaseCapture = () => {
+    const recorder = state.recorder;
+    if (recorder) {
+      recorder.onstop = recorder.ondataavailable = recorder.onerror = null;
+      if (recorder.state !== "inactive") { try { recorder.stop(); } catch {} }
+    }
+    state.recorder = null; stopTracks(state.stream); state.stream = null;
+    stopClock(); stopVisualizer(); suspendContext();
+  };
+  const revokeUrl = () => { if (state.objectUrl) URL.revokeObjectURL(state.objectUrl); state.objectUrl = ""; };
+  const installAudio = (blob, buffer, name) => {
+    // Prepare URL first; only replace the old recording after preparation succeeds.
+    const url = URL.createObjectURL(blob);
+    audio.pause(); revokeUrl();
+    Object.assign(state, { blob, buffer, fileName: name, mime: blob.type || "audio", objectUrl: url, duration: buffer?.duration || 0, playhead: 0, selectionStart: null, selectionEnd: null, selecting: false });
+    audio.src = url; audio.load();
+    q('[data-r="file-name"]').textContent = name;
+    q('[data-r="file-meta"]').textContent = `${state.mime} · ${formatBytes(blob.size)}`;
+    q('[data-r="format"]').textContent = `Формат: ${state.mime} · ${formatBytes(blob.size)}`;
+    q('[data-r="duration"]').textContent = buffer ? `Длительность: ${formatClock(buffer.duration * 1000)}` : "Длительность: недоступна (декодирование не удалось)";
+    q('[data-r="empty"]').style.display = buffer ? "none" : "grid";
+    q('[data-r="empty"]').textContent = "Волна недоступна. Можно прослушать и сохранить исходный файл.";
+    renderSelection(); redraw(); updateClock();
+  };
+  const decodeBlob = async (blob, source) => {
+    trace("audio.decode.start", { source, size_bytes: blob.size, content_type: blob.type });
+    const decoded = await context().decodeAudioData(await blob.arrayBuffer());
+    return decoded;
+  };
+  const decodedTrace = (buffer) => trace("audio.decode.ready", { duration_ms: Math.round(buffer.duration * 1000), channels: buffer.numberOfChannels, sample_rate: buffer.sampleRate }, "ready");
+  const confirmReplace = () => !state.dirty || window.confirm("Текущая запись не сохранена. Заменить её?");
+  const clearAudio = (reason) => {
+    if ((state.dirty || busy()) && !window.confirm("Удалить текущую запись? Это действие нельзя отменить.")) return;
+    ++operation; releaseCapture(); audio.pause(); revokeUrl();
+    Object.assign(state, { buffer: null, blob: null, original: null, fileName: "", mime: "", recordMime: "", duration: 0, playhead: 0, recordStartedAt: null, elapsedBeforePause: 0, selectionStart: null, selectionEnd: null, selecting: false, undo: [], redo: [], dirty: false });
+    audio.removeAttribute("src"); audio.load();
+    q('[data-r="file-name"]').textContent = "Новая запись";
+    q('[data-r="file-meta"]').textContent = "микрофон · локально";
+    q('[data-r="duration"]').textContent = "Длительность: —";
+    q('[data-r="format"]').textContent = "Формат: —";
+    q('[data-r="empty"]').textContent = "Нажмите «Запись» — здесь появится живая волна.";
+    q('[data-r="empty"]').style.display = "grid";
+    setPhase("EMPTY", reason); renderSelection(); redraw(); trace("audio.clear", { reason }, "warn");
+  };
+  const startRecording = async () => {
+    if (busy() || !confirmReplace()) return;
+    if (!navigator.mediaDevices?.getUserMedia || typeof MediaRecorder === "undefined") {
+      fail("record.error", new Error("MediaRecorder / getUserMedia unavailable"), "Микрофон недоступен. Откройте приложение на localhost или по HTTPS."); return;
+    }
+    audio.pause(); releaseCapture();
+    const id = ++operation;
+    state.recordStartedAt = null; state.elapsedBeforePause = 0;
+    setPhase("REQUESTING", "microphone-request"); trace("microphone.request");
+    let stream;
+    try {
+      // Resume during the user gesture. Permission and decode may finish much later.
+      if (AudioContextCtor) await context().resume();
+      if (id !== operation) return;
+      stream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true } });
+      if (id !== operation) { stopTracks(stream); return; }
+      state.stream = stream;
+      const mime = preferredMime();
+      const recorder = mime ? new MediaRecorder(stream, { mimeType: mime }) : new MediaRecorder(stream);
+      state.recorder = recorder; state.recordMime = recorder.mimeType || mime || "browser-default";
+      const chunks = [];
+      recorder.ondataavailable = (event) => {
+        if (id !== operation || !event.data?.size) return;
+        chunks.push(event.data); trace("record.blob", { size_bytes: event.data.size, content_type: event.data.type });
+      };
+      recorder.onerror = (event) => {
+        if (id !== operation) return;
+        ++operation; releaseCapture(); setPhase(restingPhase(), "record-error"); redraw();
+        fail("record.media-error", event.error || new Error("MediaRecorder error"), "Ошибка записи. Предыдущий файл сохранён; попробуйте записать снова.");
+      };
+      recorder.onstop = async () => {
+        if (id !== operation) return;
+        if (state.recordStartedAt !== null) state.elapsedBeforePause = recordElapsed();
+        state.recordStartedAt = null;
+        releaseCapture(); setPhase("PROCESSING", "record-stop");
+        const finalMime = recorder.mimeType || mime || "audio/webm";
+        const blob = new Blob(chunks, { type: finalMime }); chunks.length = 0;
+        trace("record.finish", { size_bytes: blob.size, content_type: finalMime, elapsed_ms: state.elapsedBeforePause }, "ready");
+        if (!blob.size) { setPhase(restingPhase(), "empty-recording"); redraw(); fail("record.empty", new Error("Empty recording"), "Запись пустая. Попробуйте записать ещё раз."); return; }
+        let buffer = null;
+        try { buffer = await decodeBlob(blob, "microphone"); }
+        catch (error) {
+          if (id !== operation) return;
+          fail("audio.decode.error", error, "Запись получена. Волна недоступна, но можно прослушать и сохранить файл.");
+        }
+        if (id !== operation) return;
+        try {
+          const ext = finalMime.includes("mp4") ? "m4a" : finalMime.includes("ogg") ? "ogg" : finalMime.includes("wav") ? "wav" : "webm";
+          installAudio(blob, buffer, `bookcraft-${new Date().toISOString().replace(/[:.]/g, "-")}.${ext}`);
+          state.undo = []; state.redo = []; state.original = buffer; state.dirty = true;
+          if (buffer) decodedTrace(buffer);
+          setPhase("RECORDED", "record-ready"); suspendContext();
+          if (buffer) toast("Запись готова. Можно слушать, выделять и удалять фрагменты.");
+        } catch (error) { setPhase(restingPhase(), "record-install-error"); fail("record.install.error", error, "Не удалось подготовить запись."); }
+      };
+      recorder.start(500);
+      state.recordStartedAt = performance.now();
+      setPhase("RECORDING", "record-start"); startClock();
+      q('[data-r="empty"]').style.display = "none";
+      startVisualizer(stream);
+      trace("microphone.ready", { tracks: stream.getAudioTracks().length, content_type: state.recordMime }, "ready");
+      trace("record.start", { content_type: state.recordMime });
+    } catch (error) {
+      stopTracks(stream);
+      if (id !== operation) return;
+      releaseCapture(); setPhase(restingPhase(), "microphone-error"); redraw();
+      const message = error.name === "NotAllowedError" ? "Доступ к микрофону запрещён. Разрешите его в настройках сайта и повторите запись." : error.name === "NotFoundError" ? "Микрофон не найден. Подключите устройство и повторите запись." : "Не удалось включить микрофон. Проверьте устройство и разрешения браузера.";
+      fail("microphone.error", error, message);
+    }
+  };
+  const togglePause = async () => {
+    const recorder = state.recorder;
+    if (!recorder) return;
+    if (state.phase === "RECORDING") {
+      recorder.pause(); state.elapsedBeforePause = recordElapsed(); state.recordStartedAt = null;
+      stopClock(); stopVisualizer(); suspendContext(); setPhase("PAUSED", "record-pause"); trace("record.pause", { elapsed_ms: recordElapsed() });
+    } else if (state.phase === "PAUSED") {
+      const id = operation;
+      if (AudioContextCtor) await context().resume();
+      if (id !== operation || state.phase !== "PAUSED" || recorder.state !== "paused") return;
+      recorder.resume(); state.recordStartedAt = performance.now();
+      setPhase("RECORDING", "record-resume"); startClock(); startVisualizer(state.stream); trace("record.resume", { elapsed_ms: recordElapsed() });
+    }
+  };
+  const stopRecording = () => {
+    if (state.phase === "PLAYING") { audio.pause(); audio.currentTime = 0; state.playhead = 0; updateClock(); redraw(); return; }
+    if (!state.recorder || !["RECORDING", "PAUSED"].includes(state.phase)) return;
+    state.elapsedBeforePause = recordElapsed(); state.recordStartedAt = null;
+    stopClock(); stopVisualizer(); setPhase("PROCESSING", "record-stop-request");
+    trace("record.stop.request", { elapsed_ms: recordElapsed() }); state.recorder.stop();
+  };
+  // AudioBuffers are immutable in this controller; history shares them instead of
+  // duplicating entire recordings. Keep the original separately from bounded undo.
+  const edit = (kind) => {
+    if (busy() || !state.buffer) return;
+    const range = selection();
+    if (!range) return;
+    const previous = state.buffer;
+    const next = kind === "delete-selection" ? cutSelection(context(), previous, range.start, range.end) : trimToSelection(context(), previous, range.start, range.end);
+    const name = state.fileName.replace(/(?:-edited)?\.[^.]+$/, "") + "-edited.wav";
+    installAudio(audioBufferToWavBlob(next), next, name);
+    state.undo.push(previous); if (state.undo.length > 20) state.undo.splice(1, 1); state.redo = []; state.dirty = true;
+    setPhase("EDITING", kind);
+    trace(`edit.${kind}`, { start_ms: Math.round(range.start * 1000), end_ms: Math.round(range.end * 1000), duration_before_ms: Math.round(previous.duration * 1000), duration_after_ms: Math.round(next.duration * 1000) }, "ready");
+  };
+  const history = (kind) => {
+    if (busy()) return;
+    const from = kind === "undo" ? state.undo : state.redo;
+    const to = kind === "undo" ? state.redo : state.undo;
+    if (!from.length) return;
+    const previous = state.buffer;
+    const next = from.at(-1);
+    installAudio(audioBufferToWavBlob(next), next, state.fileName.replace(/(?:-edited)?\.[^.]+$/, "") + "-edited.wav");
+    from.pop(); to.push(previous); state.dirty = true;
+    setPhase(restingPhase(), kind); trace(`edit.${kind}`, { undo_count: state.undo.length, redo_count: state.redo.length }, "ready");
+  };
+  const importAudio = async (file) => {
+    if (!file || busy() || !confirmReplace()) return;
+    audio.pause(); const id = ++operation;
+    state.recordStartedAt = null; state.elapsedBeforePause = 0;
+    setPhase("PROCESSING", "import-start"); trace("import.start", { name: file.name, size_bytes: file.size, content_type: file.type });
+    try {
+      if (!file.size) throw new Error("Файл пустой");
+      const buffer = await decodeBlob(file, "import");
+      if (id !== operation) return;
+      installAudio(file, buffer, file.name || `import-${Date.now()}`);
+      state.original = buffer; state.undo = []; state.redo = []; state.dirty = false; state.recordMime = "";
+      decodedTrace(buffer); setPhase("RECORDED", "import-ready"); suspendContext();
+      trace("import.ready", { name: file.name, size_bytes: file.size, duration_ms: Math.round(buffer.duration * 1000) }, "ready"); toast("Аудиофайл загружен.");
+    } catch (error) {
+      if (id !== operation) return;
+      setPhase(restingPhase(), "import-error"); suspendContext(); redraw();
+      fail("import.error", error, "Не удалось открыть аудиофайл. Предыдущая запись сохранена. Попробуйте WAV, MP3 или другой поддерживаемый браузером формат.");
+    }
+  };
+  const play = async () => {
+    if (busy() || !state.blob) return;
+    if (!audio.paused) { audio.pause(); return; }
+    const range = selection();
+    if (range && (state.playhead < range.start || state.playhead >= range.end)) audio.currentTime = range.start;
+    else audio.currentTime = state.playhead >= state.duration && state.duration ? 0 : state.playhead;
+    try { await audio.play(); }
+    catch (error) { fail("preview.play.error", error, "Браузер не смог воспроизвести файл. Сохраните его или импортируйте другой формат."); }
+  };
+  const report = () => tracer.buildReport({
+    recorderState: state.phase,
+    runtime: { user_agent: navigator.userAgent, media_recorder: typeof MediaRecorder !== "undefined", audio_context: Boolean(AudioContextCtor), audio_context_state: audioContext?.state || "not-created", get_user_media: Boolean(navigator.mediaDevices?.getUserMedia), record_mime: state.recordMime || null },
+    audio: state.blob ? { name: state.fileName, content_type: state.mime, size_bytes: state.blob.size, duration_ms: state.buffer ? Math.round(state.duration * 1000) : null, channels: state.buffer?.numberOfChannels || null, sample_rate: state.buffer?.sampleRate || null } : null,
+    selection: selection() ? { start_ms: Math.round(selection().start * 1000), end_ms: Math.round(selection().end * 1000) } : null,
+  });
+  const download = (blob, name, url = "") => {
+    const temporary = !url;
+    const link = document.createElement("a"); link.href = url || URL.createObjectURL(blob); link.download = name;
+    document.body.append(link); link.click(); link.remove();
+    if (temporary) setTimeout(() => URL.revokeObjectURL(link.href), 1000);
+  };
+  const copyReport = async () => {
+    trace("report.copy.request");
+    const text = JSON.stringify(report(), null, 2);
+    try {
+      await navigator.clipboard.writeText(text);
+      trace("report.copy", { characters: text.length }, "ready"); toast("Отчёт скопирован.");
+    } catch {
+      const area = document.createElement("textarea"); area.value = text; page.append(area); area.select();
+      let copied = false;
+      try { copied = document.execCommand?.("copy") === true; } catch {} finally { area.remove(); }
+      if (copied) { trace("report.copy.fallback", { characters: text.length }, "ready"); toast("Отчёт скопирован."); }
+      else {
+        trace("report.copy.unavailable", {}, "warn");
+        download(new Blob([JSON.stringify(report(), null, 2)], { type: "application/json" }), "bookcraft-recorder-report.json");
+        toast("Буфер обмена недоступен. Отчёт сохранён как JSON-файл.");
+      }
+    }
+  };
+  const guard = (operationName, fn) => (...args) => {
+    try { Promise.resolve(fn(...args)).catch(error => fail("recorder.unexpected", error, `Ошибка: ${operationName}. Подробности в отчёте.`)); }
+    catch (error) { fail("recorder.unexpected", error, `Ошибка: ${operationName}. Подробности в отчёте.`); }
+  };
+  const action = (name, fn) => qa(`[data-action="${name}"]`).forEach(button => button.addEventListener("click", guard(name, fn)));
+  const eventTime = (event) => {
+    const rect = canvas.getBoundingClientRect();
+    return Math.max(0, Math.min(1, (event.clientX - rect.left) / Math.max(1, rect.width))) * state.duration;
+  };
+  canvas.addEventListener("pointerdown", guard("selection", event => {
+    if (!state.buffer || busy() || (event.button !== undefined && event.button !== 0)) return;
+    event.preventDefault(); audio.pause(); canvas.setPointerCapture?.(event.pointerId);
+    state.selecting = true; state.selectionStart = state.selectionEnd = eventTime(event);
+    renderSelection(); redraw(); trace("wave.selection.start", { start_ms: state.selectionStart * 1000 });
+  }));
+  canvas.addEventListener("pointermove", event => { if (state.selecting) { state.selectionEnd = eventTime(event); renderSelection(); redraw(); } });
+  canvas.addEventListener("pointerup", event => {
+    if (!state.selecting) return;
+    state.selecting = false; state.selectionEnd = eventTime(event);
+    const range = selection();
+    if (range) trace("wave.selection", { start_ms: range.start * 1000, end_ms: range.end * 1000 }, "ready");
+    else {
+      state.playhead = state.selectionEnd; audio.currentTime = state.playhead;
+      state.selectionStart = state.selectionEnd = null; trace("wave.seek", { position_ms: state.playhead * 1000 });
+    }
+    canvas.releasePointerCapture?.(event.pointerId); renderSelection(); redraw(); updateClock();
+  });
+  const cancelSelection = () => {
+    if (!state.selecting) return;
+    state.selecting = false; state.selectionStart = state.selectionEnd = null;
+    renderSelection(); redraw(); trace("wave.selection.cancel");
+  };
+  canvas.addEventListener("pointercancel", cancelSelection);
+  canvas.addEventListener("lostpointercapture", cancelSelection);
+  action("close", () => {
+    if (busy()) { trace("ui.close.blocked", { reason: state.phase }, "warn"); toast("Остановите запись и дождитесь обработки, либо нажмите «Новая» для отмены."); return; }
+    audio.pause(); suspendContext(); page.classList.remove("open"); document.body.style.overflow = savedOverflow; returnFocus?.focus(); trace("ui.close");
+  });
+  action("record", startRecording); action("pause-record", togglePause); action("stop", stopRecording);
+  action("new", () => clearAudio("new-recording")); action("clear", () => clearAudio("delete")); action("play", play);
+  action("delete-selection", () => edit("delete-selection")); action("trim-selection", () => edit("trim-selection"));
+  action("undo", () => history("undo")); action("redo", () => history("redo"));
+  action("clear-selection", () => { state.selectionStart = state.selectionEnd = null; renderSelection(); redraw(); trace("wave.selection.clear"); });
+  action("import", () => { trace("import.dialog.open"); q('[data-r="file-input"]').click(); });
+  q('[data-r="file-input"]').addEventListener("change", guard("import", event => { const file = event.target.files?.[0]; event.target.value = ""; return importAudio(file); }));
+  action("download", () => {
+    if (!state.blob || busy()) return;
+    download(state.blob, state.fileName, state.objectUrl);
+    // Browsers cannot confirm the user completed the Save dialog; retain dirty protection.
+    trace("audio.download", { name: state.fileName, size_bytes: state.blob.size }, "ready"); toast("Файл передан браузеру для сохранения.");
+  });
+  action("copy-report", copyReport); action("clear-trace", () => tracer.clear(state.phase));
+  audio.addEventListener("play", () => {
+    if (busy() || !state.blob || !page.classList.contains("open")) { audio.pause(); return; }
+    setPhase("PLAYING", "preview-play"); trace("preview.play", { from_ms: audio.currentTime * 1000 });
+  });
+  audio.addEventListener("pause", () => {
+    if (busy() || !state.blob) return;
+    state.playhead = Number(audio.currentTime) || 0;
+    if (state.phase === "PLAYING") setPhase(restingPhase(), "preview-pause");
+    trace("preview.pause", { at_ms: state.playhead * 1000 }); updateClock(); redraw();
+  });
+  audio.addEventListener("timeupdate", () => {
+    if (busy() || !state.blob) return;
+    state.playhead = Number(audio.currentTime) || 0;
+    const range = selection();
+    if (range && !audio.paused && state.playhead >= range.end) {
+      audio.pause(); audio.currentTime = state.playhead = range.start; trace("preview.selection-end", { end_ms: range.end * 1000 });
+    }
+    updateClock(); redraw();
+  });
+  audio.addEventListener("ended", () => {
+    if (busy() || !state.blob) return;
+    state.playhead = 0; setPhase(restingPhase(), "preview-ended"); trace("preview.ended"); redraw();
+  });
+  audio.addEventListener("seeking", () => {
+    if (busy() || !state.blob) return;
+    state.playhead = Number(audio.currentTime) || 0; trace("preview.seek", { position_ms: state.playhead * 1000 }); updateClock(); redraw();
+  });
+  audio.addEventListener("error", () => { if (state.blob && !busy()) fail("preview.error", new Error(`MediaError ${audio.error?.code || "unknown"}`), "Браузер не поддерживает воспроизведение этого файла. Сохраните оригинал."); });
+  const resize = () => { if (!busy()) redraw(); };
+  window.addEventListener("resize", resize);
+  window.addEventListener("beforeunload", event => { if (state.dirty || busy()) { event.preventDefault(); event.returnValue = ""; } });
+  window.addEventListener("pagehide", () => {
+    ++operation; releaseCapture(); audio.pause();
+    if (audioContext) { const old = audioContext; audioContext = null; old.close().catch(() => {}); }
+    revokeUrl(); setPhase(restingPhase(), "pagehide"); trace("resources.release");
+  });
+  window.addEventListener("pageshow", () => {
+    if (state.blob && !state.objectUrl) { state.objectUrl = URL.createObjectURL(state.blob); audio.src = state.objectUrl; audio.load(); redraw(); }
+  });
+  page._recorder = {
+    trace, report,
+    open: () => { returnFocus = document.activeElement; savedOverflow = document.body.style.overflow; document.body.style.overflow = "hidden"; redraw(); updateClock(); q('[data-action="close"]').focus(); trace("ui.open", {}, "ready"); },
+  };
+  trace("recorder.mount", { media_recorder: typeof MediaRecorder !== "undefined", audio_context: Boolean(AudioContextCtor) }, "ready");
+  renderSelection(); refreshControls(); traceRender();
 }
 
-export function mountRecorderPage() { injectStyles(); const page=buildPage(); if(!page._recorder)makeController(page); }
+export function mountRecorderPage() { injectStyles(); const page = buildPage(); if (!page._recorder) makeController(page); }
