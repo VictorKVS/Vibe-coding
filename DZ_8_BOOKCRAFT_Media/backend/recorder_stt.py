@@ -7,12 +7,36 @@ from pathlib import Path
 import tempfile
 import time
 import wave
+from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, File, HTTPException, Request, UploadFile
 
 ROOT = Path(__file__).resolve().parents[1]
 app = FastAPI(title="BOOK.CRAFT Recorder STT")
 lock = asyncio.Lock()
+WAIT_SECONDS = 330
+
+
+@asynccontextmanager
+async def recognition_slot(request):
+    """Wait without starting a second Whisper; cancellation never owns the lock."""
+    deadline = time.monotonic() + WAIT_SECONDS
+    acquired = False
+    try:
+        while not acquired:
+            if await request.is_disconnected():
+                raise HTTPException(499, "Ожидание распознавания отменено.")
+            if time.monotonic() >= deadline:
+                raise HTTPException(504, "Очередь распознавания занята слишком долго. Повторите позже.")
+            try:
+                await asyncio.wait_for(lock.acquire(), timeout=.25)
+                acquired = True
+            except asyncio.TimeoutError:
+                pass
+        yield
+    finally:
+        if acquired:
+            lock.release()
 
 
 def runtime():
@@ -28,7 +52,7 @@ def runtime():
 @app.get("/health")
 def health():
     exe, model = runtime()
-    return {"ready": exe.is_file() and model.is_file(), "model": model.name, "engine": "whisper.cpp", "segment_seconds": 30}
+    return {"ready": exe.is_file() and model.is_file(), "busy": lock.locked(), "version": "3.2.1", "model": model.name, "engine": "whisper.cpp", "segment_seconds": 30}
 
 
 def validate_audio(data):
@@ -53,8 +77,7 @@ async def segment(request: Request, audio: UploadFile = File(...)):
     exe, model = runtime()
     if not exe.is_file() or not model.is_file():
         raise HTTPException(503, "Whisper или модель не найдены. Проверьте локальную конфигурацию.")
-    if lock.locked(): raise HTTPException(409, "Whisper занят другой записью. Повторите через несколько секунд.")
-    async with lock:
+    async with recognition_slot(request):
         with tempfile.TemporaryDirectory(prefix="bookcraft-recorder-") as folder:
             source = Path(folder) / "segment.wav"
             output = Path(folder) / "result"
