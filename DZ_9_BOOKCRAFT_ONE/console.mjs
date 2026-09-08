@@ -98,7 +98,7 @@ window.addEventListener('pagehide',stopVoice);
 $('#clear-chat').onclick=()=>{cancelPending();$('#chat-input').value='';$('#chat-status').textContent='Ввод очищен. Диалоги и история анализов сохранены.';};
 
 function phoneChannel(){if(!chat)return;if(chat.channel!=='Телефон'&&chat.messages.length>1)openBot();chat.channel='Телефон';$('#chat-channel').value='Телефон';persistChat();}
-mountVoice({beforeRecord:()=>{stopVoice();cancelPending();phoneChannel();},onTranscript:text=>{phoneChannel();$('#chat-input').value=text.replace(/\s+/g,' ').trim();$('#chat-input').focus();}});
+mountVoice({beforeRecord:()=>{stopVoice();cancelPending();phoneChannel();},onTranscript:text=>{phoneChannel();const message=text.replace(/\s+/g,' ').trim();$('#chat-input').value=message;send(message);$('#chat-messages').scrollIntoView({block:'nearest',behavior:'smooth'});}});
 
 let telegramItems=[];
 async function refreshTelegram(){
