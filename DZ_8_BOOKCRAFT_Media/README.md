@@ -3,10 +3,51 @@
 > Продолжение ДЗ-6: текст, изображения и аудио в одном рабочем процессе.
 
 [![DZ-8 PRO](https://img.shields.io/badge/DZ--8-PRO-7c3aed)](../submissions/DZ-08/PRO/README.md)
-[![Local first](https://img.shields.io/badge/AI-local--first-22c55e)](#бесплатный-контур)
+[![Local first](https://img.shields.io/badge/AI-local--first-22c55e)](RECORDER_STT.md)
 [![Secrets](https://img.shields.io/badge/secrets-not_saved-0ea5e9)](#безопасность)
 
 Проект создан как отдельная копия стабильного BOOK·CRAFT из ДЗ-6. Исходная версия ДЗ-6 остаётся неизменной, а здесь развивается мультимодальная студия.
+
+## 🎙️ Диктофон и распознавание — демонстрация
+
+[![BOOK·CRAFT Recorder](../submissions/DZ-08/PRO/screenshots/03-recorder-workspace.png)](../submissions/DZ-08/PRO/demo/bookcraft-recorder-demo.mp4)
+
+**[▶ Смотреть видео](../submissions/DZ-08/PRO/demo/bookcraft-recorder-demo.mp4) · [Результаты и скриншоты](../submissions/DZ-08/PRO/README.md)**
+
+Запись и пауза, реальная волна, монтаж с Undo/Redo, импорт MP3/WAV/WebM, локальный Whisper, процент, отмена и продолжение, сохранение аудио и TXT. На демонстрации подтверждены диктовка и MP3 из двух сегментов.
+
+### Запустить на этом компьютере
+
+```powershell
+& "G:\1\Vibe coding\BOOKCRAFT-STT-OLD\DZ_8_BOOKCRAFT_Media\START_BOOKCRAFT_MEDIA.cmd"
+```
+
+Нажмите **🎙 Диктофон**. Штатный запуск поднимает интерфейс и локальный STT-сервис на порту 8019. Тестовая вкладка на 5174 также использует этот сервис. Ключи облачных API для диктофона не нужны.
+
+### Запустить из GitHub на другом компьютере
+
+1. Установите Node.js и Python, выполните `npm ci` и `pip install -r backend/requirements.txt`.
+2. Установите whisper.cpp и подходящую модель, например `ggml-small.bin`.
+3. Создайте `.runtime/recorder-stt.json` по примеру ниже и замените пути своими.
+4. Выполните `START_RECORDER_STT.cmd`, затем `npm run dev`.
+
+```json
+{
+  "python": "C:/path/to/python.exe",
+  "executable": "C:/path/to/whisper-cli.exe",
+  "model": "C:/path/to/ggml-small.bin"
+}
+```
+
+Конфигурация, модели и временные файлы остаются локальными. [Подробности STT и ограничения](RECORDER_STT.md).
+
+### Проверить результат
+
+![Диктовка: готовая расшифровка](../submissions/DZ-08/PRO/screenshots/06-microphone-transcript.png)
+
+![Импортированный MP3: два сегмента и 100%](../submissions/DZ-08/PRO/screenshots/08-mp3-transcript.png)
+
+Ниже описаны остальные возможности студии и отдельный backend-контракт голосового запроса.
 
 ## Что переносится из ДЗ-6
 
@@ -144,7 +185,7 @@ uvicorn backend.app:app --reload --port 8018
 
 Проверка: `http://127.0.0.1:8018/api/health`.
 
-### Загрузка аудиозаписи и расшифровка
+### Голосовой ввод в поле идеи (отдельный маршрут)
 
 Кнопка **«Загрузить MP3 и расшифровать»** принимает MP3, WAV, M4A, OGG и WebM размером до 25 МБ. Локальный Whisper превращает запись в текст и помещает его в поле идеи, где автор проверяет расшифровку перед отправкой модели.
 

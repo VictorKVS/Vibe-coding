@@ -9,16 +9,24 @@
   <a href="submissions/DZ-05/README.md"><img src="https://img.shields.io/badge/DZ--5-ready-22C55E" alt="DZ-5"></a>
   <a href="submissions/DZ-06/README.md"><img src="https://img.shields.io/badge/DZ--6-ready-22C55E" alt="DZ-6"></a>
   <a href="submissions/DZ-08/LITE/README.md"><img src="https://img.shields.io/badge/DZ--8_Lite-ready-22C55E" alt="DZ-8 Lite"></a>
-  <a href="submissions/DZ-08/PRO/README.md"><img src="https://img.shields.io/badge/DZ--8_Pro-in_progress-F59E0B" alt="DZ-8 Pro"></a>
+  <a href="submissions/DZ-08/PRO/README.md"><img src="https://img.shields.io/badge/DZ--8_Pro-voice_demo-22C55E" alt="DZ-8 Pro"></a>
 </p>
 
 > Репозиторий показывает не набор разрозненных домашних работ, а последовательное развитие одного подхода: **интерфейс → интеграции → AI-продукт → мультимодальность → управляемый backend**.
 
-<p align="center">
-  <a href="submissions/DZ-06/README.md">
-    <img src="submissions/DZ-06/screenshots/07-bookcraft-start-screen.jpg" width="900" alt="BOOK CRAFT — флагманский проект">
-  </a>
-</p>
+## 🎙️ Новое: BOOK·CRAFT Recorder
+
+**Голос → редактируемая аудиозапись → русский текст.** Полноэкранный диктофон, импорт MP3 и локальное распознавание Whisper с реальным прогрессом.
+
+[![BOOK·CRAFT Recorder — открыть демонстрацию](submissions/DZ-08/PRO/screenshots/03-recorder-workspace.png)](submissions/DZ-08/PRO/demo/bookcraft-recorder-demo.mp4)
+
+**[▶ Видео демонстрации](submissions/DZ-08/PRO/demo/bookcraft-recorder-demo.mp4) · [Карточка ДЗ-8 PRO](submissions/DZ-08/PRO/README.md) · [Запуск и исходники](DZ_8_BOOKCRAFT_Media/README.md)**
+
+| Запись и монтаж | Распознавание | Подтверждение |
+|---|---|---|
+| Микрофон, пауза, продолжение, волна, Undo/Redo | Whisper локально, сегменты по 30 секунд, отмена и продолжение | 8 скриншотов, видео, тесты интерфейса и backend |
+
+На демонстрационных снимках: диктовка **6 секунд → текст за 9 секунд**, MP3 **35 секунд → 2 фрагмента → 100% за 40 секунд**. Это результаты конкретных проверок на авторском компьютере.
 
 ## 🧭 Карта развития
 
@@ -111,7 +119,7 @@ AI-студия сценариев книг и видеороликов: жан�
 
 ### 🖼️ ДЗ-8 · Media & Voice
 
-Lite фиксирует состояние загрузки изображения. Pro выделен в отдельный контур для голосового backend.
+Lite фиксирует загрузку изображения. В Pro добавлены полноэкранный диктофон, локальное распознавание речи, скриншоты и видеодемонстрация.
 
 **Рост:** текстовый продукт → мультимодальная платформа.
 
@@ -161,7 +169,7 @@ flowchart TD
 | воспроизводимый запуск | README и стартовые сценарии проектов |
 | формальные критерии | MIN / MED / MAX и UI-проверки |
 | визуальные доказательства | `submissions/*/screenshots` |
-| демонстрация | видео ДЗ-6 и последовательность ДЗ-5 |
+| демонстрация | видео ДЗ-6, видео диктофона ДЗ-8 и последовательность ДЗ-5 |
 | секреты вне Git | `.gitignore`, переменные окружения и Colab Secrets |
 | разделение продукта и сдачи | исходники в `DZ_*`, карточки в `submissions/` |
 

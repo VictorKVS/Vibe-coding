@@ -8,7 +8,7 @@
 | ДЗ-5 | AI-секретарь встреч | файлы, STT, Sheets, PDF и TXT | ✅ готово | [Карточка](DZ-05/README.md) |
 | ДЗ-6 | BOOK·CRAFT | React-продукт, локальная LLM и Model Gateway | ✅ готово | [Карточка](DZ-06/README.md) |
 | ДЗ-8 Lite | BOOK·CRAFT Media | загрузка изображения и честный UI-статус | ✅ готово | [Карточка](DZ-08/LITE/README.md) |
-| ДЗ-8 Pro | Voice Backend | audio → STT → user_message | 🟡 подготовка | [Карточка](DZ-08/PRO/README.md) |
+| ДЗ-8 Pro | Voice Backend | audio → STT → user_message | 🎬 STT-демо и проверки | [Карточка](DZ-08/PRO/README.md) |
 
 ## Лестница развития
 
