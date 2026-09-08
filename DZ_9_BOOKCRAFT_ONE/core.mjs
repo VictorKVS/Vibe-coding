@@ -43,7 +43,7 @@ export function advance(session,input,data){
   const terms={sales:[/компьютер|станци/i,/монитор/i,/перифери|клавиатур/i],medical:[/терапевт/i,/кардиолог/i,/профилактич|осмотр/i],sport:[/пробн/i,/бассейн/i,/персональн/i],auto:[/диагностик/i,/масл/i,/шиномонтаж|шин/i],massage:[/расслабля/i,/спин/i,/подароч/i],warehouse:[/бумаг/i,/упаковк/i,/расходн/i]}[s.profile];
   const found=p.catalog.filter((item,i)=>terms[i]?.test(raw));
   if(raw!=='new'&&found.length===1){const item=found[0];s.itemId=item.id;s.step=item.stock!==undefined?'quantity':'slot';say(`${item.name}: ${money(item.price)}. ${item.stock!==undefined?`Доступно ${data.stock[item.id]} шт. Какое количество нужно?`:'Выберите время из демонстрационного расписания. Администратор подтвердит запись.'}`);}
-  else say(`Помогу: ${data.settings.goal.toLowerCase()}. Выберите вариант из каталога ниже.`);
+  else say(s.profile==='medical'?'Не поняла, к какому врачу вы хотите записаться. Назовите терапевта, хирурга или кардиолога.':`Помогу: ${data.settings.goal.toLowerCase()}. Выберите вариант из каталога ниже.`);
   return {session:s};
  }
  if(s.step==='history-contact'){
