@@ -4,6 +4,7 @@ const path = require('node:path');
 const allowed = {'/':'index.html','/index.html':'index.html','/inbox.html':'inbox.html','/app.js':'app.js','/style.css':'style.css','/console.css':'console.css','/console.mjs':'console.mjs','/core.mjs':'core.mjs'};
 allowed['/assets/secretary-sprite.png']='assets/secretary-sprite.png';
 allowed['/voice.mjs']='voice.mjs';
+allowed['/clinic-knowledge.mjs']='clinic-knowledge.mjs';
 for(const name of ['01-therapist.wav','02-cardiologist.wav','03-checkup.wav'])allowed['/demo-audio/'+name]='demo-audio/'+name;
 const types = {'.wav':'audio/wav','.png':'image/png','.html':'text/html; charset=utf-8','.js':'text/javascript; charset=utf-8','.mjs':'text/javascript; charset=utf-8','.css':'text/css; charset=utf-8'};
 let telegram={status:()=>({configured:false,enabled:false}),inbox:()=>[]};

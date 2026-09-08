@@ -1,7 +1,7 @@
 const fs=require('node:fs');
 const path=require('node:path');
 const destination=path.resolve(process.argv[2]||path.join(__dirname,'dist'));
-const files=['lab.html','lab.mjs','lab.css','index.html','console.css','console.mjs','core.mjs','voice.mjs','inbox.html','app.js','style.css'];
+const files=['clinic-knowledge.mjs','lab.html','lab.mjs','lab.css','index.html','console.css','console.mjs','core.mjs','voice.mjs','inbox.html','app.js','style.css'];
 fs.mkdirSync(destination,{recursive:true});
 for(const name of files)fs.copyFileSync(path.join(__dirname,name),path.join(destination,name));
 fs.mkdirSync(path.join(destination,'assets'),{recursive:true});
