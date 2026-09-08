@@ -1,6 +1,7 @@
 const http = require('node:http');
 const fs = require('node:fs');
 const path = require('node:path');
+const cloud = process.env.CLOUD_MODE === 'true';
 const allowed = {'/':'index.html','/index.html':'index.html','/inbox.html':'inbox.html','/app.js':'app.js','/style.css':'style.css','/console.css':'console.css','/console.mjs':'console.mjs','/core.mjs':'core.mjs'};
 allowed['/assets/secretary-sprite.png']='assets/secretary-sprite.png';
 allowed['/voice.mjs']='voice.mjs';
@@ -8,12 +9,20 @@ allowed['/clinic-knowledge.mjs']='clinic-knowledge.mjs';
 for(const name of ['01-therapist.wav','02-cardiologist.wav','03-checkup.wav'])allowed['/demo-audio/'+name]='demo-audio/'+name;
 const types = {'.wav':'audio/wav','.png':'image/png','.html':'text/html; charset=utf-8','.js':'text/javascript; charset=utf-8','.mjs':'text/javascript; charset=utf-8','.css':'text/css; charset=utf-8'};
 let telegram={status:()=>({configured:false,enabled:false}),inbox:()=>[]};
-import('./telegram.mjs').then(m=>{telegram=m.startTelegram(__dirname);}).catch(()=>console.error('Telegram module unavailable'));
+if(!cloud)import('./telegram.mjs').then(m=>{telegram=m.startTelegram(__dirname);}).catch(()=>console.error('Telegram module unavailable'));
 const labApi=require('./lab-server.cjs');
 for(const name of ['lab.html','lab.mjs','lab.css'])allowed['/'+name]=name;
 const port = Number(process.env.PORT || 5179);
 http.createServer((req,res)=>{
  const route=new URL(req.url,'http://localhost').pathname;
+ const json=(status,body)=>{res.writeHead(status,{'Content-Type':'application/json; charset=utf-8','Cache-Control':'no-store'});res.end(JSON.stringify(body));};
+ if(route==='/api/health'){json(200,{status:'ok',application:'BOOKCRAFT ONE',mode:cloud?'cloud-demo':'local'});return;}
+ if(route==='/api/catalog'){
+  if(req.method!=='GET'){json(405,{error:'Use GET'});return;}
+  import('./core.mjs').then(({profiles})=>json(200,{demo:true,profiles:Object.fromEntries(Object.entries(profiles).map(([id,p])=>[id,{name:p.name,catalog:p.catalog}]))})).catch(()=>json(500,{error:'Catalog unavailable'}));return;
+ }
+ if(cloud&&route.startsWith('/api/stt/')){json(503,{ready:false,detail:'В публичном демо распознавание не подключено. Используйте текстовый диалог.'});return;}
+ if(cloud&&route.startsWith('/api/lab/')){json(route.endsWith('/models')?200:503,{models:[],errors:['Локальные модели доступны только в версии на компьютере.'],error:'Модели не подключены к облачному демо.'});return;}
  if(route.startsWith('/api/lab/')){void labApi(req,res);return;}
  if(route==='/api/telegram/status'||route==='/api/telegram/inbox'){if(req.method!=='GET'){res.writeHead(405);res.end();return;}res.writeHead(200,{'Content-Type':'application/json','Cache-Control':'no-store'});res.end(JSON.stringify(route.endsWith('status')?telegram.status():telegram.inbox()));return;}
  if(route==='/api/stt/health'||route==='/api/stt/segment'){
@@ -27,5 +36,5 @@ http.createServer((req,res)=>{
  }
  const file=allowed[route];
  if(!file){res.writeHead(404);res.end('Not found');return;}
- fs.readFile(path.join(__dirname,file),(err,data)=>{if(err){res.writeHead(500);res.end('Read error');return;}res.writeHead(200,{'Content-Type':types[path.extname(file)],'Cache-Control':'no-store'});res.end(data);});
-}).listen(port,'127.0.0.1',()=>console.log(`BOOKCRAFT CRM: http://127.0.0.1:${port}`));
+ fs.readFile(path.join(__dirname,file),(err,data)=>{if(err){res.writeHead(500);res.end('Read error');return;}if(cloud&&file==='index.html')data=data.toString().replace('</head>','<style>.voice-panel{display:none!important}body:before{content:"Облачное демо · текстовые сценарии и CRM · голос доступен в локальной версии";display:block;padding:10px;background:#eee9ff;color:#392766;text-align:center;font:13px sans-serif}</style></head>');res.writeHead(200,{'Content-Type':types[path.extname(file)],'Cache-Control':'no-store'});res.end(data);});
+}).listen(port,cloud?'0.0.0.0':'127.0.0.1',()=>console.log(`BOOKCRAFT CRM ready on port ${port} (${cloud?'cloud':'local'})`));

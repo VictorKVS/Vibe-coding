@@ -1,0 +1,15 @@
+services:
+  - type: web
+    name: bookcraft-one-dz10
+    runtime: node
+    plan: free
+    branch: codex/universal-bot-crm
+    rootDir: DZ_9_BOOKCRAFT_ONE
+    buildCommand: npm ci --omit=dev
+    startCommand: node server.cjs
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_VERSION
+        value: 24
+      - key: CLOUD_MODE
+        value: "true"
