@@ -8,6 +8,7 @@ import {
   trimToSelection,
 } from "./recorder-audio.js";
 import { createRecorderTrace } from "./recorder-trace.js";
+import { mountRecorderStt } from "./recorder-stt.js";
 
 const PAGE_ID = "bookcraft-recorder-page-v3";
 const STYLE_ID = "bookcraft-recorder-page-v3-style";
@@ -87,6 +88,7 @@ function makeController(page) {
   let operation = 0;
   let savedOverflow = "";
   let returnFocus = null;
+  let stt = null;
   const state = {
     phase: "EMPTY", recorder: null, stream: null, recordMime: "",
     recordStartedAt: null, elapsedBeforePause: 0, timer: null,
@@ -154,6 +156,7 @@ function makeController(page) {
   };
   const redraw = () => drawWaveform({ canvas, buffer: state.buffer, selection: selection(), playhead: state.playhead });
   const refreshControls = () => {
+    stt?.changed();
     const locked = busy();
     const active = ["RECORDING", "PAUSED"].includes(state.phase);
     const editable = Boolean(state.buffer) && !locked;
@@ -543,7 +546,7 @@ function makeController(page) {
   audio.addEventListener("error", () => { if (state.blob && !busy()) fail("preview.error", new Error(`MediaError ${audio.error?.code || "unknown"}`), "Браузер не поддерживает воспроизведение этого файла. Сохраните оригинал."); });
   const resize = () => { if (!busy()) redraw(); };
   window.addEventListener("resize", resize);
-  window.addEventListener("beforeunload", event => { if (state.dirty || busy()) { event.preventDefault(); event.returnValue = ""; } });
+  window.addEventListener("beforeunload", event => { if (state.dirty || busy() || stt?.active()) { event.preventDefault(); event.returnValue = ""; } });
   window.addEventListener("pagehide", () => {
     ++operation; releaseCapture(); audio.pause();
     if (audioContext) { const old = audioContext; audioContext = null; old.close().catch(() => {}); }
@@ -557,6 +560,7 @@ function makeController(page) {
     open: () => { returnFocus = document.activeElement; savedOverflow = document.body.style.overflow; document.body.style.overflow = "hidden"; redraw(); updateClock(); q('[data-action="close"]').focus(); trace("ui.open", {}, "ready"); },
   };
   trace("recorder.mount", { media_recorder: typeof MediaRecorder !== "undefined", audio_context: Boolean(AudioContextCtor) }, "ready");
+  stt = mountRecorderStt(page, { getBuffer: () => state.buffer, isBusy: busy, trace });
   renderSelection(); refreshControls(); traceRender();
 }
 

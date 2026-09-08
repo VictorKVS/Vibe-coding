@@ -63,6 +63,14 @@ function Resolve-Python([string]$Root) {
             } catch {}
         }
     }
+    $recorderConfigPath = Join-Path $Root ".runtime\recorder-stt.json"
+    if (Test-Path -LiteralPath $recorderConfigPath) {
+        $recorderPython = (Get-Content -LiteralPath $recorderConfigPath -Raw | ConvertFrom-Json).python
+        if ($recorderPython -and (Test-Path -LiteralPath $recorderPython)) {
+            & $recorderPython -c "import fastapi, uvicorn, dotenv, httpx" *> $null
+            if ($LASTEXITCODE -eq 0) { return $recorderPython }
+        }
+    }
     $python = Get-Command python.exe -ErrorAction SilentlyContinue
     if ($python) { return $python.Source }
     $py = Get-Command py.exe -ErrorAction SilentlyContinue

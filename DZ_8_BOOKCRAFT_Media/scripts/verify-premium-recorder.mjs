@@ -25,7 +25,7 @@ const checks = {
   "on-screen trace": page.includes("ТРАССИРОВКА / ОТЧЁТ") && page.includes("Копировать отчёт"),
   "trace privacy": trace.includes("transcript") && trace.includes("[REDACTED]"),
   "state tracing": page.includes("state.change") && page.includes("microphone.request") && page.includes("record.finish"),
-  "STT intentionally deferred": page.includes("Этап 2") && !page.includes("/api/stt/"),
+  "STT module mounted": page.includes("mountRecorderStt") && !page.includes("/api/stt/"),
 };
 
 const failed = Object.entries(checks).filter(([, ok]) => !ok).map(([name]) => name);
