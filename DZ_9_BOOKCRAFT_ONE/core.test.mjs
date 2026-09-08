@@ -41,3 +41,22 @@ test('Поликлиника: проверка связи, уточнение в
 test('Запрос хирурга не становится количеством товара; смена врача сбрасывает время',()=>{const d=seedProfile('sales');let s=newSession('sales');s=advance(s,'new',d).session;s=advance(s,'s1',d).session;const r=advance(s,'к хирургу',d);assert.match(r.session.messages.at(-1).text,/Клиника/);const med=seedProfile('medical');s=advance(newSession('medical'),'к терапевту',med).session;s=advance(s,'Завтра, 10:00',med).session;s=advance(s,'Нет, лучше к хирургу',med).session;assert.equal(s.itemId,'m4');assert.equal(s.slot,null);assert.equal(s.step,'slot');});
 
 test('Поликлиника: послезавтра не превращается в завтра; спасибо не заполняет имя',()=>{const d=seedProfile('medical');let s=advance(newSession('medical'),'к хирургу',d).session;s=advance(s,'А есть на послезавтра?',d).session;assert.equal(s.step,'slot');assert.equal(s.slot,null);assert.match(s.messages.at(-1).text,/Послезавтра/);s=advance(s,'Спасибо.',d).session;assert.equal(s.step,'slot');s=advance(s,'Послезавтра в десять',d).session;assert.equal(s.slot,'Послезавтра, 10:00');assert.equal(s.step,'name');s=advance(s,'Спасибо',d).session;assert.equal(s.name,'');});
+
+test('Локальный голосовой диалог: дата, исправление имени, телефон частями',()=>{const d=seedProfile('medical');let s=newSession('medical');const step=input=>{const result=advance(s,input,d);s=result.session;return result;};step('Запишите меня к хирургу через два дня');assert.equal(s.requestedDay,'Послезавтра');step('Мне удобно в 10 утра');assert.equal(s.slot,'Послезавтра, 10:00');step('Меня зовут Вика');step('Меня зовут Виктор');assert.equal(s.name,'Виктор');step('семь пять четыре четыре четыре пять');assert.equal(s.step,'contact');step('плюс семь девять девять девять');step('хм ноль ноль ноль один два три четыре');assert.equal(s.contact,'+79990001234');assert.equal(s.step,'confirm');assert.equal(s.recordId,null);const result=step('Хорошо');assert.equal(result.record.client,'Виктор');assert.equal(result.record.slot,'Послезавтра, 10:00');});
+
+test('Поликлиника не подтверждает отсутствующие двенадцать часов',()=>{const d=seedProfile('medical');let s=advance(newSession('medical'),'Хочу к хирургу завтра',d).session;s=advance(s,'Завтра в 12 утра',d).session;assert.equal(s.step,'slot');assert.equal(s.slot,null);s=advance(s,'послезавтра в двенадцать',d).session;assert.equal(s.step,'slot');assert.equal(s.slot,null);});
+
+test('Каждый врач предлагает своё расписание при недоступном времени; дата исправляется после выбора',()=>{
+ const d=seedProfile('medical');
+ for(const item of profiles.medical.catalog){
+  let s=newSession('medical');for(const input of ['new',item.id,'завтра в 23:59'])s=advance(s,input,d).session;
+  assert.equal(s.slot,null);assert.equal(s.step,'slot');
+  const available=item.slots.filter(slot=>slot.startsWith('Завтра'));
+  for(const slot of available.length?available:item.slots)assert(s.messages.at(-1).text.includes(slot.split(', ')[1]));
+ }
+ let s=advance(newSession('medical'),'к хирургу',d).session;
+ s=advance(s,'послезавтра в 10',d).session;assert.equal(s.step,'name');
+ s=advance(s,'завтра в двенадцать',d).session;
+ assert.equal(s.step,'slot');assert.equal(s.slot,null);assert.equal(s.name,'');
+ assert.match(s.messages.at(-1).text,/Завтра доступны 10:00 или 14:30/);
+});

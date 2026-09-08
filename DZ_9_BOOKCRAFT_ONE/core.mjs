@@ -24,17 +24,23 @@ export function advance(session,input,data){
  const choice=optionsFor(s).find(o=>o.value===raw);s.messages.push({role:'user',text:choice?.label||raw});
  const say=(text)=>s.messages.push({role:'bot',text});
  if(s.step==='done'||s.step==='human'){say('Этот диалог завершён. Начните новый диалог, чтобы создать отдельное обращение.');return {session:s};}
- if(/слышно|слышишь|слышите|проверка (связи|микрофона)/.test(value)||/^(?:\d+[\s,.!;-]*){3,}$/.test(value)){say('Ваше сообщение получено. Если это проверка микрофона — распознанный текст появился в диалоге. '+(s.profile==='medical'?'К какому врачу хотите записаться?':'Как я могу помочь?'));return {session:s};}
+ if(/слышно|слышишь|слышите|проверка (связи|микрофона)/.test(value)||(s.step!=='contact'&&/^(?:\d+[\s,.!;-]*){3,}$/.test(value))){say('Ваше сообщение получено. Если это проверка микрофона — распознанный текст появился в диалоге. '+(s.profile==='medical'?'К какому врачу хотите записаться?':'Как я могу помочь?'));return {session:s};}
  if(s.profile!=='medical'&&/хирург|терапевт|кардиолог|запис.+врач/.test(value)){say('Вы обращаетесь по поводу записи к врачу, а сейчас открыт другой профиль. Выберите «Клиника» и начните беседу — здесь не будем оформлять товар вместо приёма.');return {session:s};}
  if((s.profile==='medical'||s.profile==='massage')&&/диагноз|лекарств|симптом|болит|боль|противопоказ|лечени/.test(value)){s.step='human';say('Этот вопрос требует специалиста. Бот помогает с организацией записи и не даёт медицинских рекомендаций. Создана демонстрационная передача администратору.');return {session:s};}
  if(s.profile==='medical'){
+  if(/^(здравствуйте|здравствуй|добрый день|доброе утро|привет)[.! ]*$/i.test(raw)){say('Здравствуйте! Помогу записаться на приём. К какому врачу хотите обратиться?');return {session:s};}
+  const correctedName=raw.match(/^(?:нет[, ]+)?(?:меня зовут|мо[её] имя)\s+([а-яёa-z -]{2,80})[.!]*$/i);
+  if(correctedName&&['contact','confirm'].includes(s.step)){s.name=correctedName[1].trim();say('Исправила имя: '+s.name+'. '+(s.step==='confirm'?'Остальные данные прежние. Подтверждаете заявку?':'Теперь продиктуйте телефон или email для связи.'));return {session:s};}
+  const requestedDay=/послезавтра|через (два|2) дня/.test(value)?'Послезавтра':/завтра/.test(value)?'Завтра':/пятниц/.test(value)?'Пятница':null;
+  if(requestedDay){s.requestedDay=requestedDay;if(s.itemId&&['name','contact','confirm'].includes(s.step)){s.slot=null;s.step='slot';}}
+
   if(/омс|страхов|адрес|документ|подготов|оплат|работаете/.test(value)){say('В учебной базе этой информации нет. Уточнить у администратора? Можно сказать «позовите администратора».');return {session:s};}
 
   const doctorTerms=[/терапевт|терапи/i,/кардиолог/i,/профилактич|осмотр/i,/хирург/i];
   const found=p.catalog.filter((item,i)=>doctorTerms[i]?.test(raw));
   if(found.length>1){s.step='item';s.itemId=null;s.slot=null;s.name='';s.contact='';say('Уточните, пожалуйста, какой приём нужен: '+found.map(i=>i.name.toLowerCase()).join(' или ')+'? Выберите один вариант ниже.');return {session:s};}
   if(found.length===1&&['intent','item','slot','name','contact','confirm'].includes(s.step)){
-   const item=found[0];s.itemId=item.id;s.quantity=1;s.slot=null;s.name='';s.contact='';s.step='slot';say(`${item.name}. Стоимость в демо: ${money(item.price)}. Удобнее завтра в ${item.slots[0].split(', ')[1]} или ${item.slots[1]?.split(', ')[1]||'другой день'}? Можно выбрать время кнопкой. Администратор подтвердит запись.`);return {session:s};
+   const item=found[0];s.itemId=item.id;s.quantity=1;s.slot=null;s.name='';s.contact='';s.phoneDigits='';s.step='slot';if(s.requestedDay){const daySlots=item.slots.filter(slot=>slot.startsWith(s.requestedDay));say(daySlots.length?item.name+'. '+s.requestedDay+' есть '+daySlots.map(slot=>slot.split(', ')[1]).join(' или ')+'. Какое время удобно?':'На этот день в демо нет времени. Выберите другой вариант ниже.');return {session:s};}say(`${item.name}. Стоимость в демо: ${money(item.price)}. Удобнее завтра в ${item.slots[0].split(', ')[1]} или ${item.slots[1]?.split(', ')[1]||'другой день'}? Можно выбрать время кнопкой. Администратор подтвердит запись.`);return {session:s};
   }
   if(s.step==='intent'&&/запис|при[её]м|врач|поликлиник/.test(value)){s.step='item';say('К какому врачу вас записать: терапевту, хирургу или кардиологу?');return {session:s};}
  }
@@ -64,15 +70,27 @@ export function advance(session,input,data){
  if(s.step==='quantity'){
   const n=Number(raw);if(!/^\d+$/.test(raw)||!Number.isSafeInteger(n)||n<1||n>data.stock[s.itemId]){say(`Введите количество от 1 до ${data.stock[s.itemId]}. Если остатка не хватает, позовите специалиста.`);return {session:s};}s.quantity=n;s.slot='Согласовать доставку';s.step='name';say('Как к вам обращаться?');return {session:s};
  }
- if(s.step==='slot'){const slots=p.catalog.find(i=>i.id===s.itemId).slots;let chosen=slots.includes(raw)?raw:null;if(!chosen&&s.profile==='medical'){const candidates=slots.filter(slot=>{const day=slot.startsWith('Послезавтра')?/послезавтра/.test(value):slot.startsWith('Завтра')?/завтра/.test(value)&&!/послезавтра/.test(value):/пятниц/.test(value);const time=slot.split(', ')[1];return day&&(value.includes(time)||time==='10:00'&&/утр|десять|\b10\b/.test(value)||time==='14:30'&&/после обеда|четырнадцать|два тридцать/.test(value)||time==='11:00'&&/одиннадцать/.test(value));});if(candidates.length===1)chosen=candidates[0];}if(!chosen){const after=slots.filter(slot=>slot.startsWith('Послезавтра'));say(/послезавтра/.test(value)?(after.length?'Послезавтра в демо-расписании есть '+after.map(slot=>slot.split(', ')[1]).join(' или ')+'. Какое время вам удобно?':'Для этого врача послезавтра в демо-расписании нет времени. Выберите другой день или позовите администратора.'):'Не поняла день или время. Повторите, например: «Послезавтра в десять», либо выберите время кнопкой.');return {session:s};}s.slot=chosen;s.step='name';say('Как к вам обращаться?');return {session:s};}
+ if(s.step==='slot'){const slots=p.catalog.find(i=>i.id===s.itemId).slots;let chosen=slots.includes(raw)?raw:null;if(!chosen&&s.profile==='medical'){const candidates=slots.filter(slot=>{const day=s.requestedDay?slot.startsWith(s.requestedDay):false;const time=slot.split(', ')[1];return day&&(value.includes(time)||time==='10:00'&&(/десять|\b10\b/.test(value)||/утр/.test(value)&&!/(\b\d{1,2}\b|одиннадцать|двенадцать|девять|восемь)/.test(value))||time==='14:30'&&/после обеда|четырнадцать|два тридцать/.test(value)||time==='11:00'&&/одиннадцать/.test(value));});if(candidates.length===1)chosen=candidates[0];}if(!chosen){const available=s.requestedDay?slots.filter(slot=>slot.startsWith(s.requestedDay)):slots;const doctor=p.catalog.find(i=>i.id===s.itemId).name;say(available.length?doctor+'. '+(s.requestedDay?s.requestedDay+' доступны '+available.map(slot=>slot.split(', ')[1]).join(' или '):'Доступное время: '+available.join('; '))+'. Какое время вам удобно?':doctor+'. На выбранный день свободного времени в демо нет. Есть '+slots.join('; ')+'. Выберем другое время или позвать администратора?');return {session:s};}s.slot=chosen;s.step='name';say('Как к вам обращаться?');return {session:s};}
  if(s.step==='name'){if(raw.length<2||raw.length>100){say('Укажите имя длиной от 2 до 100 символов.');return {session:s};}s.name=s.profile==='medical'?raw.replace(/^(меня зовут|мо[её] имя|я)\s+/i,'').replace(/[.!]+$/,''):raw;s.step='contact';say('Укажите email или телефон для связи. Для теста можно использовать client1@example.test.');return {session:s};}
  if(s.step==='contact'){
-  if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(raw)&&!/^\+?[\d ()-]{7,24}$/.test(raw)){say('Контакт не распознан. Введите email или телефон с кодом города.');return {session:s};}
-  s.contact=raw;s.step='confirm';const item=p.catalog.find(i=>i.id===s.itemId);
+  let contactInput=raw;
+  if(s.profile==='medical'&&!raw.includes('@')){
+   const words={ноль:'0',нуль:'0',один:'1',одна:'1',два:'2',две:'2',три:'3',четыре:'4',пять:'5',шесть:'6',семь:'7',восемь:'8',девять:'9',плюс:'+'};
+   const normalized=value.replace(/хм|эм/g,'').split(/[\s,.;!()—-]+/).filter(Boolean).map(token=>words[token]??token).join('');
+   if(!/^\+?\d+$/.test(normalized)){say('Не разобрала номер. Назовите цифры по одной или введите телефон в поле сообщения.');return {session:s};}
+   const startsNew=normalized.startsWith('+')||normalized.length===11;
+   s.phoneDigits=(startsNew?'':s.phoneDigits||'')+normalized;
+   const digits=s.phoneDigits.replace(/\D/g,'');
+   if(digits.length<11){say('Получено '+digits.length+' цифр. '+(digits.startsWith('7')||digits.startsWith('8')?'Продиктуйте оставшиеся '+(11-digits.length)+' цифр.':'Назовите полный номер заново, начиная с «плюс семь».'));return {session:s};}
+   if(digits.length!==11||!/[78]/.test(digits[0])){s.phoneDigits='';say('Проверьте номер: в этом демо нужен российский номер — плюс семь и десять цифр. Продиктуйте заново.');return {session:s};}
+   contactInput='+7'+digits.slice(1);
+  }
+  if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(contactInput)&&!/^\+?[\d ()-]{7,24}$/.test(contactInput)){say('Контакт не распознан. Введите email или телефон с кодом города.');return {session:s};}
+  s.contact=contactInput;s.step='confirm';const item=p.catalog.find(i=>i.id===s.itemId);
   say(`Проверьте заявку:\n${item.name}${s.quantity>1?` × ${s.quantity}`:''}\nСумма: ${money(item.price*s.quantity)}\n${s.slot}\n${s.name} · ${s.contact}\n\nСоздать заявку в локальной CRM? ${item.stock!==undefined?'Товар будет зарезервирован в демо-остатках.':'Время дополнительно подтвердит администратор.'}`);return {session:s};
  }
  if(s.step==='confirm'){
-  if(raw!=='confirm'&&!(s.profile==='medical'&&/^(да|да[, ]+подтверждаю|подтверждаю|подтвердить|вс[её] верно|да[, ]+вс[её] верно)[.! ]*$/i.test(raw))){say('Нажмите «Подтвердить заявку» или «Изменить выбор». Без подтверждения заявка не создаётся.');return {session:s};}
+  if(raw!=='confirm'&&!(s.profile==='medical'&&/^(хорошо|да|да[, ]+подтверждаю|подтверждаю|подтвердить|вс[её] верно|да[, ]+вс[её] верно)[.! ]*$/i.test(raw))){say('Нажмите «Подтвердить заявку» или «Изменить выбор». Без подтверждения заявка не создаётся.');return {session:s};}
   const item=p.catalog.find(i=>i.id===s.itemId);if(item.stock!==undefined&&data.stock[item.id]<s.quantity){s.step='quantity';say('Остаток изменился. Укажите доступное количество или позовите специалиста.');return {session:s};}
   const existing=data.clients.find(c=>c.contact.toLowerCase()===s.contact.toLowerCase());
   const client=existing||{id:crypto.randomUUID(),name:s.name,contact:s.contact,company:'Новый клиент'};

@@ -86,7 +86,7 @@ let voiceTimer,voiceGeneration=0;
 function stopVoice(){voiceGeneration++;clearTimeout(voiceTimer);if('speechSynthesis' in window)window.speechSynthesis.cancel();document.querySelectorAll('.secretary-portrait').forEach(el=>el.classList.remove('speaking'));document.querySelector('.secretary-stage')?.classList.remove('speaking');}
 function speak(text){
  stopVoice();if(!text)return;if(!('speechSynthesis' in window)||!('SpeechSynthesisUtterance' in window)){$('#voice-status').textContent='В этом браузере озвучивание недоступно.';return;}
- const voices=window.speechSynthesis.getVoices(),ru=voices.filter(v=>/^ru/i.test(v.lang)),voice=ru.find(v=>/female|irina|ирина|svetlana|светлана|maria|мария/i.test(v.name))||ru.find(v=>v.localService)||ru[0];
+ const voices=window.speechSynthesis.getVoices(),ru=voices.filter(v=>/^ru/i.test(v.lang)&&v.localService),voice=ru.find(v=>/female|irina|ирина|svetlana|светлана|maria|мария/i.test(v.name))||ru.find(v=>v.localService)||ru[0];
  if(!voice){$('#voice-status').textContent='Русский голос не найден. Проверьте голоса Windows или откройте в Edge.';return;}
  const generation=voiceGeneration;const utterance=new SpeechSynthesisUtterance(text);utterance.lang='ru-RU';utterance.voice=voice;utterance.rate=.97;utterance.pitch=1.05;
  utterance.onstart=()=>{if(generation!==voiceGeneration)return;$('#voice-status').textContent=`Говорит · ${voice.name}`;document.querySelectorAll('.secretary-portrait').forEach(el=>el.classList.add('speaking'));document.querySelector('.secretary-stage').classList.add('speaking');};
@@ -111,4 +111,4 @@ async function refreshTelegram(){
 }
 document.addEventListener('click',e=>{const button=e.target.closest('[data-import-telegram]');if(!button)return;const item=telegramItems.find(i=>i.id===button.dataset.importTelegram);if(!item||item.profile!==profileId)return;const d=data(),session=structuredClone(item.session);const ix=d.sessions.findIndex(s=>s.id===session.id);if(ix>=0)d.sessions[ix]=session;else d.sessions.unshift(session);if(item.record&&!d.records.some(r=>r.id===item.record.id)){const r=structuredClone(item.record),c=d.clients.find(c=>c.contact.toLowerCase()===r.contact.toLowerCase());if(c)r.clientId=c.id;else d.clients.push({id:r.clientId,name:r.client,contact:r.contact,company:'Telegram'});d.records.unshift(r);}if(!d.history.some(h=>h.id===item.id))d.history=[{id:item.id,title:'Telegram · '+(session.name||'Голосовое обращение'),created:item.created,sessionId:session.id,text:item.analysis},...d.history].slice(0,3);save();toast('Диалог и разбор добавлены в CRM');});
 
-if(clinicMode){document.title="Поликлиника · Алина";$("#chat-channel").value="Телефон";openBot();}
+if(clinicMode){$("#voice-enabled").checked=true;document.title="Поликлиника · Алина";$("#chat-channel").value="Телефон";openBot();}
