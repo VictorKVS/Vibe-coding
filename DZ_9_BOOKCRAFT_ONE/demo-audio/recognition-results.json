@@ -1,0 +1,26 @@
+[
+  {
+    "text": "Здравствуйте! Меня зовут Виктор, хочу записаться на приём к терапевту. Какие есть варианты времени?",
+    "duration": 12.115125,
+    "elapsed_seconds": 8.19,
+    "file": "01-therapist.wav",
+    "test_elapsed_seconds": 8.28,
+    "provenance": "Synthetic Windows TTS input, real local Whisper recognition"
+  },
+  {
+    "text": "Добрый день!\nХочу записаться к кардиологу.\nПодскажите стоимость приема и свободное время.",
+    "duration": 10.170125,
+    "elapsed_seconds": 8.58,
+    "file": "02-cardiologist.wav",
+    "test_elapsed_seconds": 8.59,
+    "provenance": "Synthetic Windows TTS input, real local Whisper recognition"
+  },
+  {
+    "text": "Здравствуйте. Мне нужен профилактический осмотр. Можно записаться на пятницу.",
+    "duration": 9.3379375,
+    "elapsed_seconds": 7.44,
+    "file": "03-checkup.wav",
+    "test_elapsed_seconds": 7.47,
+    "provenance": "Synthetic Windows TTS input, real local Whisper recognition"
+  }
+]

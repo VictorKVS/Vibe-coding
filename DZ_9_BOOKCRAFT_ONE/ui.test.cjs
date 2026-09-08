@@ -9,8 +9,8 @@ test('Полный UI: история, профили, сценарии, оши�
  const dom=new JSDOM(fs.readFileSync(path.join(__dirname,'index.html'),'utf8'),{url:'http://localhost:5179',runScripts:'outside-only'});
  const w=dom.window,d=w.document;w.structuredClone=structuredClone;w.scrollTo=()=>{};
  w.HTMLDialogElement.prototype.showModal=function(){this.open=true;};w.HTMLDialogElement.prototype.close=function(){this.open=false;};
- for(const [k,v] of Object.entries(core))w[k]=v;
- const source=fs.readFileSync(path.join(__dirname,'console.mjs'),'utf8').replace(/^import [^\r\n]+\r?\n/,'');
+ for(const [k,v] of Object.entries(core))w[k]=v;w.mountVoice=()=>{};
+ const source=fs.readFileSync(path.join(__dirname,'console.mjs'),'utf8').replace(/^import [^\r\n]+\r?\n/gm,'');
  w.eval(source);
  const click=s=>{const el=d.querySelector(s);assert(el,`Element ${s}`);el.click();};
  const store=()=>JSON.parse(w.localStorage.getItem('bookcraft.one.mvp.v2'));

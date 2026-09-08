@@ -4,8 +4,10 @@
   "private": true,
   "scripts": {
     "start": "node server.cjs",
-    "test": "node --test core.test.mjs",
-    "test:ui": "node --test ui.test.cjs"
+    "test": "node --test core.test.mjs telegram.test.mjs",
+    "test:ui": "node --test ui.test.cjs voice.test.cjs"
   },
-  "devDependencies": {"jsdom": "^30.0.1"}
+  "devDependencies": {
+    "jsdom": "^30.0.1"
+  }
 }

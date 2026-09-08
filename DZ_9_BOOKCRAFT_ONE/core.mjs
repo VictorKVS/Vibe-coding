@@ -27,7 +27,14 @@ export function advance(session,input,data){
  if((s.profile==='medical'||s.profile==='massage')&&/диагноз|лекарств|симптом|болит|боль|противопоказ|лечени/.test(value)){s.step='human';say('Этот вопрос требует специалиста. Бот помогает с организацией записи и не даёт медицинских рекомендаций. Создана демонстрационная передача администратору.');return {session:s};}
  if(raw==='restart'||/другая услуга|изменить выбор|сменить услугу/.test(value)){s.step='item';s.itemId=null;s.slot=null;s.quantity=1;s.contact='';s.name='';say('Выберем заново. Какая позиция или услуга вам нужна?');return {session:s};}
  if(raw==='history'||/история|мои заказы|моя запись|статус заказ/.test(value)){s.step='history-contact';say('Для демонстрации введите контакт client1@example.test. В рабочей версии перед показом истории потребуется подтверждение личности.');return {session:s};}
- if(s.step==='intent'){s.step='item';say(`Помогу: ${data.settings.goal.toLowerCase()}. Выберите вариант из каталога ниже.`);return {session:s};}
+ if(s.step==='intent'){
+  s.step='item';
+  const terms={sales:[/компьютер|станци/i,/монитор/i,/перифери|клавиатур/i],medical:[/терапевт/i,/кардиолог/i,/профилактич|осмотр/i],sport:[/пробн/i,/бассейн/i,/персональн/i],auto:[/диагностик/i,/масл/i,/шиномонтаж|шин/i],massage:[/расслабля/i,/спин/i,/подароч/i],warehouse:[/бумаг/i,/упаковк/i,/расходн/i]}[s.profile];
+  const found=p.catalog.filter((item,i)=>terms[i].test(raw));
+  if(raw!=='new'&&found.length===1){const item=found[0];s.itemId=item.id;s.step=item.stock!==undefined?'quantity':'slot';say(`${item.name}: ${money(item.price)}. ${item.stock!==undefined?`Доступно ${data.stock[item.id]} шт. Какое количество нужно?`:'Выберите время из демонстрационного расписания. Администратор подтвердит запись.'}`);}
+  else say(`Помогу: ${data.settings.goal.toLowerCase()}. Выберите вариант из каталога ниже.`);
+  return {session:s};
+ }
  if(s.step==='history-contact'){
   const c=data.clients.find(c=>c.contact.toLowerCase()===value);s.step='history-result';
   say(c?`${c.name}, в демонстрационной истории:\n${data.records.filter(r=>r.clientId===c.id).slice(-3).map(r=>`${r.id} · ${r.item} · ${p.stages[r.stage]}`).join('\n')}`:'Совпадений в локальной истории нет. Можно создать новую заявку или обратиться к специалисту.');return {session:s};
@@ -75,7 +82,7 @@ export function seedPersonalHistory(id,data){
  for(let i=0;i<3;i++){
   let s=newSession(id,['Телефон','Telegram','Email'][i],data.settings.greeting);
   const item=p.catalog[i];
-  const input=[p.prompt,item.id,item.stock!==undefined?'1':item.slots[0],'Виктор','viktor@example.test','confirm'];
+  const input=['new',item.id,item.stock!==undefined?'1':item.slots[0],'Виктор','viktor@example.test','confirm'];
   for(const message of input){const r=advance(s,message,data);s=r.session;if(r.client)data.clients.push(r.client);if(r.record){r.record.source='personal-demo';r.record.stage=[3,2,0][i];r.record.created=new Date(Date.now()-(i+1)*86400000).toISOString();data.records.unshift(r.record);}}
   s.example=true;s.created=new Date(Date.now()-(i+1)*86400000).toISOString();data.sessions.push(s);
  }

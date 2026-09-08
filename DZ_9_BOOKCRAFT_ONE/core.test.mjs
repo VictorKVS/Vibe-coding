@@ -4,7 +4,7 @@ import {profiles,seedProfile,newSession,advance,seedPersonalHistory,metrics,summ
 for(const id of Object.keys(profiles)){
  test(`${id}: полный сценарий создаёт заявку только после подтверждения`,()=>{
   const d=seedProfile(id),p=profiles[id],item=p.catalog[0];let s=newSession(id);
-  for(const text of [p.prompt,item.id,item.stock!==undefined?'2':item.slots[0],'Виктор','viktor@example.test']){const r=advance(s,text,d);assert.equal(r.record,undefined);s=r.session;}
+  for(const text of ['new',item.id,item.stock!==undefined?'2':item.slots[0],'Виктор','viktor@example.test']){const r=advance(s,text,d);assert.equal(r.record,undefined);s=r.session;}
   assert.equal(s.step,'confirm');assert.equal(advance(s,'давайте подумаем',d).record,undefined);
   const result=advance(s,'confirm',d);assert.equal(result.session.step,'done');assert.equal(result.record.itemId,item.id);assert.equal(result.record.amount,item.price*(item.stock!==undefined?2:1));assert.equal(result.client.name,'Виктор');assert.equal(advance(result.session,'confirm',d).record,undefined);
  });
@@ -32,4 +32,7 @@ test('Метрики вычисляются из записей и выбран�
 });
 test('Изоляция профилей и точное сопоставление контакта',()=>{
  const a=seedProfile('sales'),b=seedProfile('medical');a.settings.goal='Изменено';assert.notEqual(a.settings.goal,b.settings.goal);let s=newSession('sales');for(const input of ['new','s1','1','Другое имя','CLIENT1@example.test'])s=advance(s,input,a).session;const r=advance(s,'confirm',a);assert.equal(r.client,null);assert.equal(r.record.clientId,a.clients[0].id);
+});
+test('Типовые распознанные обращения сразу выбирают нужную услугу',()=>{
+ const d=seedProfile('medical');for(const [text,id] of [['Хочу записаться на приём к терапевту','m1'],['Нужен кардиолог','m2'],['Мне нужен профилактический осмотр','m3']]){const result=advance(newSession('medical'),text,d);assert.equal(result.session.itemId,id);assert.equal(result.session.step,'slot');assert.equal(result.record,undefined);}
 });
