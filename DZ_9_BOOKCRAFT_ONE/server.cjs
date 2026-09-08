@@ -8,9 +8,12 @@ for(const name of ['01-therapist.wav','02-cardiologist.wav','03-checkup.wav'])al
 const types = {'.wav':'audio/wav','.png':'image/png','.html':'text/html; charset=utf-8','.js':'text/javascript; charset=utf-8','.mjs':'text/javascript; charset=utf-8','.css':'text/css; charset=utf-8'};
 let telegram={status:()=>({configured:false,enabled:false}),inbox:()=>[]};
 import('./telegram.mjs').then(m=>{telegram=m.startTelegram(__dirname);}).catch(()=>console.error('Telegram module unavailable'));
+const labApi=require('./lab-server.cjs');
+for(const name of ['lab.html','lab.mjs','lab.css'])allowed['/'+name]=name;
 const port = Number(process.env.PORT || 5179);
 http.createServer((req,res)=>{
  const route=new URL(req.url,'http://localhost').pathname;
+ if(route.startsWith('/api/lab/')){void labApi(req,res);return;}
  if(route==='/api/telegram/status'||route==='/api/telegram/inbox'){if(req.method!=='GET'){res.writeHead(405);res.end();return;}res.writeHead(200,{'Content-Type':'application/json','Cache-Control':'no-store'});res.end(JSON.stringify(route.endsWith('status')?telegram.status():telegram.inbox()));return;}
  if(route==='/api/stt/health'||route==='/api/stt/segment'){
   if(req.headers.origin && req.headers.origin!==`http://${req.headers.host}`){res.writeHead(403);res.end();return;}

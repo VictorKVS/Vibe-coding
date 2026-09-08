@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "start": "node server.cjs",
-    "test": "node --test core.test.mjs telegram.test.mjs",
+    "test": "node --test core.test.mjs telegram.test.mjs lab.test.cjs",
     "test:ui": "node --test ui.test.cjs voice.test.cjs"
   },
   "devDependencies": {
