@@ -5,6 +5,7 @@ on:
     branches: [main]
     paths:
       - "DZ_6_WeWeb_Lovable/**"
+      - "DZ_9_BOOKCRAFT_ONE/**"
       - ".github/workflows/deploy-dz6-bookcraft-pages.yml"
   workflow_dispatch:
 
@@ -38,6 +39,8 @@ jobs:
         run: npm test
       - name: Build
         run: npm run build
+      - name: Build universal CRM at /dz9/
+        run: node ../DZ_9_BOOKCRAFT_ONE/build-static.cjs dist/dz9
       - name: Configure Pages
         uses: actions/configure-pages@v5
       - name: Upload Pages artifact
