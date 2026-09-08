@@ -5,7 +5,7 @@
   "scripts": {
     "start": "node server.cjs",
     "test": "node --test core.test.mjs telegram.test.mjs lab.test.cjs",
-    "test:ui": "node --test ui.test.cjs voice.test.cjs"
+    "test:ui": "node --test ui.test.cjs voice.test.cjs lab-ui.test.cjs"
   },
   "devDependencies": {
     "jsdom": "^30.0.1"
