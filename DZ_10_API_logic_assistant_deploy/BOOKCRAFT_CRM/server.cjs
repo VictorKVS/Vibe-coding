@@ -37,4 +37,4 @@ http.createServer((req,res)=>{
  const file=allowed[route];
  if(!file){res.writeHead(404);res.end('Not found');return;}
  fs.readFile(path.join(__dirname,file),(err,data)=>{if(err){res.writeHead(500);res.end('Read error');return;}if(cloud&&file==='index.html')data=data.toString().replace('</head>','<style>.voice-panel{display:none!important}body:before{content:"Облачное демо · текстовые сценарии и CRM · голос доступен в локальной версии";display:block;padding:10px;background:#eee9ff;color:#392766;text-align:center;font:13px sans-serif}</style></head>');res.writeHead(200,{'Content-Type':types[path.extname(file)],'Cache-Control':'no-store'});res.end(data);});
-}).listen(port,cloud?'0.0.0.0':'127.0.0.1',()=>console.log(`BOOKCRAFT CRM ready on port ${port} (${cloud?'cloud':'local'})`));
+}).listen(port,'0.0.0.0',()=>console.log(`BOOKCRAFT CRM ready on port ${port} (${cloud?'cloud':'local'})`));
