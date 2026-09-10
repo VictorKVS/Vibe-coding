@@ -9,6 +9,7 @@
 | ДЗ-6 | BOOK·CRAFT | React-продукт, локальная LLM и Model Gateway | ✅ готово | [Карточка](DZ-06/README.md) |
 | ДЗ-8 Lite | BOOK·CRAFT Media | загрузка изображения и честный UI-статус | ✅ готово | [Карточка](DZ-08/LITE/README.md) |
 | ДЗ-8 Pro | Voice Backend | audio → STT → user_message | 🎬 STT-демо и проверки | [Карточка](DZ-08/PRO/README.md) |
+| ДЗ-10 · вариант 31 | ДИКИЕ ИДЕИ → В ДЕНЬГИ | AI-диалог, Research, Story DNA, Project Memory, LLM Gateway | 🚀 код готов · деплой/видео финализируются | [Карточка](DZ-10_31/README.md) |
 
 ## Лестница развития
 
@@ -18,6 +19,7 @@ flowchart LR
     D5 --> D6["ДЗ-6<br/>AI-продукт"]
     D6 --> D8L["ДЗ-8 Lite<br/>Изображения"]
     D8L --> D8P["ДЗ-8 Pro<br/>Голосовой backend"]
+    D8P --> D10["ДЗ-10_31<br/>AI Creative Production"]
 ```
 
 ДЗ-7 не представлено в текущем составе репозитория и не включено в статус готовности.
