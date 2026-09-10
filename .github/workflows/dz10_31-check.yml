@@ -24,3 +24,20 @@ jobs:
           cache-dependency-path: DZ_10_API_logic_assistant_deploy/WILD_IDEAS/package-lock.json
       - run: npm ci
       - run: npm run build
+      - name: Smoke test production server
+        shell: bash
+        run: |
+          PORT=8080 HOST=127.0.0.1 npm start >/tmp/dz10-start.log 2>&1 &
+          pid=$!
+          trap 'kill "$pid" 2>/dev/null || true' EXIT
+          for i in $(seq 1 30); do
+            if curl -fsS http://127.0.0.1:8080/api/health; then
+              echo
+              echo "Production health check passed"
+              exit 0
+            fi
+            sleep 1
+          done
+          echo "Production server did not become healthy"
+          cat /tmp/dz10-start.log
+          exit 1
