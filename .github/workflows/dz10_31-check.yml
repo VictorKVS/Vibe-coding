@@ -1,0 +1,26 @@
+name: DZ10_31 WILD_IDEAS build
+
+on:
+  push:
+    branches: [dz10_31]
+  pull_request:
+    branches: [main]
+    paths:
+      - 'DZ_10_API_logic_assistant_deploy/WILD_IDEAS/**'
+      - 'submissions/DZ-10_31/**'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: DZ_10_API_logic_assistant_deploy/WILD_IDEAS
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: DZ_10_API_logic_assistant_deploy/WILD_IDEAS/package-lock.json
+      - run: npm ci
+      - run: npm run build
