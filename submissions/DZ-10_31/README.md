@@ -6,7 +6,9 @@
 
 ## Демонстрация
 
-**Публикация:** URL будет добавлен после финального деплоя варианта `dz10_31`.
+**CI:** ✅ `npm ci` + `npm run build` успешно выполнены в GitHub Actions для варианта `dz10_31`.
+
+**Публикация:** контейнерный запуск подготовлен (`Dockerfile`, `/api/health`). Публичный URL будет добавлен после финального запуска на хостинге.
 
 **Видео:** положить итоговую запись экрана в `demo/DZ10_31_WILD_IDEAS.mp4`, после чего ссылка ниже станет рабочей.
 
@@ -88,6 +90,9 @@ npm run dev
 
 - исходники: `DZ_10_API_logic_assistant_deploy/WILD_IDEAS`;
 - ветка сдачи: `dz10_31`;
+- CI: `.github/workflows/dz10_31-check.yml`;
+- контейнер: `DZ_10_API_logic_assistant_deploy/WILD_IDEAS/Dockerfile`;
+- health check: `/api/health`;
 - сценарий записи: [demo/RECORDING_SCRIPT.md](demo/RECORDING_SCRIPT.md);
 - видео после записи: `demo/DZ10_31_WILD_IDEAS.mp4`;
 - публичный URL: добавить после финального деплоя.
