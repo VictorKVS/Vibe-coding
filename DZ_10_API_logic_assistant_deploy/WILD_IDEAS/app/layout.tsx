@@ -3,6 +3,7 @@ import './globals.css';
 import './neural-hud.css';
 import './brand-landing.css';
 import './format-cascades.css';
+import './research-lab.css';
 import './narrative-lab.css';
 export const metadata: Metadata = {
   title: 'Дикие идеи → в деньги — BOOK·CRAFT Neural Studio',
