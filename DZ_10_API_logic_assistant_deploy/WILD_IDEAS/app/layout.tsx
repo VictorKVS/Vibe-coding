@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import './globals.css';
 import './neural-hud.css';
-export const metadata: Metadata = { title: 'BOOK·CRAFT Neural Studio — Дикие идеи', description: 'Живая AI-студия историй: Алина, голосовой диалог, миры, герои и визуальные концепты.' };
+import './brand-landing.css';
+export const metadata: Metadata = { title: 'Дикие идеи → в деньги — BOOK·CRAFT Neural Studio', description: 'От мысли к книге, визуальной истории и цифровому продукту. Алина помогает превратить идею в форму.' };
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) { return <html lang="ru" className="dark"><body>{children}</body></html>; }
