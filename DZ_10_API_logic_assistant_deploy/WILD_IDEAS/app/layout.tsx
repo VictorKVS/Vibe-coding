@@ -5,6 +5,7 @@ import './brand-landing.css';
 import './format-cascades.css';
 import './research-lab.css';
 import './narrative-lab.css';
+import './model-switcher.css';
 export const metadata: Metadata = {
   title: 'Дикие идеи → в деньги — BOOK·CRAFT Neural Studio',
   description: 'От мысли к книге, визуальной истории и цифровому продукту. Алина помогает превратить идею в форму.',
