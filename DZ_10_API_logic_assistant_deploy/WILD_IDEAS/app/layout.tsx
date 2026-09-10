@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import './globals.css';
 import './neural-hud.css';
 import './brand-landing.css';
+import './format-cascades.css';
 import './narrative-lab.css';
 export const metadata: Metadata = {
   title: 'Дикие идеи → в деньги — BOOK·CRAFT Neural Studio',
