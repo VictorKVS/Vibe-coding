@@ -1,4 +1,4 @@
-type Task='dialogue'|'synthesis'|'architecture';
+type Task='dialogue'|'synthesis'|'architecture'|'vision';
 type Message={role:'user'|'assistant';content:string};
 type ImageInput={dataUrl:string;name?:string};
 type RequestBody={selection?:string;task?:Task;messages?:Message[];context?:Record<string,unknown>;images?:ImageInput[]};
@@ -19,21 +19,27 @@ function configured(provider:string){
  return true;
 }
 function catalog():ModelItem[]{
- const items:ModelItem[]=[{id:'auto',provider:'auto',model:'auto',label:'AUTO · умный роутинг',available:true,note:'Диалог → экономичная модель; синтез → средняя; архитектура → сильная.'},{id:'demo',provider:'demo',model:'demo',label:'DEMO · без API',available:true,note:'Детерминированный fallback для показа интерфейса; pixels не анализирует.'}];
+ const items:ModelItem[]=[{id:'auto',provider:'auto',model:'auto',label:'AUTO · умный роутинг',available:true,note:'Диалог / синтез / архитектура / vision маршрутизируются по задаче.'},{id:'demo',provider:'demo',model:'demo',label:'DEMO · без API',available:true,note:'Детерминированный fallback для показа интерфейса; pixels не анализирует.'}];
  for(const m of openAIModels())items.push({id:`openai:${m}`,provider:'openai',model:m,label:`OpenAI · ${m}`,available:configured('openai'),note:'OpenAI Responses API · text + image'});
  for(const m of compatibleModels())items.push({id:`compatible:${m}`,provider:'compatible',model:m,label:`${env('COMPATIBLE_LABEL')||'OpenAI-compatible'} · ${m}`,available:configured('compatible'),note:`${env('COMPATIBLE_BASE_URL')} · vision зависит от модели`});
  for(const m of ollamaModels())items.push({id:`ollama:${m}`,provider:'ollama',model:m,label:`Ollama · ${m}`,available:configured('ollama'),note:'Локальная или удалённая Ollama; vision зависит от модели'});
  return items;
 }
-
+function preferredModel(models:string[],preferred:string){return preferred&&models.includes(preferred)?preferred:models[0];}
 function autoSelection(task:Task){
  if(configured('openai')){
   const models=openAIModels();
-  const wanted=task==='architecture'?'gpt-5.6-sol':task==='synthesis'?'gpt-5.6-terra':'gpt-5.6-luna';
-  return `openai:${models.includes(wanted)?wanted:models[0]}`;
+  const preferred=task==='vision'?env('OPENAI_VISION_MODEL'):task==='architecture'?'gpt-5.6-sol':task==='synthesis'?'gpt-5.6-terra':'gpt-5.6-luna';
+  return `openai:${preferredModel(models,preferred)}`;
  }
- if(configured('compatible'))return `compatible:${compatibleModels()[0]}`;
- if(configured('ollama'))return `ollama:${ollamaModels()[0]}`;
+ if(configured('compatible')){
+  const models=compatibleModels();const preferred=task==='vision'?env('COMPATIBLE_VISION_MODEL'):'';
+  return `compatible:${preferredModel(models,preferred)}`;
+ }
+ if(configured('ollama')){
+  const models=ollamaModels();const preferred=task==='vision'?env('OLLAMA_VISION_MODEL'):'';
+  return `ollama:${preferredModel(models,preferred)}`;
+ }
  return 'demo';
 }
 function resolve(selection:string,task:Task){
@@ -104,13 +110,14 @@ function demoReply(messages:Message[],context:Record<string,unknown>|undefined,i
 }
 
 export async function GET(){
- return Response.json({models:catalog(),auto:{dialogue:autoSelection('dialogue'),synthesis:autoSelection('synthesis'),architecture:autoSelection('architecture')}});
+ return Response.json({models:catalog(),auto:{dialogue:autoSelection('dialogue'),synthesis:autoSelection('synthesis'),architecture:autoSelection('architecture'),vision:autoSelection('vision')}});
 }
 export async function POST(request:Request){
  const started=Date.now();
  try{
   const body=(await request.json()) as RequestBody;const task=body.task||'dialogue';const messages=(body.messages||[]).filter(x=>x&&typeof x.content==='string').slice(-20);const images=validImages(body.images);
   if(!messages.length)return Response.json({error:'messages required'},{status:400});
+  if(task==='vision'&&!images.length)return Response.json({error:'vision task requires image'},{status:400});
   const item=resolve(body.selection||'auto',task);
   const result=item.provider==='openai'?await callOpenAI(item.model,messages,body.context,images):item.provider==='compatible'?await callCompatible(item.model,messages,body.context,images):item.provider==='ollama'?await callOllama(item.model,messages,body.context,images):demoReply(messages,body.context,images);
   return Response.json({...result,selection:item.id,provider:item.provider,model:item.model,task,imagesReceived:images.length,latencyMs:Date.now()-started});
