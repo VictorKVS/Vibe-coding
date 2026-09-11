@@ -7,8 +7,10 @@
   },
   "scripts": {
     "dev": "vinext dev",
+    "dev:models": "node scripts/run-with-models.mjs dev",
     "build": "vinext build",
     "start": "vinext start",
+    "start:models": "node scripts/run-with-models.mjs start",
     "lint": "oxlint",
     "format": "oxfmt"
   },
