@@ -30,7 +30,7 @@ export function OrbitStudio(p:Props){
   const clean=answer.trim();const nextAnswers=[...p.answers,clean];const nextQuestion=nextAnswers.length<3?interview[nextAnswers.length].speech:'Основа есть. Теперь я соберу исследовательский слой и покажу, на что можно опираться.';
   setAiReply('');p.choose(clean);
   try{
-   const text=await llm.ask({task:'dialogue',messages:[{role:'user',content:clean}],images:visual?[visual]:[],context:{stage:'idea_intake',confirmedAnswers:nextAnswers,nextQuestion,multimodal:Boolean(visual),visualInstruction:visual?'Сначала перечисли наблюдаемые признаки изображения. Затем отдельно свяжи их с текстовым запросом. Не придумывай невидимые детали.':'Изображение не приложено.',rule:'Не принимай решение за пользователя. Кратко отрази смысл ответа и перейди к следующему вопросу.'}});
+   const text=await llm.ask({task:visual?'vision':'dialogue',messages:[{role:'user',content:clean}],images:visual?[visual]:[],context:{stage:'idea_intake',confirmedAnswers:nextAnswers,nextQuestion,multimodal:Boolean(visual),visualInstruction:visual?'Сначала перечисли наблюдаемые признаки изображения. Затем отдельно свяжи их с текстовым запросом. Не придумывай невидимые детали.':'Изображение не приложено.',rule:'Не принимай решение за пользователя. Кратко отрази смысл ответа и перейди к следующему вопросу.'}});
    setAiReply(text);
   }catch{setAiReply('');}
  };
