@@ -6,9 +6,10 @@ import './format-cascades.css';
 import './research-lab.css';
 import './narrative-lab.css';
 import './model-switcher.css';
+import './multimodal.css';
 export const metadata: Metadata = {
-  title: 'Дикие идеи → в деньги — BOOK·CRAFT Neural Studio',
-  description: 'От мысли к книге, визуальной истории и цифровому продукту. Алина помогает превратить идею в форму.',
+  title: 'ALINA Multimodal — ДЗ-17 · Дикие идеи → в деньги',
+  description: 'Мультимодальный AI-продюсер: текст + изображение → анализ → творческие варианты с подтверждением пользователя.',
   icons: {
     icon: '/favicon.svg',
     shortcut: '/favicon.svg',
