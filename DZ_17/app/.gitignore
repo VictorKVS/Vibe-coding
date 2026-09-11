@@ -30,6 +30,11 @@ yarn-error.log*
 .env*
 !.env.example
 
+# local AI runtime / model weights
+/models/
+/runtime/llama/
+*.gguf
+
 # deployment and generated files
 .vercel
 next-env.d.ts
