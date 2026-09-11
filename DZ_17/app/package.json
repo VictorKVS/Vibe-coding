@@ -3,12 +3,12 @@
   "version": "0.1.0",
   "private": true,
   "engines": {
-    "node": ">=22.13.0"
+    "node": ">=22.13.0 <23"
   },
   "scripts": {
     "dev": "vinext dev",
     "build": "vinext build",
-    "start": "wrangler dev --config dist/server/wrangler.json",
+    "start": "vinext start",
     "lint": "oxlint",
     "format": "oxfmt"
   },
@@ -45,7 +45,6 @@
     "@vitejs/plugin-rsc": "0.5.26",
     "oxfmt": "0.61.0",
     "oxlint": "1.76.0",
-    "oxlint-tsgolint": "7.0.2001",
     "tailwindcss": "4.2.1",
     "typescript": "5.9.3",
     "vite": "8.0.13",
