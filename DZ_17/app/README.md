@@ -1,6 +1,6 @@
 # ALINA Multimodal + Knowledge Base Analyst · ДЗ-17
 
-Рабочая версия ALINA / WILD_IDEAS для ДЗ-17: **текст + загруженное изображение → совместный мультимодальный анализ**, плюс первый production-контур **идея → структурированный черновик базы знаний**.
+Рабочая версия ALINA / WILD_IDEAS для ДЗ-17: **текст + загруженное изображение → совместный мультимодальный анализ**, плюс production-направление **материал → структурированный черновик базы знаний → human review**.
 
 База приложения перенесена из последней рабочей версии `DZ10_31`, после чего добавлены vision-контур, устойчивый LLM Gateway и режим `ALINA Knowledge Base Analyst`.
 
@@ -18,10 +18,14 @@
 - fallback между провайдерами при ошибке AUTO;
 - отдельные задачи `dialogue / synthesis / architecture / vision / kb_extract / kb_validate`;
 - конфигурация конкретной модели для каждой задачи через `.env.local`;
-- KB Analyst: идея → entities / facts / relationships / timeline / knowledge states / plot threads / visual requirements / open questions;
-- все извлечённые знания получают статус `proposed`;
-- отдельная LLM-проверка черновика KB на противоречия;
-- экспорт черновика KB в JSON;
+- KB Analyst: текст → entities / facts / relationships / timeline / knowledge states / plot threads / visual requirements / open questions;
+- **KB Analyst v2: текст + изображение → vision observation → structured KB**;
+- отдельный видимый блок `VISION OBSERVATION`, который не считается каноном;
+- item-level review: `proposed / approved / rejected`;
+- массовое авторское подтверждение всех неотклонённых элементов;
+- локальное сохранение черновика аналитика между перезагрузками;
+- отдельная LLM-проверка KB на противоречия;
+- экспорт draft/approved KB в JSON;
 - голосовой ввод текста;
 - Project Memory, Research Pack и Story DNA;
 - API-ключи остаются только на сервере.
@@ -121,11 +125,11 @@ NEXT PROVIDER
 
 Ручной выбор модели отключает fallback: пользователь явно фиксирует конкретную модель для теста или сравнения.
 
-## ALINA Knowledge Base Analyst
+## ALINA Knowledge Base Analyst v2
 
 На главной странице есть отдельная кнопка `KB Analyst`.
 
-Workflow:
+Для текста:
 
 ```text
 RAW IDEA
@@ -133,6 +137,20 @@ RAW IDEA
 KB EXTRACT MODEL
   ↓
 ALINA KB v1 JSON
+```
+
+Для мультимодального материала:
+
+```text
+TEXT + IMAGE
+  ↓
+VISION MODEL
+  ↓
+OBSERVATION
+  ↓
+KB EXTRACT MODEL
+  ↓
+ALINA KB v1
   ├── project
   ├── entities
   ├── facts
@@ -144,14 +162,19 @@ ALINA KB v1 JSON
   ├── open_questions
   └── conflicts
   ↓
+HUMAN REVIEW
+  ├── approve
+  ├── reject
+  └── keep proposed
+  ↓
 KB VALIDATOR
   ↓
-ISSUES / QUESTIONS / RECOMMENDED CHANGES
-  ↓
-AUTHOR APPROVAL — следующий этап
+EXPORT JSON
 ```
 
-На этом этапе аналитик **не пишет в канон**. Он создаёт только `proposed`-слой. Следующий production-этап — PostgreSQL/pgvector Narrative KB с provenance и human approval workflow.
+Принцип: **OBSERVATION ≠ FACT ≠ CANON**. Результат vision-модели отображается отдельно и не становится утверждённым знанием мира автоматически.
+
+Текущий `AUTHOR APPROVED` — локальный прототип human-in-the-loop. Следующий production-этап — PostgreSQL/pgvector Narrative KB с provenance, версиями, транзакционным approval workflow и связями между вселенными/сериями/книгами.
 
 ## Мультимодальный flow ДЗ-17
 
@@ -166,26 +189,25 @@ VISION MODEL
   ↓
 OBSERVATION
   ↓
-INTERPRETATION IN PROJECT CONTEXT
+INTERPRETATION / STRUCTURED EXTRACTION
   ↓
-ALINA RESPONSE
+VISIBLE ALINA RESPONSE
   ↓
 AUTHOR CONFIRMATION
 ```
 
-ALINA не превращает собственную интерпретацию изображения в канон автоматически.
+Этот поток закрывает учебную мультимодальность, а аналитик расширяет её: результат можно не только прочитать, но и превратить в повторно используемый слой знаний.
 
 ## Тест для скриншота ДЗ
 
-1. Открыть приложение и начать диалог с ALINA.
-2. Нажать `Добавить фото`.
-3. Загрузить тестовый визуальный референс.
-4. Ввести, например:
+Можно использовать обычный диалог ALINA или KB Analyst v2. Для аналитика особенно наглядно:
 
-> Проанализируй этот визуальный референс. Что из него можно использовать в сцене моей книги? Отдели то, что реально видно, от твоей творческой интерпретации.
-
-5. Нажать `Анализировать`.
-6. Сделать скриншот, где одновременно видны изображение, текстовый запрос, ответ ALINA и trace выбранной модели.
+1. открыть `KB Analyst`;
+2. добавить фото;
+3. ввести текстовую задачу;
+4. нажать `Анализировать текст + фото`;
+5. дождаться `VISION OBSERVATION` и `DRAFT KB`;
+6. сделать скриншот, где одновременно видны изображение, текст, мультимодальный результат и структурированные элементы KB.
 
 ## Безопасность
 
@@ -194,7 +216,8 @@ ALINA не превращает собственную интерпретаци�
 - изображения проходят через backend gateway;
 - сервер ограничивает число изображений и размер data URL;
 - `DEMO` не выдаёт фиктивный vision-анализ за настоящий;
-- автоматически извлечённые элементы KB не становятся каноном без подтверждения автора.
+- автоматически извлечённые элементы KB не становятся каноном без подтверждения автора;
+- локальный review не подменяет будущую серверную транзакционную фиксацию канона.
 
 ## Связанные материалы
 
