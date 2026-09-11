@@ -1,7 +1,7 @@
 'use client';
 import {useCallback,useEffect,useMemo,useState} from 'react';
 
-export type LlmTask='dialogue'|'synthesis'|'architecture';
+export type LlmTask='dialogue'|'synthesis'|'architecture'|'vision';
 export type LlmModel={id:string;provider:string;model:string;label:string;available:boolean;note:string};
 export type LlmMeta={selection:string;provider:string;model:string;task:LlmTask;latencyMs:number};
 export type LlmImage={dataUrl:string;name?:string};
