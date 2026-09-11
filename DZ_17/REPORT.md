@@ -39,7 +39,7 @@ TEXT + IMAGE
 → HUMAN CONFIRMATION
 ```
 
-Приложение не привязано к одному провайдеру: серверный gateway поддерживает OpenAI, OpenAI-compatible API и мультимодальные Ollama-модели. Реальные API-ключи не передаются браузеру.
+Приложение не привязано к одной модели. Основной локальный путь теперь работает напрямую через `llama.cpp router`, а внешний глубокий анализ может выполняться через нативный GigaChat API. OpenAI / OpenAI-compatible / Ollama оставлены как дополнительные providers, но для локального режима они не обязательны. Реальные API-ключи не передаются браузеру.
 
 ---
 
@@ -58,7 +58,7 @@ TEXT + IMAGE
 
 Вторая техническая задача — не раскрывать секрет модели во frontend. Для этого мультимодальный запрос идёт через server-side `/api/llm`; frontend передаёт изображение и текст приложению, а ключ провайдера остаётся в переменных окружения сервера.
 
-Третья задача — честное поведение при отсутствии vision-модели. DEMO fallback не имитирует анализ картинки: он прямо сообщает, что pixels не были проанализированы. Это позволяет не выдавать демонстрационный ответ за реальный мультимодальный результат.
+Третья задача — честное поведение при отсутствии vision-модели. DEMO fallback не имитирует анализ картинки. Vision-задача требует реально отмеченную image-capable модель.
 
 ---
 
@@ -66,7 +66,13 @@ TEXT + IMAGE
 
 - Model Switcher;
 - отдельная маршрутизация задачи `vision`;
-- OpenAI / OpenAI-compatible / Ollama providers;
+- прямой локальный provider `llama.cpp router` без LM Studio;
+- прямой GigaChat provider;
+- автоматическое получение/обновление GigaChat access token на сервере;
+- динамическое обнаружение локальных и GigaChat моделей;
+- автоматическая загрузка/смена локальной GGUF-модели через router mode;
+- `npm run dev:models` — единый запуск приложения и локального model runtime;
+- OpenAI / OpenAI-compatible / Ollama как опциональные providers;
 - Project Memory;
 - Research Pack;
 - Story DNA;
@@ -82,6 +88,52 @@ TEXT + IMAGE
 - мультимодальный путь `text + image → vision observation → KB extraction`.
 
 Эти функции не заменяют обязательный сценарий ДЗ. Для проверки отдельно фиксируется минимальный поток `изображение + текст → реальный мультимодальный ответ`.
+
+---
+
+# Model Manager без LM Studio
+
+Принцип подключения моделей:
+
+```text
+ALINA UI
+   ↓
+Model Switcher
+   ↓
+/api/llm
+   ├── LOCAL / llama.cpp router
+   ├── GigaChat API
+   ├── optional OpenAI
+   ├── optional compatible
+   └── optional Ollama
+```
+
+Для локальных моделей ALINA запускает `llama-server.exe` в router mode через `scripts/run-with-models.mjs`. GGUF-файлы находятся в каталоге `DZ_17/app/models/`, а runtime — в `DZ_17/app/runtime/llama/`. Оба каталога исключены из Git.
+
+```text
+npm run dev:models
+```
+
+Router стартует на `127.0.0.1`, публикует `/v1/models`, и ALINA автоматически добавляет найденные модели в UI. Выбор `LOCAL · <model>` отправляет exact model id в запросе; router сам загружает нужную модель. Таким образом смена модели выполняется **из приложения**, без отдельной Studio-программы.
+
+Для AUTO доступны role-specific переменные:
+
+```text
+LLAMA_DIALOGUE_MODEL
+LLAMA_SYNTHESIS_MODEL
+LLAMA_ARCHITECTURE_MODEL
+LLAMA_KB_MODEL
+LLAMA_KB_VALIDATE_MODEL
+LLAMA_VISION_MODEL
+```
+
+Внешний GigaChat подключается напрямую. Сервер ALINA получает access token по Authorization key, кэширует его до истечения срока и использует API списка моделей и chat completions. Секреты во frontend не отправляются.
+
+Рекомендуемый локальный порядок:
+
+```env
+ALINA_PROVIDER_ORDER=llamacpp,gigachat,demo
+```
 
 ---
 
@@ -238,6 +290,11 @@ ETA завершения
 - [ ] `npm run build` проходит;
 - [ ] production health-check проходит;
 - [ ] приложение открывается;
+- [ ] local llama.cpp router стартует через `npm run dev:models`;
+- [ ] Model Switcher показывает локальные модели из `/v1/models`;
+- [ ] GigaChat models появляются при настроенном Authorization key;
+- [ ] ручная смена LOCAL/GigaChat модели работает из UI;
+- [ ] AUTO выбирает модель согласно роли;
 - [ ] фото JPG/PNG/WEBP загружается;
 - [ ] preview изображения отображается;
 - [ ] текстовый запрос вводится;
