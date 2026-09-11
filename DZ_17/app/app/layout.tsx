@@ -7,9 +7,10 @@ import './research-lab.css';
 import './narrative-lab.css';
 import './model-switcher.css';
 import './multimodal.css';
+import './kb-analyst.css';
 export const metadata: Metadata = {
-  title: 'ALINA Multimodal — ДЗ-17 · Дикие идеи → в деньги',
-  description: 'Мультимодальный AI-продюсер: текст + изображение → анализ → творческие варианты с подтверждением пользователя.',
+  title: 'ALINA Multimodal + KB Analyst — ДЗ-17 · Дикие идеи → в деньги',
+  description: 'Мультимодальный AI-продюсер и аналитик: текст + изображение → анализ, а идея → структурированный черновик базы знаний.',
   icons: {
     icon: '/favicon.svg',
     shortcut: '/favicon.svg',
