@@ -2,22 +2,23 @@
 
 Рабочая версия ALINA / WILD_IDEAS для ДЗ-17: **текст + загруженное изображение → совместный мультимодальный анализ**, плюс production-направление **материал → структурированный черновик базы знаний → human review**.
 
-База приложения перенесена из последней рабочей версии `DZ10_31`, после чего добавлены vision-контур, устойчивый LLM Gateway и режим `ALINA Knowledge Base Analyst`.
+База приложения перенесена из последней рабочей версии `DZ10_31`, после чего добавлены vision-контур, устойчивый LLM Gateway, `ALINA Knowledge Base Analyst` и прямой Model Manager без обязательных LM Studio/GUI-оболочек.
 
 ## Что уже реализовано
 
 - загрузка `JPG / PNG / WEBP` до 5 МБ;
 - preview изображения;
 - `text + image` через серверный `/api/llm`;
-- OpenAI Responses API;
-- OpenAI-compatible `/chat/completions`;
-- Ollama;
-- `DEMO` fallback;
+- прямой локальный provider **llama.cpp router**;
+- прямой внешний provider **GigaChat API**;
+- автоматическое получение и обновление GigaChat access token на сервере;
+- динамическое обнаружение локальных моделей через `/v1/models`;
 - переключатель моделей прямо в UI;
 - AUTO-маршрутизация по типу задачи;
 - fallback между провайдерами при ошибке AUTO;
 - отдельные задачи `dialogue / synthesis / architecture / vision / kb_extract / kb_validate`;
 - конфигурация конкретной модели для каждой задачи через `.env.local`;
+- OpenAI / OpenAI-compatible / Ollama оставлены как дополнительные providers, но для native local mode они не нужны;
 - KB Analyst: текст → entities / facts / relationships / timeline / knowledge states / plot threads / visual requirements / open questions;
 - **KB Analyst v2: текст + изображение → vision observation → structured KB**;
 - отдельный видимый блок `VISION OBSERVATION`, который не считается каноном;
@@ -30,7 +31,7 @@
 - Project Memory, Research Pack и Story DNA;
 - API-ключи остаются только на сервере.
 
-## Запуск
+## Обычный запуск
 
 ```bash
 npm ci
@@ -46,62 +47,154 @@ npm run build
 npm start
 ```
 
-## Как менять модели без изменения кода
+---
 
-Скопируйте `.env.example` в `.env.local`.
+# Native Model Manager: без LM Studio
 
-Главный переключатель порядка провайдеров:
+Основной локальный вариант теперь такой:
 
-```env
-ALINA_PROVIDER_ORDER=openai,compatible,ollama,demo
+```text
+ALINA UI
+   ↓
+/api/llm
+   ↓
+llama.cpp router
+   ↓
+./models/*.gguf
 ```
 
-AUTO берёт подходящую модель для конкретной задачи. Если провайдер завершился ошибкой, AUTO пробует следующий доступный провайдер.
+`llama.cpp` умеет работать в router mode: сервер запускается с `--models-dir`, публикует список моделей через `/v1/models` и загружает нужную модель по `model` в запросе. Поэтому пользователь выбирает модель **в интерфейсе ALINA**, а не в отдельной Studio-программе.
 
-### OpenAI
+## Структура локальных файлов
 
-```env
-OPENAI_API_KEY=...
-OPENAI_MODELS=model-fast,model-balanced,model-deep,model-vision
-OPENAI_DIALOGUE_MODEL=model-fast
-OPENAI_SYNTHESIS_MODEL=model-balanced
-OPENAI_ARCHITECTURE_MODEL=model-deep
-OPENAI_KB_MODEL=model-balanced
-OPENAI_KB_VALIDATE_MODEL=model-deep
-OPENAI_VISION_MODEL=model-vision
+```text
+DZ_17/app/
+├── runtime/
+│   └── llama/
+│       └── llama-server.exe
+├── models/
+│   ├── text-model-q4.gguf
+│   └── vision-model/
+│       ├── vision-model.gguf
+│       └── mmproj-....gguf
+└── .env.local
 ```
 
-### OpenAI-compatible
+`runtime/llama/` и `models/` находятся в `.gitignore`; бинарники и веса моделей в GitHub не попадают.
 
-```env
-COMPATIBLE_BASE_URL=https://provider.example/api/v1
-COMPATIBLE_API_KEY=...
-COMPATIBLE_MODELS=model-a,model-b,vision-model
-COMPATIBLE_LABEL=My Gateway
-COMPATIBLE_DIALOGUE_MODEL=model-a
-COMPATIBLE_SYNTHESIS_MODEL=model-b
-COMPATIBLE_ARCHITECTURE_MODEL=model-b
-COMPATIBLE_KB_MODEL=model-b
-COMPATIBLE_KB_VALIDATE_MODEL=model-b
-COMPATIBLE_VISION_MODEL=vision-model
+## Запуск ALINA вместе с локальными моделями
+
+После размещения `llama-server.exe` и GGUF-моделей:
+
+```bash
+npm run dev:models
 ```
 
-### Ollama
+Скрипт `scripts/run-with-models.mjs`:
+
+1. читает `.env.local`;
+2. проверяет, не запущен ли уже local router;
+3. при необходимости запускает `llama-server.exe --models-dir ...`;
+4. ждёт `/health`;
+5. запускает приложение;
+6. при завершении приложения останавливает поднятый им local router.
+
+Если локальный runtime ещё не установлен, приложение всё равно стартует и может использовать GigaChat или другой настроенный provider.
+
+### Базовая конфигурация
 
 ```env
-OLLAMA_BASE_URL=http://127.0.0.1:11434
-OLLAMA_MODELS=local-fast,local-deep,local-vision
-OLLAMA_DIALOGUE_MODEL=local-fast
-OLLAMA_SYNTHESIS_MODEL=local-deep
-OLLAMA_ARCHITECTURE_MODEL=local-deep
-OLLAMA_KB_MODEL=local-deep
-OLLAMA_KB_VALIDATE_MODEL=local-deep
-OLLAMA_VISION_MODEL=local-vision
+ALINA_PROVIDER_ORDER=llamacpp,gigachat,demo
+
+LLAMA_AUTOSTART=1
+LLAMA_SERVER_BIN=runtime/llama/llama-server.exe
+LLAMA_MODELS_DIR=models
+LLAMA_HOST=127.0.0.1
+LLAMA_PORT=8081
+LLAMA_BASE_URL=http://127.0.0.1:8081
+LLAMA_CTX_SIZE=8192
+LLAMA_PARALLEL=1
+LLAMA_GPU_LAYERS=99
 ```
 
-Важно: `*_VISION_MODEL` задаётся явно, чтобы приложение не делало вид, будто любая текстовая модель умеет анализировать изображения.
+Для RTX 3060 12 ГБ базовый профиль оставляет `LLAMA_PARALLEL=1`: один тяжёлый GPU worker одновременно.
 
-## AUTO routing
+## Переключение локальных моделей
+
+После старта router ALINA сама получает список моделей из:
+
+```text
+GET http://127.0.0.1:8081/v1/models
+```
+
+В Model Switcher появляются пункты:
+
+```text
+AUTO · умный роутинг
+LOCAL · <model A>
+LOCAL · <model B>
+GigaChat · <доступная модель>
+...
+```
+
+Ручной выбор фиксирует конкретную модель. `AUTO` выбирает модель по задаче.
+
+Для привязки конкретной модели к роли используются только имена моделей, код менять не нужно:
+
+```env
+LLAMA_DIALOGUE_MODEL=
+LLAMA_SYNTHESIS_MODEL=
+LLAMA_ARCHITECTURE_MODEL=
+LLAMA_KB_MODEL=
+LLAMA_KB_VALIDATE_MODEL=
+LLAMA_VISION_MODEL=
+```
+
+Для vision-модели её exact model id нужно указать явно в `LLAMA_VISION_MODEL` или `LLAMA_VISION_MODELS`. Это не позволяет ALINA ошибочно считать любую текстовую GGUF-модель мультимодальной.
+
+---
+
+# GigaChat напрямую из программы
+
+Отдельная Studio/клиент также не нужен:
+
+```text
+ALINA SERVER
+   ↓ OAuth
+GigaChat access token
+   ↓
+https://api.giga.chat/v1/models
+https://api.giga.chat/v1/chat/completions
+```
+
+В `.env.local` хранится только Authorization key:
+
+```env
+GIGACHAT_AUTH_KEY=
+GIGACHAT_SCOPE=GIGACHAT_API_PERS
+GIGACHAT_BASE_URL=https://api.giga.chat
+GIGACHAT_OAUTH_URL=https://ngw.devices.sberbank.ru:9443/api/v2/oauth
+```
+
+Access token получает сервер ALINA и автоматически обновляет до истечения его срока. Значение ключа и access token во frontend не передаются.
+
+Доступные generation-модели GigaChat обнаруживаются через API и автоматически появляются в том же Model Switcher.
+
+Можно закрепить модели по ролям:
+
+```env
+GIGACHAT_DIALOGUE_MODEL=
+GIGACHAT_SYNTHESIS_MODEL=
+GIGACHAT_ARCHITECTURE_MODEL=
+GIGACHAT_KB_MODEL=
+GIGACHAT_KB_VALIDATE_MODEL=
+```
+
+Если для TLS в локальной Windows-среде требуется дополнительный корневой сертификат, его путь задаётся через стандартный `NODE_EXTRA_CA_CERTS` в локальном окружении; отключение проверки TLS в код не закладывается.
+
+---
+
+# AUTO routing
 
 ```text
 USER REQUEST
@@ -116,14 +209,28 @@ TASK CLASS
     ↓
 ALINA_PROVIDER_ORDER
     ↓
-provider-specific *_MODEL
-    ↓
-MODEL CALL
+llama.cpp local model
+    ↓ error / no suitable model
+GigaChat
     ↓ error
-NEXT PROVIDER
+optional provider
+    ↓
+DEMO
 ```
 
-Ручной выбор модели отключает fallback: пользователь явно фиксирует конкретную модель для теста или сравнения.
+Рекомендуемый production-local порядок:
+
+```env
+ALINA_PROVIDER_ORDER=llamacpp,gigachat,demo
+```
+
+При необходимости можно вернуть дополнительные providers одной строкой:
+
+```env
+ALINA_PROVIDER_ORDER=llamacpp,gigachat,openai,compatible,ollama,demo
+```
+
+---
 
 ## ALINA Knowledge Base Analyst v2
 
@@ -213,10 +320,12 @@ AUTHOR CONFIRMATION
 
 - реальные API keys не коммитятся;
 - ключ не отправляется во frontend;
+- локальный llama.cpp слушает `127.0.0.1`, а не внешний интерфейс;
 - изображения проходят через backend gateway;
 - сервер ограничивает число изображений и размер data URL;
 - `DEMO` не выдаёт фиктивный vision-анализ за настоящий;
 - автоматически извлечённые элементы KB не становятся каноном без подтверждения автора;
+- локальные GGUF-веса и `llama-server.exe` исключены из Git;
 - локальный review не подменяет будущую серверную транзакционную фиксацию канона.
 
 ## Связанные материалы
@@ -224,4 +333,5 @@ AUTHOR CONFIRMATION
 - [`../README.md`](../README.md) — карточка ДЗ-17;
 - [`../SYSTEM_PROMPT_ALINA.md`](../SYSTEM_PROMPT_ALINA.md) — правила ALINA;
 - [`../TEST_PLAN.md`](../TEST_PLAN.md) — тест-план;
-- [`../REPORT.md`](../REPORT.md) — текст для отчётности.
+- [`../REPORT.md`](../REPORT.md) — текст для отчётности;
+- [`../ANALYST_ZOO_CAPACITY.md`](../ANALYST_ZOO_CAPACITY.md) — расчёт локального Tool Zoo / Analysis Zoo.
