@@ -9,6 +9,7 @@
 | ДЗ-6 | BOOK·CRAFT | React-продукт, локальная LLM и Model Gateway | ✅ готово | [Карточка](DZ-06/README.md) |
 | ДЗ-8 Lite | BOOK·CRAFT Media | загрузка изображения и честный UI-статус | ✅ готово | [Карточка](DZ-08/LITE/README.md) |
 | ДЗ-8 Pro | Voice Backend | audio → STT → user_message | 🎬 STT-демо и проверки | [Карточка](DZ-08/PRO/README.md) |
+| ДЗ-17 | ALINA Multimodal Creative Producer | текст + изображение, мультимодальный анализ, human-in-loop | 🟡 материалы готовы, нужен финальный прогон | [Карточка](DZ-17/README.md) |
 
 ## Лестница развития
 
@@ -18,6 +19,9 @@ flowchart LR
     D5 --> D6["ДЗ-6<br/>AI-продукт"]
     D6 --> D8L["ДЗ-8 Lite<br/>Изображения"]
     D8L --> D8P["ДЗ-8 Pro<br/>Голосовой backend"]
+    D8P --> D17["ДЗ-17<br/>ALINA Multimodal"]
 ```
 
 ДЗ-7 не представлено в текущем составе репозитория и не включено в статус готовности.
+
+Для ДЗ-17 отдельно отделён обязательный учебный минимум от долгосрочного развития ALINA/WILD_IDEAS в сторону Narrative Knowledge Base, Visual Continuity, storyboard, анимации и голосового интерфейса.
