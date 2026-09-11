@@ -1,8 +1,23 @@
-# WILD_IDEAS
+# ALINA Multimodal · ДЗ-17
 
-Актуальный пилот «Дикие идеи → в деньги» для задания 10.
+Рабочая версия ALINA / WILD_IDEAS для ДЗ-17: **текст + загруженное изображение → совместный мультимодальный анализ**.
 
-[Сайт](https://wild-ideas-pilot.cocmosxx2.chatgpt.site/) · [Описание задания и запуск](../README.md) · [Статус](../STATUS.md)
+База приложения перенесена из последней рабочей версии `DZ10_31`, после чего добавлен отдельный vision-контур для ДЗ-17.
+
+## Что уже реализовано
+
+- загрузка `JPG / PNG / WEBP` до 5 МБ;
+- preview изображения в интерфейсе;
+- одновременная отправка текста и изображения в серверный `/api/llm`;
+- OpenAI Responses API: `input_text + input_image`;
+- OpenAI-compatible vision: `text + image_url`;
+- Ollama multimodal: `message.images` для моделей, которые поддерживают vision;
+- `DEMO` fallback честно сообщает, что pixels не анализируются;
+- системное правило ALINA: `OBSERVATION → INTERPRETATION`, без выдумывания невидимых деталей;
+- Model Switcher;
+- голосовой ввод текста;
+- Project Memory, Research Pack и Story DNA из предыдущего этапа;
+- API-ключи остаются только на сервере.
 
 ## Запуск
 
@@ -11,53 +26,96 @@ npm ci
 npm run dev
 ```
 
-Node.js >= 22.13. Сборка: `npm run build`.
+Node.js >= 22.13.
 
-## LLM Gateway
+Проверка production build:
 
-В пилот добавлен серверный `/api/llm`: API-ключи не передаются в браузер. Интерфейс Алины получает список доступных моделей с сервера и позволяет переключать модель прямо во время работы.
+```bash
+npm run build
+npm start
+```
 
-Поддерживаются:
+## Настройка модели
 
-- `AUTO` — маршрутизация по типу задачи;
-- OpenAI Responses API;
-- любой OpenAI-compatible `/chat/completions` endpoint (OpenRouter, LM Studio, vLLM, корпоративный gateway и т. п.);
-- Ollama;
-- `DEMO` fallback без API-ключа, чтобы интерфейс не ломался на показе.
+Скопируйте `.env.example` в `.env.local` и настройте один из провайдеров.
 
-Для OpenAI в AUTO заложена схема: dialogue → `gpt-5.6-luna`, synthesis → `gpt-5.6-terra`, architecture → `gpt-5.6-sol`. Если нужной модели нет в `OPENAI_MODELS`, используется первая разрешённая модель.
-
-### Локальная настройка
-
-Скопируйте `.env.example` в `.env.local` и заполните только нужный провайдер:
+### OpenAI
 
 ```env
 OPENAI_API_KEY=...
 OPENAI_MODELS=gpt-5.6-luna,gpt-5.6-terra,gpt-5.6-sol
 ```
 
-или OpenAI-compatible:
+### OpenAI-compatible
 
 ```env
 COMPATIBLE_BASE_URL=https://provider.example/api/v1
 COMPATIBLE_API_KEY=...
-COMPATIBLE_MODELS=model-a,model-b
+COMPATIBLE_MODELS=vision-model
 COMPATIBLE_LABEL=My Gateway
 ```
 
-или Ollama:
+Для реального анализа изображения выбранная compatible-модель должна поддерживать формат OpenAI vision `image_url`.
+
+### Ollama
 
 ```env
 OLLAMA_BASE_URL=http://127.0.0.1:11434
-OLLAMA_MODELS=qwen3:8b,llama3.1:8b
+OLLAMA_MODELS=your-vision-model
 ```
 
-После изменения env перезапустите `npm run dev`. Реальные ключи никогда не коммитить. Для опубликованной версии задавайте их через переменные окружения/секреты хостинга.
+Выбранная Ollama-модель должна поддерживать изображения.
 
-## Текущий demo flow
+## Мультимодальный flow ДЗ-17
 
-`Идея → Research Pack → Story DNA → Мир → Герои → Согласование → 20 страниц`.
+```text
+PHOTO
+  +
+TEXT QUERY
+  ↓
+/server /api/llm
+  ↓
+VISION MODEL
+  ↓
+OBSERVATION
+  ↓
+INTERPRETATION IN PROJECT CONTEXT
+  ↓
+ALINA RESPONSE
+  ↓
+AUTHOR CONFIRMATION
+```
 
-Первичный диалог уже может идти через выбранную LLM; оркестратор этапов, исследования, Narrative Library и Project Memory остаются отдельными слоями. Это намеренно: модель формулирует и объясняет, но не получает право самовольно менять подтверждённые пользователем решения.
+ALINA не должна превращать собственную интерпретацию изображения в канон автоматически.
 
-Изображения миров и персонажей в MVP — заранее подготовленные концепты. Генератор комикса и приём заказов пока не подключены.
+## Тест для скриншота ДЗ
+
+1. Открыть приложение и начать диалог с ALINA.
+2. Нажать `Добавить фото`.
+3. Загрузить тестовый визуальный референс.
+4. Ввести, например:
+
+> Проанализируй этот визуальный референс. Что из него можно использовать в сцене моей книги? Отдели то, что реально видно, от твоей творческой интерпретации.
+
+5. Нажать `Анализировать`.
+6. Сделать скриншот, где одновременно видны:
+   - загруженное изображение;
+   - текстовый запрос;
+   - ответ ALINA;
+   - trace выбранной модели.
+
+## Безопасность
+
+- реальные API keys не коммитятся;
+- ключ не отправляется в frontend;
+- изображения передаются через backend gateway;
+- сервер ограничивает число изображений и размер data URL;
+- неподдерживаемые типы файла отбрасываются ещё в UI;
+- `DEMO` не выдаёт фиктивный vision-анализ за настоящий.
+
+## Связанные материалы
+
+- [`../README.md`](../README.md) — карточка ДЗ-17;
+- [`../SYSTEM_PROMPT_ALINA.md`](../SYSTEM_PROMPT_ALINA.md) — правила ALINA;
+- [`../TEST_PLAN.md`](../TEST_PLAN.md) — тест-план;
+- [`../REPORT.md`](../REPORT.md) — текст для отчётности.
