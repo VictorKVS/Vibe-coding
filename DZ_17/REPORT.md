@@ -74,9 +74,161 @@ TEXT + IMAGE
 - серверная проверка входных изображений;
 - ограничения типов и размера файла;
 - trace модели и latency;
-- GitHub Actions: build + production `/api/health` smoke test.
+- GitHub Actions: build + production `/api/health` smoke test;
+- ALINA Knowledge Base Analyst;
+- разложение материала на entities / facts / relationships / timeline / knowledge states / plot threads / visual requirements;
+- human review со статусами `proposed / approved / rejected`;
+- отдельный KB Validator;
+- мультимодальный путь `text + image → vision observation → KB extraction`.
 
 Эти функции не заменяют обязательный сценарий ДЗ. Для проверки отдельно фиксируется минимальный поток `изображение + текст → реальный мультимодальный ответ`.
+
+---
+
+# Расчёт локального Tool Zoo + Analysis Zoo
+
+Для развития ALINA как полноценного аналитика отдельно рассчитан максимально практичный зоопарк инструментов на текущем ПК.
+
+Подтверждённая конфигурация:
+
+| Ресурс | Конфигурация |
+|---|---|
+| ОС | Windows 11 Pro 23H2 |
+| CPU | Intel Core i5-10400F, 6 ядер / 12 потоков |
+| RAM | ~32 ГБ |
+| GPU | NVIDIA GeForce RTX 3060 |
+| VRAM | 12 ГБ |
+| CUDA | доступна |
+
+## GPU
+
+Из 12 ГБ VRAM резервируется примерно 1.5–2 ГБ под Windows/WDDM, UI и служебные буферы:
+
+```text
+12 ГБ - 2 ГБ ≈ 10 ГБ безопасного AI-бюджета
+```
+
+Поэтому базовое правило scheduler:
+
+```text
+GPU_HEAVY_SEMAPHORE = 1
+```
+
+На GPU одновременно исполняется одна тяжёлая задача: text LLM, vision LLM или STT.
+
+Плановый рабочий диапазон локальной 7–8B Q4 text-модели:
+
+```text
+weights              ≈ 5–6.5 ГБ
+KV/cache/runtime      ≈ 1.5–3 ГБ
+--------------------------------
+working set           ≈ 6.5–9.5 ГБ
+```
+
+Это подходит RTX 3060 12 ГБ. 14B Q4 рассматривается как экспериментальный on-demand профиль, а не как постоянный worker.
+
+## CPU
+
+Имеется 12 логических потоков. Два оставляются ОС/браузеру/IDE:
+
+```text
+12 - 2 = 10 usable threads
+```
+
+Если тяжёлый CPU worker получает примерно два логических потока:
+
+```text
+floor(10 / 2) = 5 theoretical workers
+```
+
+Для устойчивой интерактивной работы используется запас и принимается:
+
+```text
+recommended CPU-heavy workers = 4
+```
+
+## RAM
+
+Плановый бюджет:
+
+```text
+32 ГБ total
+- 8–10 ГБ Windows + browser + IDE
+- 3–4 ГБ PostgreSQL / services
+--------------------------------
+≈18–21 ГБ remaining
+```
+
+Этого достаточно для inference runtime, CPU embeddings/reranker, парсеров, временных OCR/STT buffers и graph artifacts при условии, что несколько больших LLM не держатся одновременно в RAM/VRAM.
+
+## Одновременные рабочие линии
+
+Безопасный baseline:
+
+```text
+4 CPU-heavy lanes
++ 1 local GPU lane
++ 2 external GigaChat lanes
+= 7 полезных параллельных lanes
+```
+
+Тестовый максимум после проверки API limits GigaChat:
+
+```text
+4 CPU + 1 GPU + 3 external = 8 lanes
+```
+
+Третья внешняя линия не считается гарантированной до фактической телеметрии rate-limit/429/latency.
+
+## Архитектурный вывод
+
+ALINA может иметь **25–30 специализированных аналитических ролей**, не загружая 25–30 моделей одновременно. Роли работают поверх малого числа физических движков:
+
+```text
+1 × Local Text LLM 7–8B Q4
+1 × Local Vision/VL 7B-class Q4
+1 × Local STT
+2 × small CPU ML: embeddings + reranker
+10+ deterministic tools
+PostgreSQL + pgvector
+Queue / Scheduler
++
+External GigaChat
+```
+
+Локальный слой выполняет массовую обработку: parsing, hashing, NER, chunking, embeddings, entity/fact/relation/event extraction, первичный graph и visual/STT passes.
+
+GigaChat используется как внешний сильный слой для deep synthesis, cross-document reasoning, hypothesis comparison, Socrates/counter-evidence и второй независимой проверки KB.
+
+Полный расчёт, ограничения и таблица плановой нагрузки вынесены в [`ANALYST_ZOO_CAPACITY.md`](ANALYST_ZOO_CAPACITY.md).
+
+Важно: tokens/sec, images/min, STT realtime factor, реальные VRAM/RAM peaks и лимиты GigaChat пока не измерены. Поэтому throughput, ускорение относительно одного потока и ETA не выдумываются. После локального запуска должна собираться telemetry:
+
+```text
+items/min
+chunks/min
+tokens/sec
+VRAM peak
+RAM peak
+CPU utilization
+queue wait
+retry rate
+GigaChat latency
+429/error rate
+% rework
+```
+
+После накопления телеметрии в отчёт добавляются:
+
+```text
+скорость vs 1 поток
+% ускорения / замедления
+throughput за проход
+throughput накопительно
+доля повторной работы
+остаток
+ETA завершения
+```
 
 ---
 
