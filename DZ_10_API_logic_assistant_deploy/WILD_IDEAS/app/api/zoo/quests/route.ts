@@ -56,6 +56,23 @@ function experimentId() {
   return `QX-${Date.now().toString(36).toUpperCase()}`;
 }
 
+function combinationLabel(models: Record<string, string>) {
+  return Object.entries(models)
+    .sort(([a], [b]) => a.localeCompare(b))
+    .map(([slot, model]) => `${slot}=${model}`)
+    .join('__');
+}
+
+function filenameSafe(value: string) {
+  return value.replace(/[^a-zA-Z0-9_.=-]+/g, '-').replace(/-+/g, '-').slice(0, 180);
+}
+
+async function sha256(value: string) {
+  const bytes = new TextEncoder().encode(value);
+  const digest = await crypto.subtle.digest('SHA-256', bytes);
+  return Array.from(new Uint8Array(digest)).map((byte) => byte.toString(16).padStart(2, '0')).join('');
+}
+
 async function callLlm(requestUrl: string, payload: object): Promise<LlmResult> {
   const response = await fetch(new URL('/api/llm', requestUrl), {
     method: 'POST',
@@ -78,6 +95,8 @@ export async function GET() {
 
 export async function POST(request: Request) {
   const started = Date.now();
+  const generatedAt = new Date().toISOString();
+  const runId = experimentId();
   try {
     const body = (await request.json()) as RunBody;
     const quest = getQuest(body.questId || '');
@@ -95,6 +114,17 @@ export async function POST(request: Request) {
     if (missingSlots.length) {
       return Response.json({ error: `Missing model slots: ${missingSlots.join(', ')}` }, { status: 400 });
     }
+
+    const combo = combinationLabel(models);
+    const signatureMaterial = JSON.stringify({
+      questId: quest.id,
+      compositionId: composition.id,
+      models: Object.fromEntries(Object.entries(models).sort(([a], [b]) => a.localeCompare(b))),
+      scenario: body.scenarioOverride?.trim() || quest.scenario,
+    });
+    const combinationFingerprint = await sha256(signatureMaterial);
+    const shortFingerprint = combinationFingerprint.slice(0, 12);
+    const artifactFilename = `${generatedAt.replace(/[:.]/g, '-') }__${quest.id}__${composition.id}__${filenameSafe(combo)}__${shortFingerprint}.json`;
 
     const previous: Record<string, string> = {};
     const stageResults: StageResult[] = [];
@@ -118,6 +148,7 @@ export async function POST(request: Request) {
                 compositionId: composition.id,
                 stageId: stage.id,
                 modelSlot: stage.modelSlot,
+                combinationFingerprint: shortFingerprint,
               },
             });
             return {
@@ -160,10 +191,17 @@ export async function POST(request: Request) {
       if (failed.length) {
         return Response.json(
           {
-            experimentId: experimentId(),
+            schemaVersion: 1,
+            experimentId: runId,
+            generatedAt,
+            artifactFilename,
+            combinationLabel: combo,
+            combinationFingerprint,
+            reviewState: 'PENDING_STRICT_REVIEW',
             status: 'PARTIAL_FAILURE',
             questId: quest.id,
             compositionId: composition.id,
+            models,
             callsPlanned: calls,
             callsCompleted: stageResults.length,
             wallMs: Date.now() - started,
@@ -183,11 +221,26 @@ export async function POST(request: Request) {
     const automaticEvaluation = evaluateQuestOutput(quest, finalResult.text);
     const totalReportedLatencyMs = stageResults.reduce((sum, result) => sum + (result.latencyMs || 0), 0);
 
-    return Response.json({
-      experimentId: experimentId(),
+    const record = {
+      schemaVersion: 1,
+      experimentId: runId,
+      generatedAt,
+      artifactFilename,
+      combinationLabel: combo,
+      combinationFingerprint,
       status: 'COMPLETED',
-      quest: { id: quest.id, title: quest.title, profession: quest.profession, level: quest.level },
-      composition: { id: composition.id, title: composition.title },
+      reviewState: 'PENDING_STRICT_REVIEW',
+      quest: {
+        id: quest.id,
+        title: quest.title,
+        profession: quest.profession,
+        level: quest.level,
+        scenario: body.scenarioOverride?.trim() || quest.scenario,
+        objective: quest.objective,
+        constraints: quest.constraints,
+        successCriteria: quest.successCriteria,
+      },
+      composition: { id: composition.id, title: composition.title, description: composition.description },
       models,
       callsUsed: stageResults.length,
       wallMs: Date.now() - started,
@@ -196,8 +249,29 @@ export async function POST(request: Request) {
       finalOutput: finalResult.text,
       automaticEvaluation,
       stageResults,
-      note: 'Automatic score is a structural signal, not proof of professional correctness. Compare runs on the same quest and keep human/domain review for material conclusions.',
-    });
+      strictReview: {
+        state: 'PENDING',
+        reviewer: null,
+        reviewedAt: null,
+        verdict: null,
+        hardFail: null,
+        score: null,
+        dimensions: {
+          professionalCorrectness: null,
+          constraintAdherence: null,
+          evidenceDiscipline: null,
+          completeness: null,
+          clarity: null,
+          efficiency: null,
+        },
+        strengths: [],
+        criticalDefects: [],
+        notes: null,
+      },
+      note: 'Automatic score is a structural signal, not proof of professional correctness. The strictReview block is intentionally empty until independent review.',
+    };
+
+    return Response.json(record);
   } catch (error) {
     return Response.json({ error: error instanceof Error ? error.message : 'Quest Arena error' }, { status: 500 });
   }
