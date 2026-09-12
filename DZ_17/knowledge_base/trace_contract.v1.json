@@ -1,0 +1,90 @@
+{
+  "schema_version": "alina-analyst-trace-v1",
+  "description": "Контракт аудируемого объяснения действий Analyst. Не является скрытой цепочкой рассуждений модели.",
+  "required": [
+    "trace_id",
+    "case_id",
+    "step_id",
+    "actor",
+    "action",
+    "input_refs",
+    "method_ref",
+    "output_refs",
+    "status",
+    "started_at",
+    "finished_at"
+  ],
+  "fields": {
+    "trace_id": "string",
+    "case_id": "string",
+    "step_id": "string",
+    "parent_step_id": "string|null",
+    "actor": {
+      "type": "tool|local_model|external_model|senior_model|human|system",
+      "id": "string",
+      "version": "string|null"
+    },
+    "action": "string",
+    "input_refs": ["KB_RECORD_ID"],
+    "query_refs": ["QUERY_ID"],
+    "method_ref": "METHOD-ID",
+    "source_refs": ["SOURCE-REGISTRY-ID"],
+    "checks_performed": [
+      {
+        "check_id": "string",
+        "result": "pass|fail|warning|not_applicable",
+        "details": "string"
+      }
+    ],
+    "evidence_for": ["KB_RECORD_ID"],
+    "evidence_against": ["KB_RECORD_ID"],
+    "alternatives_considered": ["HYPOTHESIS_ID"],
+    "gaps": ["OPEN_QUESTION_ID"],
+    "confidence": {
+      "overall": "number|null",
+      "calibration_status": "calibrated|experimental|not_applicable",
+      "factors": "object"
+    },
+    "output_refs": ["KB_RECORD_ID"],
+    "proposed_changes": ["CHANGESET_ID"],
+    "model": {
+      "provider": "string|null",
+      "model_id": "string|null",
+      "prompt_version": "string|null",
+      "schema_version": "string|null"
+    },
+    "status": "queued|running|completed|warning|failed|blocked|review_required|approved|rejected|superseded",
+    "error": {
+      "code": "string|null",
+      "message": "string|null",
+      "retryable": "boolean|null"
+    },
+    "review": {
+      "required": "boolean",
+      "reviewer_ref": "string|null",
+      "decision_ref": "string|null"
+    },
+    "started_at": "ISO-8601",
+    "finished_at": "ISO-8601|null"
+  },
+  "ui_explanation_view": {
+    "show": [
+      "action",
+      "input_refs",
+      "method_ref",
+      "evidence_for",
+      "evidence_against",
+      "alternatives_considered",
+      "gaps",
+      "confidence",
+      "checks_performed",
+      "output_refs",
+      "review",
+      "status"
+    ],
+    "do_not_require": [
+      "hidden_chain_of_thought",
+      "private_model_scratchpad"
+    ]
+  }
+}
