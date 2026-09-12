@@ -10,8 +10,9 @@
 | `C4_ARCHITECTURE.md` | C4 Context / Container / Component / Deployment |
 | `API_CONTRACTS.md` | API и контракты передачи данных между компонентами |
 | `SYSTEM_PROMPT_ALINA.md` | Базовый системный контракт ALINA |
+| `METHODOLOGY_AND_STANDARDS.md` | Мастер-перечень стандартов, методик и литературы |
 
-## 2. Процессная документация
+## 2. Process documentation
 
 | Документ | Нотация/тип |
 |---|---|
@@ -33,7 +34,29 @@
 | `profiles/narrative.v1.json` | Первый Domain Profile |
 | `openapi/analyst-core.p0.yaml` | OpenAPI P0 |
 
-## 4. Связь уровней документации
+## 4. Analyst Meta Knowledge Base
+
+| Артефакт | Назначение |
+|---|---|
+| `knowledge_base/README.md` | Назначение и структура Meta-KB самой аналитической системы |
+| `knowledge_base/ANALYST_KB_SPEC.md` | Логическая модель, классы знаний, аналитический цикл и правила объяснимости |
+| `knowledge_base/source_registry.v1.json` | Реестр ГОСТ/ISO/W3C/NIST/OWASP/MITRE и книг |
+| `knowledge_base/analyst_method_cards.v1.json` | Машиночитаемые карточки методов Analyst |
+| `knowledge_base/trace_contract.v1.json` | Контракт аудируемого trace `input → method → evidence → checks → output` |
+
+Meta-KB отделена от предметных баз знаний:
+
+```text
+ANALYST META-KB
+methods / standards / algorithms / controls / metrics
+              ↓
+         ALINA ANALYST
+              ↑
+DOMAIN KB
+facts / claims / entities / relations / events / hypotheses
+```
+
+## 5. Связь уровней документации
 
 ```text
 IDEA / PRODUCT GOAL
@@ -44,6 +67,10 @@ C4_ARCHITECTURE
         ↓
 PROCESS MAP / IDEF0 / BPMN
         ↓
+METHODOLOGY_AND_STANDARDS
+        ↓
+ANALYST META-KB
+        ↓
 API_CONTRACTS / OPENAPI
         ↓
 JSON SCHEMAS / DOMAIN PROFILES
@@ -53,32 +80,34 @@ P0 IMPLEMENTATION
 CODE / TESTS / TELEMETRY
 ```
 
-## 5. Правило актуальности
+## 6. Правило актуальности
 
-Изменение бизнес-процесса считается завершённым только если синхронно обновлены, где применимо:
+Изменение бизнес-процесса или аналитического метода считается завершённым только если синхронно обновлены, где применимо:
 
 1. процессная карта/IDEF0/BPMN;
 2. API contract;
 3. JSON Schema;
 4. Domain Profile;
-5. UI/process-state representation;
-6. tests;
-7. telemetry/event model;
-8. security controls;
-9. changelog/version.
+5. Analyst Method Card / Meta-KB;
+6. UI/process-state representation;
+7. tests;
+8. telemetry/event model;
+9. security controls;
+10. changelog/version.
 
-## 6. Следующий этап реализации
+## 7. Следующий этап реализации
 
-Следующий слой после документации:
+Следующий слой после Meta-KB:
 
 ```text
-Process Event API
-→ Live Process Board
-→ Role Panels
-→ Admin Operations Dashboard
-→ AI Security Dashboard
-→ KB Explorer
-→ Real Tool/Analysis Zoo events
+Meta-KB Loader
+→ Method Registry API
+→ Analyst Planner
+→ KB Query / Evidence Retrieval
+→ Trace Event API
+→ Senior Review Package
+→ Experience Store
+→ Live Analyst Trace in UI
 ```
 
-UI должен визуализировать именно фактические события backend, а не рисовать декоративный прогресс.
+UI должен визуализировать фактические действия backend и показывать проверяемое обоснование каждого вывода, а не декоративный прогресс и не скрытую внутреннюю цепочку рассуждений модели.
