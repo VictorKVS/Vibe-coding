@@ -11,7 +11,8 @@
     "start": "wrangler dev --config dist/server/wrangler.json",
     "lint": "oxlint",
     "format": "oxfmt",
-    "quest:run": "node scripts/run-quest-arena.mjs"
+    "quest:run": "node scripts/run-quest-arena.mjs",
+    "quest:matrix": "node scripts/run-quest-matrix.mjs"
   },
   "dependencies": {
     "react": "19.2.6",
