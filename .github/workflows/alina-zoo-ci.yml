@@ -1,0 +1,36 @@
+name: Alina Agent Zoo CI
+
+on:
+  pull_request:
+    paths:
+      - 'DZ_10_API_logic_assistant_deploy/WILD_IDEAS/**'
+      - '.github/workflows/alina-zoo-ci.yml'
+  push:
+    branches:
+      - feature/alina-agent-zoo-rag
+    paths:
+      - 'DZ_10_API_logic_assistant_deploy/WILD_IDEAS/**'
+      - '.github/workflows/alina-zoo-ci.yml'
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: DZ_10_API_logic_assistant_deploy/WILD_IDEAS
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22.13.0'
+          cache: npm
+          cache-dependency-path: DZ_10_API_logic_assistant_deploy/WILD_IDEAS/package-lock.json
+      - name: Install
+        run: npm ci
+      - name: Validate Zoo JSON
+        run: |
+          node -e "const fs=require('fs'); for(const f of ['knowledge/zoo/agents.json','knowledge/zoo/knowledge.json','knowledge/zoo/eval-cases.json','prompts/manifest.json']) JSON.parse(fs.readFileSync(f,'utf8')); console.log('Zoo JSON OK')"
+      - name: Lint
+        run: npm run lint
+      - name: Build
+        run: npm run build
