@@ -13,6 +13,49 @@ npm run dev
 
 Node.js >= 22.13. Сборка: `npm run build`.
 
+## Agent Zoo
+
+Алина развивается не как один огромный system prompt, а как управляемый зоопарк ролей:
+
+`Alina Orchestrator → Router → Specialist → Zoo RAG → Prompt assembly → LLM Gateway → Trace`.
+
+Первый состав:
+
+- `alina_orchestrator`;
+- `research_analyst`;
+- `knowledge_growth_analyst`;
+- `prompt_engineer`;
+- `narrative_architect`;
+- `skeptical_reviewer`.
+
+Реестр ролей: `knowledge/zoo/agents.json`. База знаний самого зоопарка: `knowledge/zoo/knowledge.json`. Архитектура и ограничения: [`AGENT_ZOO_ARCHITECTURE.md`](./AGENT_ZOO_ARCHITECTURE.md).
+
+Каждый ответ `/api/llm` может возвращать trace: `agentId`, `promptId`, `promptVersion`, `knowledgeRefs`, модель/provider, task class, latency и причину маршрутизации.
+
+## Model Lab — заменяем модели и сравниваем
+
+После локального запуска откройте:
+
+`http://127.0.0.1:3000/model-lab`
+
+Если dev-сервер выбрал другой порт — используйте его.
+
+Model Lab позволяет:
+
+- выбрать конкретного агента Zoo;
+- выбрать `dialogue / synthesis / architecture`;
+- выбрать до 4 доступных моделей;
+- прогнать через них **один и тот же** запрос;
+- сравнить ответы рядом;
+- увидеть latency, provider/model, usage, prompt version, knowledge refs и routing trace;
+- использовать готовые повторяемые кейсы из `knowledge/zoo/model-eval-cases.json` или свой запрос.
+
+Эксперименты никогда не запускаются автоматически. Реальный provider может тарифицировать каждый запрос. Правила сравнения и promotion: [`MODEL_EXPERIMENT_PROTOCOL.md`](./MODEL_EXPERIMENT_PROTOCOL.md).
+
+Главный принцип: не ищем «лучшую модель вообще». Выбираем модель для конкретной роли и класса задач по схеме:
+
+`hard constraints → eval quality → failures/regressions → latency/usage/cost → reviewed promotion`.
+
 ## LLM Gateway
 
 В пилот добавлен серверный `/api/llm`: API-ключи не передаются в браузер. Интерфейс Алины получает список доступных моделей с сервера и позволяет переключать модель прямо во время работы.
