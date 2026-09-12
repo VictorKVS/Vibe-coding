@@ -7,7 +7,8 @@ This directory stores durable experiment records for independent review.
 - `pending/` — experiment finished, strict review not yet completed;
 - `reviewed/` — independent review completed and written into the JSON record;
 - `rejected/` — optional archive for hard-fail / invalid experiments;
-- `superseded/` — old runs retained for traceability after protocol/model/prompt changes.
+- `superseded/` — old runs retained for traceability after protocol/model/prompt changes;
+- `matrices/` — batch experiment summaries comparing several compositions/model assignments on the same quest.
 
 Directories are created locally by the runner when needed.
 
@@ -67,6 +68,38 @@ git push
 ```
 
 Do not place API keys, environment variables or hidden provider credentials in result files.
+
+## Matrix experiments
+
+Use the matrix runner when the goal is to compare **one model vs combinations of models** on the same professional quest.
+
+Example with DEMO only:
+
+```bash
+npm run quest:matrix -- --quest=Q-KB-001 --models=demo --push
+```
+
+Example with several available providers/models:
+
+```bash
+npm run quest:matrix -- --quest=Q-KB-001 --models=openai:gpt-5.6-sol,ollama:qwen3:8b,compatible:model-a --max-runs=16 --push
+```
+
+By default the matrix covers:
+
+- `single`;
+- `relay_critic`;
+- `parallel_synthesis`;
+- `specialist_pipeline`.
+
+The runner generates both same-model baselines and deterministic mixed-model teams without exploding into every possible permutation. `--max-runs` is the hard experiment cap. `--repeat=N` can be used to test stability of the same setup.
+
+Each individual run still goes to `pending/`. The matrix runner also writes:
+
+- `quest-runs/matrices/<matrix>.json` — machine-readable experiment summary;
+- `quest-runs/matrices/<matrix>.md` — provisional leaderboard for human review.
+
+The matrix leaderboard is **not the final winner table**. It ranks by deterministic auto checks only until strict review is completed.
 
 ## Strict review
 
