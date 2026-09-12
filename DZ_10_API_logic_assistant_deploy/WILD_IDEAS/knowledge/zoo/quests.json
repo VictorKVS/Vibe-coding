@@ -1,0 +1,142 @@
+{
+  "schemaVersion": 1,
+  "catalogId": "ALINA-QUESTS-0001",
+  "quests": [
+    {
+      "id": "Q-PROMPT-001",
+      "profession": "Prompt Engineering",
+      "level": "middle",
+      "title": "Редактор без переписывания фактов",
+      "defaultAgent": "prompt_engineer",
+      "task": "architecture",
+      "scenario": "Нужно спроектировать системный промпт для редактора, который улучшает стиль текста, но не меняет факты, сюжет и подтверждённые пользователем решения.",
+      "objective": "Получить версионируемый prompt artifact с переменными, ограничениями и eval-набором.",
+      "constraints": ["не выдавать prompt сразу за production", "не смешивать стабильную политику и динамические факты", "не скрывать assumptions"],
+      "successCriteria": ["есть prompt id/version", "есть hard constraints", "есть context variables", "есть positive/negative/ambiguous eval cases", "есть promotion recommendation"],
+      "automaticChecks": {
+        "mustContainAnyGroups": [["version", "верси"], ["constraint", "огранич"], ["eval", "тест"], ["context", "контекст"], ["draft", "ready_for_eval", "needs_more_context"]],
+        "mustNotContain": ["PRODUCTION APPROVED", "гарантированно лучший"],
+        "minChars": 500
+      }
+    },
+    {
+      "id": "Q-KB-001",
+      "profession": "Knowledge Engineering",
+      "level": "senior",
+      "title": "Два авторитетных источника противоречат друг другу",
+      "defaultAgent": "knowledge_growth_analyst",
+      "task": "architecture",
+      "scenario": "Два авторитетных источника дают разные определения одного профессионального термина. Нельзя усреднять формулировки и терять применимость.",
+      "objective": "Спроектировать представление конфликта в KB и путь разрешения/эскалации.",
+      "constraints": ["сохранить оба утверждения", "сохранить provenance", "не объявлять победителя без applicability/evidence"],
+      "successCriteria": ["два отдельных claim", "source/provenance", "applicability", "conflict relation", "review/escalation"],
+      "automaticChecks": {
+        "mustContainAnyGroups": [["claim", "утвержден"], ["source", "источник", "provenance"], ["applic", "применим"], ["conflict", "противореч"], ["review", "эскалац", "провер"]],
+        "mustNotContain": ["усредним определения", "выберем самое популярное"],
+        "minChars": 450
+      }
+    },
+    {
+      "id": "Q-PROF-001",
+      "profession": "Profession Modeling",
+      "level": "senior",
+      "title": "Построить KB профессии с нуля",
+      "defaultAgent": "knowledge_growth_analyst",
+      "task": "architecture",
+      "scenario": "Нужно создать базу знаний для агента-бухгалтера. На входе только папка из 200 документов и список программ, которыми пользуется бухгалтерия.",
+      "objective": "Показать, что Senior начинает с модели профессии, а не с chunking.",
+      "constraints": ["не начинать с embeddings/vector DB", "не считать набор документов моделью профессии"],
+      "successCriteria": ["mission/outcomes", "objects/stakeholders", "workflows", "decision families", "artifacts/standards", "authority boundaries", "competency ladder", "gaps before ingestion"],
+      "automaticChecks": {
+        "mustContainAnyGroups": [["мисси", "mission", "цель професс"], ["workflow", "процесс"], ["decision", "решен"], ["artifact", "документ"], ["standard", "стандарт"], ["границ", "authority"], ["gap", "пробел", "неизвест"]],
+        "mustNotContain": ["сначала загрузим все 200 документов в vector db", "просто нарежем на чанки"],
+        "minChars": 650
+      }
+    },
+    {
+      "id": "Q-RESEARCH-001",
+      "profession": "Research / Evidence",
+      "level": "middle",
+      "title": "Маркетинговое утверждение производителя",
+      "defaultAgent": "research_analyst",
+      "task": "synthesis",
+      "scenario": "Производитель пишет, что его модель точнее всех конкурентов. Других данных пока нет.",
+      "objective": "Отделить vendor claim от факта и построить план проверки.",
+      "constraints": ["не выдумывать независимые источники", "не повышать vendor claim до verified"],
+      "successCriteria": ["claim classified", "evidence gap", "independent verification plan", "conditions for promotion"],
+      "automaticChecks": {
+        "mustContainAnyGroups": [["vendor", "производител", "маркетинг"], ["claim", "утвержден"], ["независ", "independent"], ["evidence", "доказ", "данн"], ["unknown", "недостаточно", "не подтвержд"]],
+        "mustNotContain": ["это доказанный факт", "точнее всех — подтверждено"],
+        "minChars": 350
+      }
+    },
+    {
+      "id": "Q-ARCH-001",
+      "profession": "Agent Architecture",
+      "level": "senior",
+      "title": "20 агентов с полным контекстом",
+      "defaultAgent": "skeptical_reviewer",
+      "task": "architecture",
+      "scenario": "Команда предлагает 20 специализированных агентов. Каждый получает весь контекст проекта и может свободно вызывать любого другого агента.",
+      "objective": "Найти архитектурные риски и предложить более управляемую схему.",
+      "constraints": ["не критиковать только из вкуса", "предложить рабочую альтернативу"],
+      "successCriteria": ["agent explosion", "context bloat", "authority/loop risk", "observability", "bounded router/skills alternative", "conditions where more agents are justified"],
+      "automaticChecks": {
+        "mustContainAnyGroups": [["agent explosion", "слишком много агент", "разрастан"], ["context", "контекст"], ["loop", "цикл", "рекурс"], ["observ", "наблюда", "trace"], ["router", "маршрутиз"], ["skill", "навык", "функц"]],
+        "mustNotContain": ["20 агентов всегда лучше", "пусть сами договорятся"],
+        "minChars": 550
+      }
+    },
+    {
+      "id": "Q-RAG-001",
+      "profession": "RAG Architecture",
+      "level": "senior",
+      "title": "Vector DB не улучшил ответы",
+      "defaultAgent": "knowledge_growth_analyst",
+      "task": "architecture",
+      "scenario": "После перехода с простого lexical retrieval на vector search ответы агента стали красивее, но точность на проверочных вопросах упала.",
+      "objective": "Поставить диагноз без предположения, что vector retrieval автоматически лучше.",
+      "constraints": ["разделить retrieval quality и answer quality", "предложить измеримый эксперимент"],
+      "successCriteria": ["gold/eval set", "retrieval metrics", "context inspection", "hybrid baseline", "rollback/decision rule"],
+      "automaticChecks": {
+        "mustContainAnyGroups": [["eval", "gold", "эталон"], ["retrieval", "поиск"], ["precision", "recall", "hit", "mrr"], ["context", "контекст"], ["hybrid", "lexical", "гибрид"], ["rollback", "откат", "вернут"]],
+        "mustNotContain": ["vector всегда лучше", "увеличим top-k и всё исправится"],
+        "minChars": 500
+      }
+    },
+    {
+      "id": "Q-NARR-001",
+      "profession": "Narrative Architecture",
+      "level": "middle",
+      "title": "Нарушенная причинность персонажа",
+      "defaultAgent": "narrative_architect",
+      "task": "synthesis",
+      "scenario": "В первой главе герой панически боится высоты. В третьей главе он без объяснения добровольно прыгает с башни, и это не задумано как развитие персонажа.",
+      "objective": "Предложить несколько способов восстановить причинность, не отбирая у автора решение.",
+      "constraints": ["не переписывать весь сюжет", "дать варианты и последствия"],
+      "successCriteria": ["continuity issue identified", "2+ alternatives", "consequences", "author retains decision"],
+      "automaticChecks": {
+        "mustContainAnyGroups": [["противореч", "continuity", "причин"], ["вариант", "альтернатив"], ["последств", "эффект"], ["автор", "выбор"]],
+        "mustNotContain": ["единственно правильный вариант"],
+        "minChars": 300
+      }
+    },
+    {
+      "id": "Q-INTAKE-001",
+      "profession": "Solution Architecture",
+      "level": "senior",
+      "title": "Архитектору дали только идею",
+      "defaultAgent": "alina_orchestrator",
+      "task": "architecture",
+      "scenario": "Заказчик говорит: 'Нужен корпоративный AI-помощник за два месяца, фиксированная цена, данные нельзя выносить из контура'. Других материалов нет.",
+      "objective": "Показать архитектурный intake: что запросить/создать до серьёзного проектирования.",
+      "constraints": ["не начинать с выбора Kubernetes/LLM", "отделить requirement/constraint/assumption/gap"],
+      "successCriteria": ["business need", "stakeholders", "scope/out of scope", "requirements/NFR", "data/security", "assumptions/gaps", "risk/estimate/contract implications"],
+      "automaticChecks": {
+        "mustContainAnyGroups": [["business", "бизнес", "зачем"], ["stakeholder", "заинтересован"], ["scope", "границ"], ["nfr", "нефункцион"], ["данн", "security", "безопас"], ["assumption", "предполож"], ["gap", "неизвест", "вопрос"], ["risk", "риск"], ["contract", "контракт", "fixed", "t&m"]],
+        "mustNotContain": ["сразу берём kubernetes", "архитектура уже понятна"],
+        "minChars": 700
+      }
+    }
+  ]
+}
