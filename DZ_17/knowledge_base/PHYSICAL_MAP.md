@@ -79,6 +79,10 @@ DZ_17/profiles/
 | EXISTS | `DZ_17/app/app/research-lab.tsx` | research UI |
 | EXISTS | `DZ_17/app/app/narrative-lab.tsx` | narrative specialization UI |
 | EXISTS | `DZ_17/app/scripts/run-with-models.mjs` | запуск локальных моделей вместе с приложением |
+| EXISTS | `DZ_17/app/app/admin-security-console.tsx` | единый side-panel Control Center для Admin и ИБ/AI Security |
+| EXISTS | `DZ_17/app/app/admin-security-console.css` | стили боковой шестерёнки и Control Center |
+| EXISTS | `DZ_17/app/app/api/admin/config/route.ts` | безопасные read-only метаданные моделей/промтов/KB/DB/security без secret values |
+| EXISTS | `DZ_17/app/app/neural-hud.tsx` | HUD + физическая точка монтирования кнопки `SYS` |
 
 Код не является местом хранения канонического нормативного знания. Он должен получать правила из KB/профилей/контрактов.
 
@@ -95,6 +99,7 @@ DZ_17/profiles/
 | EXISTS | `DZ_17/processes/KB_AND_MODEL_LIFECYCLE.md` | жизненный цикл KB/Domain Profile/models |
 | EXISTS | `DZ_17/processes/RACI_AND_KPI.md` | роли и KPI |
 | EXISTS | `DZ_17/processes/AI_SECURITY_PROCESS.md` | AI security process |
+| EXISTS | `DZ_17/processes/ROLE_PANELS_AND_RBAC.md` | роли Admin/ИБ/Reviewer/User и матрица полномочий |
 | EXISTS | `DZ_17/DEVELOPMENT_JOURNAL.md` | журнал архитектурных и KB-изменений |
 
 ---
