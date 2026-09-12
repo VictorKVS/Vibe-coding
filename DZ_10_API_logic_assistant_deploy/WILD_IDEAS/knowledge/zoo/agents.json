@@ -1,0 +1,85 @@
+{
+  "schemaVersion": 1,
+  "registryId": "ALINA-ZOO-0001",
+  "status": "MVP",
+  "agents": [
+    {
+      "id": "alina_orchestrator",
+      "name": "Alina Orchestrator",
+      "purpose": "Primary conversational coordinator for Wild Ideas.",
+      "capabilities": ["dialogue", "intent_clarification", "specialist_routing", "result_synthesis"],
+      "knowledgeDomains": ["zoo", "project_memory", "story"],
+      "promptId": "alina.orchestrator",
+      "promptVersion": "1.0.0",
+      "handoffTargets": ["research_analyst", "knowledge_growth_analyst", "prompt_engineer", "narrative_architect", "skeptical_reviewer"],
+      "mustNot": ["silently_change_confirmed_user_decisions", "present_hypothesis_as_fact"],
+      "owner": "WILD_IDEAS",
+      "status": "active"
+    },
+    {
+      "id": "research_analyst",
+      "name": "Research Analyst",
+      "purpose": "Research and evidence synthesis for factual or market questions.",
+      "capabilities": ["research", "source_triage", "fact_hypothesis_separation", "evidence_gaps"],
+      "knowledgeDomains": ["research", "sources", "market"],
+      "promptId": "alina.research",
+      "promptVersion": "1.0.0",
+      "handoffTargets": ["alina_orchestrator", "skeptical_reviewer", "knowledge_growth_analyst"],
+      "mustNot": ["invent_sources", "promote_weak_evidence_to_fact"],
+      "owner": "RESEARCH",
+      "status": "active"
+    },
+    {
+      "id": "knowledge_growth_analyst",
+      "name": "Knowledge Growth Analyst",
+      "purpose": "Grow auditable knowledge bases consumed by agents.",
+      "capabilities": ["knowledge_intake", "provenance", "atomic_claims", "contradiction_detection", "gap_analysis", "eval_case_design"],
+      "knowledgeDomains": ["zoo", "knowledge_governance", "sources"],
+      "promptId": "alina.knowledge-growth",
+      "promptVersion": "1.0.0",
+      "handoffTargets": ["research_analyst", "skeptical_reviewer", "alina_orchestrator"],
+      "mustNot": ["self_verify_generated_knowledge", "erase_conflicting_evidence"],
+      "owner": "KNOWLEDGE_ENGINEERING",
+      "status": "active"
+    },
+    {
+      "id": "prompt_engineer",
+      "name": "Prompt Engineer",
+      "purpose": "Engineer, version and evaluate prompts and context bundles for Zoo agents.",
+      "capabilities": ["prompt_design", "context_engineering", "prompt_diff", "prompt_eval_design", "variable_contracts", "regression_cases"],
+      "knowledgeDomains": ["zoo", "prompt_engineering", "evaluation"],
+      "promptId": "alina.prompt-engineer",
+      "promptVersion": "1.0.0",
+      "handoffTargets": ["skeptical_reviewer", "knowledge_growth_analyst", "alina_orchestrator"],
+      "mustNot": ["silently_promote_prompt", "skip_eval_for_material_prompt_change", "hide_prompt_assumptions"],
+      "owner": "PROMPT_ENGINEERING",
+      "status": "active"
+    },
+    {
+      "id": "narrative_architect",
+      "name": "Narrative Architect",
+      "purpose": "Structure story, world, characters and continuity while preserving user creative authority.",
+      "capabilities": ["story_structure", "worldbuilding", "character_design", "continuity", "narrative_alternatives"],
+      "knowledgeDomains": ["story", "narrative_library", "project_memory"],
+      "promptId": "alina.narrative",
+      "promptVersion": "1.0.0",
+      "handoffTargets": ["research_analyst", "skeptical_reviewer", "alina_orchestrator"],
+      "mustNot": ["override_user_creative_authority", "silently_rewrite_confirmed_story_dna"],
+      "owner": "NARRATIVE",
+      "status": "active"
+    },
+    {
+      "id": "skeptical_reviewer",
+      "name": "Skeptical Reviewer",
+      "purpose": "Challenge plans, prompts, knowledge and story decisions for hidden assumptions and failure modes.",
+      "capabilities": ["critique", "counterexample_search", "assumption_challenge", "failure_modes", "quality_review"],
+      "knowledgeDomains": ["zoo", "evaluation", "project_memory"],
+      "promptId": "alina.skeptical-reviewer",
+      "promptVersion": "1.0.0",
+      "handoffTargets": ["alina_orchestrator", "prompt_engineer", "knowledge_growth_analyst"],
+      "mustNot": ["replace_evidence_with_preference", "change_scope_without_user_or_owner_decision"],
+      "owner": "QUALITY",
+      "status": "active"
+    }
+  ]
+}
