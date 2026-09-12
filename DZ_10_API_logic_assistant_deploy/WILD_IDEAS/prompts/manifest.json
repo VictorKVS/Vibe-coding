@@ -1,0 +1,15 @@
+{
+  "schemaVersion": 1,
+  "registryId": "ALINA-PROMPTS-0001",
+  "environment": "development",
+  "prompts": [
+    {"id":"alina.orchestrator","version":"1.0.0","agentId":"alina_orchestrator","status":"active_mvp","evalDataset":"ALINA-ZOO-ROUTING-EVAL-0001"},
+    {"id":"alina.research","version":"1.0.0","agentId":"research_analyst","status":"active_mvp","evalDataset":"ALINA-ZOO-ROUTING-EVAL-0001"},
+    {"id":"alina.knowledge-growth","version":"1.0.0","agentId":"knowledge_growth_analyst","status":"active_mvp","evalDataset":"ALINA-ZOO-ROUTING-EVAL-0001"},
+    {"id":"alina.prompt-engineer","version":"1.0.0","agentId":"prompt_engineer","status":"active_mvp","evalDataset":"ALINA-ZOO-ROUTING-EVAL-0001","source":"prompts/prompt-engineer.system.md"},
+    {"id":"alina.narrative","version":"1.0.0","agentId":"narrative_architect","status":"active_mvp","evalDataset":"ALINA-ZOO-ROUTING-EVAL-0001"},
+    {"id":"alina.skeptical-reviewer","version":"1.0.0","agentId":"skeptical_reviewer","status":"active_mvp","evalDataset":"ALINA-ZOO-ROUTING-EVAL-0001"}
+  ],
+  "promotionPolicy": "draft -> eval -> review -> staging -> production",
+  "rule": "No material prompt may be silently promoted by the agent that authored it."
+}
