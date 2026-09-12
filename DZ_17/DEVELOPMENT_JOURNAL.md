@@ -72,12 +72,24 @@ record_status = draft
 
 ### 2026-09-12 — Universal KB / dedup / provenance documentation
 
+**COMMITS**
+
+```text
+1d9fb05b93595a98ec303db2812ef6ce13095f2c  provenance/storage policy
+b5bbf77c2645591d131083279a6c5d0018150559  physical KB map
+8215df099db29630473e68ecd9d7fafaa8df5e1e  materials workspace
+2e2dd1f0b4466a836d577bfb16f3a57d8458753a  initial development journal
+51185df6d020352bc07b9799be3853c4e749542d  universal KB README update
+5ab097a36dbb86702b9fbd717e157825a3dcdad1  documentation index update
+4f37715919b31fbf4024a83bfda2ff9527f45f75  source acquisition plan hardening
+```
+
 **TASK**  
 Зафиксировать единую базу знаний для всех агентов, запретить дублирование и сделать физическое местонахождение знаний наблюдаемым.
 
 **WHAT CHANGED**
 
-Созданы правила provenance и физического хранения, физическая карта KB и рабочее место для исходных материалов.
+Созданы правила provenance и физического хранения, физическая карта KB и рабочее место для исходных материалов. Обновлены главная карта документации, README базы и план обработки источников.
 
 **WHY**
 
@@ -119,9 +131,17 @@ DZ_17/knowledge_base/materials/README.md
 DZ_17/DEVELOPMENT_JOURNAL.md
 ```
 
+Обновлены:
+
+```text
+DZ_17/knowledge_base/README.md
+DZ_17/DOCUMENTATION_INDEX.md
+DZ_17/knowledge_base/SOURCE_ACQUISITION_AND_EXTRACTION_PLAN.md
+```
+
 **CANONICAL OBJECT IDS**
 
-Новые объекты знания специально не создавались. Созданы governance/index documents. Существующие IDs продолжают использоваться из `source_registry.v1.json`, `analyst_method_cards.v1.json` и `registry/technologies.json`.
+Новые предметные объекты знания специально не создавались. Созданы governance/index documents. Существующие IDs продолжают использоваться из `source_registry.v1.json`, `analyst_method_cards.v1.json` и `registry/technologies.json`.
 
 **VALIDATION / TEST**
 
@@ -133,6 +153,7 @@ DZ_17/DEVELOPMENT_JOURNAL.md
 - существующий source_registry.v1.json остаётся библиографическим source of truth;
 - PHYSICAL_MAP указывает реальные пути и отдельно помечает planned/local-only;
 - правила запрещают SOURCE_DERIVED без exact locator;
+- ранее названные «подтверждённые открытые источники» в плане понижены до candidate/registered, пока не записаны exact URI/version/locator;
 ```
 
 **REVIEW STATUS**
@@ -170,6 +191,9 @@ PROJECT / TASK CONTEXT
 
 ```markdown
 ### YYYY-MM-DD — <короткое название>
+
+**COMMITS**
+...
 
 **TASK**
 ...
