@@ -26,25 +26,39 @@ Each run records:
 
 The fingerprint identifies the **experiment setup**, not the generated answer. Two repeated runs with the same setup should share the same combination fingerprint but have different `experimentId` / timestamp and may produce different answers.
 
-## Commit workflow
+## Run and save
 
-After running a quest locally:
+Start the app first:
+
+```bash
+npm run dev
+```
+
+In another terminal run a quest:
 
 ```bash
 npm run quest:run -- --quest=Q-KB-001 --composition=relay_critic --model.M1=openai:gpt-5.6-sol --model.M2=ollama:qwen3:8b
-```
-
-or directly:
-
-```bash
-node scripts/run-quest-arena.mjs --quest=Q-KB-001 --composition=relay_critic --model.M1=openai:gpt-5.6-sol --model.M2=ollama:qwen3:8b
 ```
 
 The runner writes the full record to:
 
 `quest-runs/pending/<timestamp>__<quest>__<composition>__<combination>__<fingerprint>.json`
 
-Then:
+### One command to commit and push the result to GitHub
+
+```bash
+npm run quest:run -- --quest=Q-KB-001 --composition=relay_critic --model.M1=openai:gpt-5.6-sol --model.M2=ollama:qwen3:8b --push
+```
+
+`--push` implies `--commit`: the runner stages **only the newly created result file**, creates an `eval(alina): ...` commit and runs `git push` on the current branch.
+
+If you want a local commit without pushing:
+
+```bash
+npm run quest:run -- --quest=Q-KB-001 --composition=single --model.M1=demo --commit
+```
+
+Without `--commit` / `--push`, commit manually:
 
 ```bash
 git add quest-runs/pending
