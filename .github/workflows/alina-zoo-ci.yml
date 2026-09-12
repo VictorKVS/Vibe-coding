@@ -29,8 +29,8 @@ jobs:
         run: npm ci
       - name: Validate Zoo JSON
         run: |
-          node -e "const fs=require('fs'); for(const f of ['knowledge/zoo/agents.json','knowledge/zoo/knowledge.json','knowledge/zoo/eval-cases.json','prompts/manifest.json']) JSON.parse(fs.readFileSync(f,'utf8')); console.log('Zoo JSON OK')"
+          node -e "const fs=require('fs'); for(const f of ['knowledge/zoo/agents.json','knowledge/zoo/knowledge.json','knowledge/zoo/eval-cases.json','knowledge/zoo/model-eval-cases.json','prompts/manifest.json']) JSON.parse(fs.readFileSync(f,'utf8')); console.log('Zoo JSON OK')"
       - name: Lint Zoo runtime
-        run: npx oxlint lib/alina-zoo.ts lib/zoo-rag.ts lib/alina-orchestrator.ts app/api/zoo/route.ts
+        run: npx oxlint lib/alina-zoo.ts lib/zoo-rag.ts lib/alina-orchestrator.ts app/api/zoo/route.ts app/api/zoo/experiments/route.ts
       - name: Build full WILD_IDEAS app
         run: npm run build
