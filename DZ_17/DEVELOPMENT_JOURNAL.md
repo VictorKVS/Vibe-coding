@@ -190,6 +190,139 @@ PROJECT / TASK CONTEXT
 
 ---
 
+### 2026-09-13 — Side gear / Admin + IB AI Security Control Center
+
+**COMMITS**
+
+```text
+abc7d423259a29cba5b101eb33b6f0c1e6ecabec  sanitized admin/config API
+73af5d4a1e8f38d6dc8c810af353467ab64570bf  AdminSecurityConsole component
+67b5a2b9d28437af78c8d787a50447ea21107f11  control center styles
+d0fe1f11af108fc3e995082edb2606d838b4e4cf  side gear mounted in NeuralHud
+ab2bb6b1bb046b0af490d5d211d704c1eb5cb6d8  stylesheet connected in layout
+```
+
+**TASK**
+
+Добавить сбоку ALINA единый вход в системные настройки для `ADMINISTRATOR` и `IB / AI SECURITY SPECIALIST`, чтобы в одном месте были модели, промты, подключения к базам знаний, база данных и контроль безопасности.
+
+**WHAT CHANGED**
+
+В интерфейс добавлена фиксированная кнопка-шестерёнка `SYS`. Она открывает правую панель `ALINA CONTROL CENTER` с переключателем ролей `Администратор` / `ИБ / AI Security` и разделами:
+
+```text
+Модели
+Промты
+Базы знаний
+База данных
+Контроль
+```
+
+Каталог моделей и routing читаются из существующего `/api/llm`. Новый `/api/admin/config` отдаёт только безопасные метаданные: prompt IDs, физические пути KB, признак настройки PostgreSQL/audit DB и security status. Secret values, connection strings и полные системные промты клиенту не возвращаются.
+
+**WHY**
+
+Ролевые панели Admin и IB уже определены в `processes/ROLE_PANELS_AND_RBAC.md`, но до этого не имели единой точки входа в UI. Решено сделать один системный control center, а различия ролей показывать внутри него. Это уменьшает дублирование UI и соответствует общей архитектуре `one core + role specialization`.
+
+**ORIGIN_CLASS**
+
+```text
+HUMAN_DECISION   — пользователь потребовал боковую шестерёнку и общий центр Admin/ИБ;
+PROJECT_DECISION — единый Control Center, read-only P0, secret-safe API, дальнейшие privileged writes только после server-side RBAC/audit;
+```
+
+**SOURCE / DECISION**
+
+Проектное решение основано на уже существующей ролевой спецификации:
+
+```text
+DZ_17/processes/ROLE_PANELS_AND_RBAC.md
+DZ_17/app/app/api/llm/route.ts
+DZ_17/app/app/use-llm.ts
+DZ_17/knowledge_base/PHYSICAL_MAP.md
+```
+
+Внешние ГОСТы или книги для этого конкретного UI-изменения не использовались как источник новых требований. Поэтому запись не маркируется `SOURCE_DERIVED`.
+
+**SOURCE LOCATOR**
+
+```text
+ROLE_PANELS_AND_RBAC.md → разделы «Панель Администратора», «Панель ИБ / AI Security Specialist», RBAC matrix, Separation of duties.
+```
+
+**PHYSICAL PATHS**
+
+Созданы:
+
+```text
+DZ_17/app/app/admin-security-console.tsx
+DZ_17/app/app/admin-security-console.css
+DZ_17/app/app/api/admin/config/route.ts
+```
+
+Обновлены:
+
+```text
+DZ_17/app/app/neural-hud.tsx
+DZ_17/app/app/layout.tsx
+DZ_17/DEVELOPMENT_JOURNAL.md
+```
+
+**CANONICAL OBJECT IDS**
+
+Новые KB-объекты не создавались. UI использует существующие IDs из `source_registry.v1.json`, `analyst_method_cards.v1.json`, Domain Profiles и LLM model catalog.
+
+**DEPENDENCIES**
+
+```text
+/api/llm
+/api/admin/config
+lucide-react
+existing DZ_17 role/RBAC specification
+```
+
+**VALIDATION / TEST**
+
+P0 реализован намеренно как `read_only_preview`: UI не может менять privileged configuration, не видит secrets, connection strings или тела системных промтов. Полноценные write operations разрешаются только после server-side authentication + RBAC + audit event contract.
+
+**REVIEW STATUS**
+
+```text
+implemented / requires build+runtime acceptance on user machine
+```
+
+**RESULT**
+
+Получена единая системная точка входа:
+
+```text
+SIDE GEAR SYS
+   ↓
+ALINA CONTROL CENTER
+   ├── ADMINISTRATOR
+   │   ├── Models / routing
+   │   ├── Prompt registry
+   │   ├── KB connections
+   │   ├── PostgreSQL / pgvector status
+   │   └── Operations
+   └── IB / AI SECURITY
+       ├── Model security
+       ├── Prompt/content security
+       ├── KB provenance/integrity
+       ├── secrets/data flow
+       └── audit/security control
+```
+
+**NEXT STEP**
+
+1. Добавить настоящую server-side authentication/RBAC.
+2. Создать audited write API для model routing, prompt versions, KB connection policies и DB settings.
+3. Добавить model hash/trust state и security hold.
+4. Подключить PostgreSQL + pgvector и отдельный event/audit ledger.
+5. Провести `npm run build` и UI smoke test после локального `git pull`.
+
+---
+
 ## 4. Шаблон следующей записи
 
 ```markdown
