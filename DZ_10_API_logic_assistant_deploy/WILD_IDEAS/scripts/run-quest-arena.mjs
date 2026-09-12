@@ -71,8 +71,8 @@ if (!response.ok) {
   }
 
   if (shouldPush) {
-    await exec('git', ['push'], { cwd: process.cwd() });
-    console.log('Pushed current branch to GitHub.');
+    await exec('git', ['push', '-u', 'origin', 'HEAD'], { cwd: process.cwd() });
+    console.log('Pushed current branch to GitHub and ensured upstream tracking.');
   } else if (!shouldCommit) {
     console.log('Next: git add quest-runs/pending && git commit && git push');
   }
