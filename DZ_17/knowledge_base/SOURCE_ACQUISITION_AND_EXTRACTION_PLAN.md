@@ -1,4 +1,4 @@
-# ALINA Analyst Meta-KB — план сбора источников и извлечения методик
+# ALINA Universal / Analyst Meta-KB — план сбора источников и извлечения методик
 
 ## 1. Принцип работы
 
@@ -7,15 +7,26 @@
 Базовые опорные документы:
 
 - `../METHODOLOGY_AND_STANDARDS.md` — мастер-перечень нормативной и методической базы;
+- `README.md` — роль общего FOUNDATION и Meta-KB;
 - `ANALYST_KB_SPEC.md` — логическая модель Meta-KB;
-- `source_registry.v1.json` — реестр источников;
+- `PROVENANCE_AND_STORAGE_POLICY.md` — обязательные правила origin/source locator/storage/dedup;
+- `PHYSICAL_MAP.md` — физическая карта базы;
+- `source_registry.v1.json` — единый библиографический реестр источников;
 - `analyst_method_cards.v1.json` — карточки методов;
 - `trace_contract.v1.json` — трассировка решений;
 - `DECISION_AND_TRAINING_FRAMEWORK.md` — правила выбора решений;
 - `ANALYST_PROFESSOR_ROLE.md` — роль Главного Аналитика;
-- `PROGRAMMER_AGENT_KB_LEVELS.md` — пример предметной KB по программированию.
+- `PROGRAMMER_AGENT_KB_LEVELS.md` — пример специализации агента;
+- `../DEVELOPMENT_JOURNAL.md` — журнал всех значимых изменений.
 
-Новые материалы сначала проверяются на наличие уже описанного правила/метода, затем дополняют существующую карточку или создают новую версию.
+Новые материалы сначала проверяются на наличие уже описанного источника/правила/метода, затем дополняют существующую карточку или создают новую версию.
+
+```text
+SEARCH EXISTING
+→ REUSE / LINK
+→ EXTEND / NEW VERSION only if needed
+→ CREATE only if no canonical object exists
+```
 
 ---
 
@@ -29,30 +40,39 @@
 
 ```text
 SOURCE
-├── идентификатор
+├── canonical source_id
 ├── полное название
 ├── редакция / год
 ├── статус документа
-├── официальный источник
+├── официальный источник / acquisition_uri
+├── accessed_at
+├── source_file_path (если оригинал законно получен)
+├── source_hash_sha256 (если есть локальный файл)
 ├── область применимости
 ├── раздел / пункт / подпункт
+├── locator_status
 ├── собственное краткое изложение требования или идеи
 ├── связанные Concept
 ├── связанные Method
 ├── связанные Algorithm
 ├── обязательные Control
-├── Metric
-└── locator_status
+└── Metric
 ```
 
-Правило: номер пункта/подпункта фиксируется только после проверки оригинала. До проверки ставится `pending_verification`.
+Правило: номер пункта/подпункта фиксируется только после проверки оригинала. До проверки:
+
+```text
+locator_status = pending_verification
+record_status = draft
+```
 
 ### Очередь B — книги, статьи, открытые курсы и официальная документация
 
-После нормативного слоя разбираем литературу по тем же карточкам, но не копируем длинные фрагменты текста.
+После нормативного слоя разбираем литературу по тем же правилам, но не копируем длинные фрагменты текста.
 
 ```text
 ORIGINAL SOURCE
+→ EXACT LOCATOR
 → IDEA
 → OUR SUMMARY
 → METHOD
@@ -65,7 +85,7 @@ ORIGINAL SOURCE
 
 ## 3. Что именно извлекаем из каждого источника
 
-Для Analyst Meta-KB интересуют не "конспекты книг", а практические единицы знания:
+Для Universal/Analyst Meta-KB интересуют не «конспекты книг», а практические единицы знания:
 
 1. **Concept** — термин и смысл;
 2. **Principle** — общий принцип;
@@ -78,7 +98,9 @@ ORIGINAL SOURCE
 9. **Metric** — чем измеряется качество;
 10. **Benchmark idea** — как проверить метод на наших данных;
 11. **Applicability** — где метод применять, а где нет;
-12. **Source locator** — точный раздел/пункт/глава после проверки.
+12. **Source locator** — точный раздел/пункт/глава после проверки;
+13. **Origin class** — источник/проектное решение/измерение/гипотеза;
+14. **Physical path** — где лежит карточка/извлечение/оригинал.
 
 ---
 
@@ -89,6 +111,7 @@ method_id
 name
 version
 status
+origin_class
 problem
 applicability
 inputs
@@ -106,13 +129,15 @@ alternatives
 decision_rule
 source_refs
 source_locators
+extraction_note_paths
 implementation_notes
 benchmark_plan
 explanation_requirements
 review_status
+supersedes
 ```
 
-Веса и пороги не считаются "истиной из книги". Для них отдельно фиксируем происхождение:
+Веса и пороги не считаются «истиной из книги». Для них отдельно фиксируем происхождение:
 
 ```text
 standard_requirement
@@ -127,7 +152,33 @@ operator_override
 
 ---
 
-## 5. Правило выбора решения
+## 5. Физический маршрут одного источника
+
+Для каждого обработанного источника должна быть видна полная цепочка:
+
+```text
+source_registry.v1.json
+  ↓ source_id
+materials/originals/<SOURCE_ID>/original.<ext>       # LOCAL_ONLY, если оригинал есть
+  ↓ hash + locator
+materials/extracts/<SOURCE_ID>/structure-map.md
+  ↓
+materials/extracts/<SOURCE_ID>/extraction-notes.md
+  ↓ canonical IDs
+analyst_method_cards.v1.json / future common registries
+  ↓ references only
+profiles/<domain>.v1.json
+  ↓
+Runtime agent context
+```
+
+Если оригинал не хранится локально, цепочка всё равно обязана содержать `acquisition_uri`, `accessed_at` и точный locator в доступной официальной/легальной версии.
+
+Физические пути всех слоёв поддерживаются в `PHYSICAL_MAP.md`.
+
+---
+
+## 6. Правило выбора решения
 
 Любое значимое решение должно иметь минимум:
 
@@ -157,7 +208,7 @@ Score(a) = Σ(w_i × s_i(a)) - Σ(p_j(a))
 
 ---
 
-## 6. Первая очередь ГОСТов
+## 7. Первая очередь ГОСТов
 
 Разбирать в таком порядке:
 
@@ -177,11 +228,22 @@ Score(a) = Σ(w_i × s_i(a)) - Σ(p_j(a))
 14. ГОСТ Р 56939-2024 — безопасная разработка ПО;
 15. Р 50.1.028-2001 — IDEF0.
 
-После каждой обработки обновляются `source_registry`, соответствующие Method Cards и список открытых вопросов.
+**Важно:** сам перечень выше является планом обработки. Наличие позиции в плане или `source_registry.v1.json` ещё не означает, что конкретные пункты стандарта проверены.
+
+После каждой обработки обновляются:
+
+```text
+source_registry.v1.json
+materials/extracts/<SOURCE_ID>/...
+соответствующие canonical Method/Concept/Control records
+PHYSICAL_MAP.md при появлении нового физического файла
+DEVELOPMENT_JOURNAL.md
+список открытых вопросов
+```
 
 ---
 
-## 7. Открытая электронная библиотека проекта
+## 8. Открытая электронная библиотека проекта
 
 В приоритете легально доступные открытые источники:
 
@@ -197,44 +259,54 @@ Score(a) = Σ(w_i × s_i(a)) - Σ(p_j(a))
 
 ---
 
-## 8. Первые подтверждённые открытые источники
+## 9. Кандидаты открытых источников, требующие фиксации точного URI/версии
+
+Ниже перечислены источники, ранее выбранные как полезные. До занесения точного `acquisition_uri`, `accessed_at`, версии и локаторов они остаются **registered/candidate**, а не доказательством конкретного метода.
 
 ### Information Retrieval
 
 **Manning, Raghavan, Schütze — Introduction to Information Retrieval**  
-Официальная/авторская онлайн-версия Stanford. Используем для retrieval, ranking, relevance, evaluation.
+Предполагаемое применение: retrieval, ranking, relevance, evaluation.
 
 ### NLP
 
-**Jurafsky & Martin — Speech and Language Processing, 3rd ed. draft**  
-Авторский draft Stanford. Используем для normalization, NLP pipeline, embeddings, IE, parsing, language models.
+**Jurafsky & Martin — Speech and Language Processing**  
+Предполагаемое применение: normalization, NLP pipeline, embeddings, IE, parsing, language models.
 
 ### Graph Representation
 
 **William L. Hamilton — Graph Representation Learning**  
-Автором опубликован pre-publication draft с разрешением издателя. Используем для node embeddings, GNN, multi-relational graphs.
+Предполагаемое применение: node embeddings, GNN, multi-relational graphs.
 
 ### Open Access Knowledge Graphs
 
-**Knowledge Graphs and Big Data Processing** (Springer, Open Access).  
-Используем как дополнительный источник по KG pipelines, big data integration и практике.
+**Knowledge Graphs and Big Data Processing**  
+Предполагаемое применение: KG pipelines, big data integration и практика.
 
 ### Web Standards
 
-W3C PROV-O, RDF, OWL, SPARQL, JSON-LD, SHACL — полностью открытые официальные спецификации; это машинная основа provenance/ontology/validation.
+W3C PROV-O, RDF, OWL, SPARQL, JSON-LD, SHACL. Для использования конкретного правила требуется точный stable locator.
 
 ### AI Governance / Security
 
-NIST AI RMF, NIST GenAI Profile, OWASP GenAI/LLM, MITRE ATLAS — официальные открытые источники.
+NIST AI RMF, NIST GenAI Profile, OWASP GenAI/LLM, MITRE ATLAS. Для каждой извлечённой нормы/методики требуется точная версия и locator.
 
 ---
 
-## 9. Практический цикл обработки одного источника
+## 10. Практический цикл обработки одного источника
 
 ```text
-REGISTER SOURCE
+SEARCH EXISTING SOURCE ID
 ↓
-VERIFY ACCESS / VERSION / STATUS
+REGISTER / REUSE SOURCE
+↓
+VERIFY TITLE / VERSION / STATUS
+↓
+RECORD ACQUISITION URI + ACCESSED_AT
+↓
+OBTAIN ORIGINAL LEGALLY (если нужно)
+↓
+CALCULATE SHA-256 (если есть локальный файл)
 ↓
 BUILD STRUCTURE MAP
 ↓
@@ -242,11 +314,11 @@ SELECT RELEVANT SECTIONS
 ↓
 EXTRACT IDEAS IN OUR WORDS
 ↓
-MAP TO CONCEPTS / METHODS / ALGORITHMS
-↓
 ADD EXACT LOCATORS
 ↓
-CREATE / UPDATE METHOD CARD
+MAP TO CONCEPTS / METHODS / ALGORITHMS / CONTROLS / METRICS
+↓
+CREATE / UPDATE CANONICAL RECORD
 ↓
 DEFINE IMPLEMENTATION OPTIONS
 ↓
@@ -254,23 +326,30 @@ DEFINE TEST / BENCHMARK
 ↓
 RUN SENIOR REVIEW
 ↓
-PUBLISH VERIFIED META-KB RECORD
+UPDATE PHYSICAL_MAP + DEVELOPMENT_JOURNAL
+↓
+PUBLISH VERIFIED RECORD
 ```
 
 ---
 
-## 10. Definition of Done одного источника
+## 11. Definition of Done одного источника
 
 Источник считается обработанным, когда:
 
 - проверены название, версия и статус;
-- есть источник происхождения;
+- зафиксирован `acquisition_uri` и дата доступа;
+- при наличии локального оригинала записаны физический путь и SHA-256;
 - выделены релевантные разделы;
 - есть точные локаторы для использованных идей;
 - идеи изложены своими словами;
+- каждый объект имеет `origin_class`;
 - созданы связи `Source → Concept → Method → Algorithm → Control/Metric`;
 - определены области применимости и ограничения;
 - сформирован минимум один implementation note;
-- если заявляется преимущество метода — есть план benchmark или научное основание;
+- если заявляется преимущество метода — есть benchmark или научное основание;
 - запись прошла Senior Review;
-- изменения версионированы.
+- изменения версионированы;
+- физическое расположение отражено в `PHYSICAL_MAP.md`;
+- изменение зафиксировано в `DEVELOPMENT_JOURNAL.md`;
+- перед созданием проверено отсутствие canonical duplicate.
