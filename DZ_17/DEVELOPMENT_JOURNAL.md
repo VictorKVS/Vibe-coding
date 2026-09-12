@@ -82,6 +82,7 @@ b5bbf77c2645591d131083279a6c5d0018150559  physical KB map
 51185df6d020352bc07b9799be3853c4e749542d  universal KB README update
 5ab097a36dbb86702b9fbd717e157825a3dcdad1  documentation index update
 4f37715919b31fbf4024a83bfda2ff9527f45f75  source acquisition plan hardening
+2ef9fb3cb114a99f940f617f7ccb7bcc849ee625  local-only originals/indexes guard
 ```
 
 **TASK**  
@@ -89,7 +90,7 @@ b5bbf77c2645591d131083279a6c5d0018150559  physical KB map
 
 **WHAT CHANGED**
 
-Созданы правила provenance и физического хранения, физическая карта KB и рабочее место для исходных материалов. Обновлены главная карта документации, README базы и план обработки источников.
+Созданы правила provenance и физического хранения, физическая карта KB и рабочее место для исходных материалов. Обновлены главная карта документации, README базы и план обработки источников. Добавлен `.gitignore`, чтобы полные оригиналы и производные runtime-индексы по умолчанию оставались локальными.
 
 **WHY**
 
@@ -128,6 +129,7 @@ DZ_17/knowledge_base/SOURCE_ACQUISITION_AND_EXTRACTION_PLAN.md
 DZ_17/knowledge_base/PROVENANCE_AND_STORAGE_POLICY.md
 DZ_17/knowledge_base/PHYSICAL_MAP.md
 DZ_17/knowledge_base/materials/README.md
+DZ_17/knowledge_base/materials/.gitignore
 DZ_17/DEVELOPMENT_JOURNAL.md
 ```
 
@@ -152,7 +154,8 @@ DZ_17/knowledge_base/SOURCE_ACQUISITION_AND_EXTRACTION_PLAN.md
 - нет нового параллельного source registry;
 - существующий source_registry.v1.json остаётся библиографическим source of truth;
 - PHYSICAL_MAP указывает реальные пути и отдельно помечает planned/local-only;
-- правила запрещают SOURCE_DERIVED без exact locator;
+- rules запрещают SOURCE_DERIVED без exact locator;
+- полные originals и runtime indexes защищены local-only .gitignore;
 - ранее названные «подтверждённые открытые источники» в плане понижены до candidate/registered, пока не записаны exact URI/version/locator;
 ```
 
