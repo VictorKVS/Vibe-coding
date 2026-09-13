@@ -1,0 +1,68 @@
+{
+  "schema_version": "alina-translation-benchmark-v1",
+  "benchmark_id": "BENCH-TRANSLATION-EN-RU-v1",
+  "version": 1,
+  "status": "draft",
+  "origin_class": "PROJECT_DECISION",
+  "purpose": "Сравнивать переводчики на одном корпусе и не принимать рекламные заявления без измерений.",
+  "primary_direction": "en->ru",
+  "corpus_policy": {
+    "store_only_lawful_test_materials": true,
+    "preserve_source_reference": true,
+    "separate_domains": true,
+    "minimum_segments_before_model_ranking": 50,
+    "recommended_segments": 200
+  },
+  "domains": [
+    "cybersecurity",
+    "ai_ml",
+    "software_architecture",
+    "legal_regulatory",
+    "scientific",
+    "general"
+  ],
+  "modes": ["exact", "technical", "reader"],
+  "candidates": [
+    "local-fast-ru",
+    "local-general-qwen14b",
+    "local-deep-ru",
+    "GigaChat online models",
+    "Mistral Reserve",
+    "Google Translate when lawfully available as a baseline"
+  ],
+  "automatic_checks": [
+    "numbers_preserved",
+    "dates_preserved",
+    "urls_preserved",
+    "identifiers_preserved",
+    "paragraph_count_delta",
+    "required_terms_used",
+    "forbidden_additions_markers",
+    "empty_output",
+    "latency_ms"
+  ],
+  "human_review": {
+    "method": "MQM-inspired error annotation",
+    "dimensions": [
+      "accuracy_mistranslation",
+      "accuracy_omission",
+      "accuracy_addition",
+      "terminology",
+      "fluency",
+      "style",
+      "locale",
+      "formatting"
+    ],
+    "severity": ["minor", "major", "critical"],
+    "blind_review_recommended": true
+  },
+  "ranking": {
+    "no_single_global_winner": true,
+    "rank_per_domain_and_mode": true,
+    "quality_first_for_exact": true,
+    "quality_latency_balance_for_technical": true,
+    "quality_fluency_balance_for_reader": true,
+    "record_hardware_and_model_version": true
+  },
+  "acceptance_rule": "Заявление 'лучше Google Translate' допустимо только для конкретной версии модели, направления, домена, режима и версии корпуса, если оно подтверждено сохраненными результатами benchmark."
+}
