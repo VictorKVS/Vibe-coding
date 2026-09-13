@@ -7,12 +7,13 @@ export type RuntimePolicyState={
  modelPolicies:Record<string,{enabled:boolean;security:'approved'|'review'|'blocked'}>;
  promptPolicies:Record<string,{active:boolean;review:'approved'|'pending'|'blocked';version:number}>;
  kbPolicies:Record<string,{enabled:boolean;securityHold:boolean}>;
+ routeOverrides:Record<string,string>;
 };
 
 export type PolicyDecision={allowed:boolean;reason:string};
 
 const stateFile=resolve(process.cwd(),'runtime','config','admin-control.v1.json');
-const EMPTY_STATE:RuntimePolicyState={version:1,updatedAt:null,modelPolicies:{},promptPolicies:{},kbPolicies:{}};
+const EMPTY_STATE:RuntimePolicyState={version:1,updatedAt:null,modelPolicies:{},promptPolicies:{},kbPolicies:{},routeOverrides:{}};
 
 export async function readRuntimePolicy():Promise<RuntimePolicyState>{
  try{
@@ -23,6 +24,7 @@ export async function readRuntimePolicy():Promise<RuntimePolicyState>{
    modelPolicies:raw.modelPolicies&&typeof raw.modelPolicies==='object'?raw.modelPolicies:{},
    promptPolicies:raw.promptPolicies&&typeof raw.promptPolicies==='object'?raw.promptPolicies:{},
    kbPolicies:raw.kbPolicies&&typeof raw.kbPolicies==='object'?raw.kbPolicies:{},
+   routeOverrides:raw.routeOverrides&&typeof raw.routeOverrides==='object'?raw.routeOverrides:{},
   };
  }catch{return structuredClone(EMPTY_STATE);}
 }
@@ -50,6 +52,8 @@ export function kbPolicyDecision(state:RuntimePolicyState,kbId:string):PolicyDec
  if(policy.securityHold)return {allowed:false,reason:'knowledge base is on AI Security hold'};
  return {allowed:true,reason:'connected'};
 }
+
+export function routeOverrideForTask(state:RuntimePolicyState,task:string){return String(state.routeOverrides?.[task]||'').trim();}
 
 export function promptIdForTask(task:string){
  if(task==='kb_extract')return 'PROMPT-KB-EXTRACT';
