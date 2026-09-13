@@ -1,0 +1,64 @@
+{
+  "schema_version": "alina-translation-benchmark-corpus-v1",
+  "benchmark_id": "BENCH-TRANSLATION-EN-RU-v1",
+  "version": 1,
+  "status": "starter_synthetic",
+  "origin_class": "PROJECT_DECISION",
+  "notes": "Синтетические проектные фразы для проверки конвейера, сохранения чисел/URL/терминов и воспроизводимости. Не являются human gold reference и не доказывают качество перевода.",
+  "cases": [
+    {
+      "case_id": "TR-0001",
+      "domain": "cybersecurity",
+      "mode": "technical",
+      "source_language": "en",
+      "target_language": "ru",
+      "source": "A threat actor may exploit weaknesses in the knowledge graph retrieval pipeline.",
+      "expected_terms": ["субъект угрозы", "граф знаний"]
+    },
+    {
+      "case_id": "TR-0002",
+      "domain": "software_architecture",
+      "mode": "technical",
+      "source_language": "en",
+      "target_language": "ru",
+      "source": "The service must return HTTP 503 after 30 seconds if the upstream API is unavailable. See https://example.org/api/v2/status.",
+      "expected_terms": []
+    },
+    {
+      "case_id": "TR-0003",
+      "domain": "ai_ml",
+      "mode": "technical",
+      "source_language": "en",
+      "target_language": "ru",
+      "source": "Retrieval does not prove provenance; each claim must retain a source identifier such as SRC-2048.",
+      "expected_terms": ["происхождение данных"]
+    },
+    {
+      "case_id": "TR-0004",
+      "domain": "legal_regulatory",
+      "mode": "exact",
+      "source_language": "en",
+      "target_language": "ru",
+      "source": "1. The operator shall retain the record for 5 years.\n\n2. The operator shall not alter the original timestamp.",
+      "expected_terms": []
+    },
+    {
+      "case_id": "TR-0005",
+      "domain": "scientific",
+      "mode": "exact",
+      "source_language": "en",
+      "target_language": "ru",
+      "source": "The measured value was 12.5 mg/L at 20 °C, whereas the control sample remained below 0.5 mg/L.",
+      "expected_terms": []
+    },
+    {
+      "case_id": "TR-0006",
+      "domain": "general",
+      "mode": "reader",
+      "source_language": "en",
+      "target_language": "ru",
+      "source": "The report was delayed, but the underlying incident had already been resolved before the meeting began.",
+      "expected_terms": []
+    }
+  ]
+}
