@@ -22,9 +22,8 @@ flowchart LR
     D8L --> D8P["ДЗ-8 Pro<br/>Голосовой backend"]
     D8P --> D10["ДЗ-10_31<br/>AI Creative Production + Agent Zoo"]
     D10 --> D17["ДЗ-17<br/>ALINA Multimodal"]
->> ```
->>
->> ДЗ-7 не представлено в текущем составе репозитория и не включено в статус готовности.
->>
->> Для ДЗ-17 отдельно отделён обязательный учебный минимум от долгосрочного развития ALINA/WILD_IDEAS в сторону Knowledge Factory, Narrative Knowledge Base, Visual Continuity, storyboard, анимации и голосового интерфейса.
->> '@
+```
+
+ДЗ-7 не представлено в текущем составе репозитория и не включено в статус готовности.
+
+Для ДЗ-17 отдельно отделён обязательный учебный минимум от долгосрочного развития ALINA/WILD_IDEAS в сторону Narrative Knowledge Base, Visual Continuity, storyboard, анимации и голосового интерфейса.
