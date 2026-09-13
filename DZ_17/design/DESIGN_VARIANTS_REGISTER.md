@@ -1,6 +1,6 @@
 # ALINA Knowledge Factory — Design Variants Register
 
-Version: `0.1`  
+Version: `0.2`  
 Status: `ACTIVE`
 
 Этот документ хранит варианты проектных решений. Вариант не удаляется после отказа; меняется его статус и фиксируется причина.
@@ -48,6 +48,13 @@ SUPERSEDED
 | DV-024 | Algorithm parameters | immutable/versioned control-plane parameters | SELECTED | LLM may propose but not mutate |
 | DV-025 | Testing | happy-path benchmark only | REJECTED | недостаточно |
 | DV-026 | Testing | scenario + what-if + adversarial polygon | SELECTED | expected production gate |
+| DV-027 | P0 data model | полностью generic document/JSON store | REJECTED | слишком слабые identity/provenance/security invariants |
+| DV-028 | P0 data model | отдельная жёсткая SQL-таблица для каждого типа знания с первого дня | DEFERRED | преждевременно заморозит нестабильную онтологию |
+| DV-029 | P0 data model | strict core columns + typed KnowledgeObject + graph edges + JSONB extensions | SELECTED | баланс трассировки и изменяемости; `CANONICAL_KNOWLEDGE_DATA_MODEL.md` |
+| DV-030 | Knowledge/security state | один общий status | REJECTED | смешивает истинность/готовность и допуск ИБ |
+| DV-031 | Knowledge/security state | independent domain status + security_status | SELECTED | ИБ может hold/restrict без переписывания предметного знания |
+| DV-032 | Source addressability | chunk как единственный locator | REJECTED | runtime segmentation не должна определять provenance |
+| DV-033 | Source addressability | StructureNode + SourceSpan as canonical locator | SELECTED | provenance сохраняется независимо от RAG chunking |
 
 ## Как добавлять новый вариант
 
