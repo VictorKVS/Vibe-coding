@@ -14,6 +14,10 @@ function median(values) {
   return sorted.length % 2 ? sorted[middle] : (sorted[middle - 1] + sorted[middle]) / 2;
 }
 
+function ratio(next, base) {
+  return Number.isFinite(next) && Number.isFinite(base) && base > 0 ? next / base : null;
+}
+
 async function readJsonFiles(root, sourceState) {
   try {
     const entries = await fs.readdir(root, { withFileTypes: true });
@@ -45,14 +49,79 @@ function traceComplete(record) {
   );
 }
 
-function modelId(record) {
-  return record?.models?.M1 || null;
+function modelId(record, slot = 'M1') {
+  return record?.models?.[slot] || null;
+}
+
+function isRealModel(value) {
+  return Boolean(value && value !== 'demo' && value !== 'auto');
+}
+
+function isReviewed(record) {
+  return record?.strictReview?.state === 'REVIEWED';
+}
+
+function isPassingReview(record) {
+  return ['PASS', 'STRONG_PASS'].includes(record?.strictReview?.verdict);
+}
+
+function strictScore(record) {
+  const value = Number(record?.strictReview?.score);
+  return Number.isFinite(value) ? value : null;
+}
+
+function usageTokensFromObject(value) {
+  if (!value || typeof value !== 'object') return null;
+  const direct = ['total_tokens', 'totalTokens', 'total_token_count'];
+  for (const key of direct) {
+    const candidate = Number(value[key]);
+    if (Number.isFinite(candidate)) return candidate;
+  }
+  const input = Number(value.input_tokens ?? value.prompt_tokens ?? value.inputTokens);
+  const output = Number(value.output_tokens ?? value.completion_tokens ?? value.outputTokens);
+  if (Number.isFinite(input) || Number.isFinite(output)) return (Number.isFinite(input) ? input : 0) + (Number.isFinite(output) ? output : 0);
+  return null;
+}
+
+function runUsageTokens(record) {
+  if (!Array.isArray(record.stageResults)) return null;
+  const values = record.stageResults.map((stage) => usageTokensFromObject(stage?.usage)).filter(Number.isFinite);
+  return values.length ? values.reduce((sum, value) => sum + value, 0) : null;
+}
+
+function latest(items, count) {
+  return [...items]
+    .sort((a, b) => String(a.record.generatedAt).localeCompare(String(b.record.generatedAt)))
+    .slice(-count);
+}
+
+function qualificationForSingleModel(model, items) {
+  const qualificationRuns = latest(items, 3);
+  const reviewed = qualificationRuns.filter(({ record }) => isReviewed(record));
+  const passing = reviewed.filter(({ record }) => isPassingReview(record));
+  const hardFails = qualificationRuns.filter(({ record }) => record.strictReview?.hardFail === true);
+  const scores = reviewed.map(({ record }) => strictScore(record)).filter(Number.isFinite);
+  const qualified = qualificationRuns.length >= 3 && reviewed.length === qualificationRuns.length && passing.length >= 2 && hardFails.length === 0;
+  return {
+    model,
+    totalRunsFound: items.length,
+    qualificationRuns: qualificationRuns.length,
+    reviewedRuns: reviewed.length,
+    passingReviews: passing.length,
+    hardFails: hardFails.length,
+    medianStrictScore: median(scores),
+    medianWallMs: median(qualificationRuns.map(({ record }) => Number(record.wallMs))),
+    medianCalls: median(qualificationRuns.map(({ record }) => Number(record.callsUsed))),
+    medianUsageTokens: median(qualificationRuns.map(({ record }) => runUsageTokens(record)).filter(Number.isFinite)),
+    qualified,
+    files: qualificationRuns.map(({ file }) => path.relative(process.cwd(), file).replaceAll('\\', '/')),
+  };
 }
 
 const level = arg('level', 'ZM0').toUpperCase();
 const questFilter = arg('quest', '');
-if (!['ZM0', 'ZM1'].includes(level)) throw new Error('This assessor currently supports ZM0 and ZM1 only.');
-if (level === 'ZM1' && !questFilter) throw new Error('ZM1 assessment requires --quest=<questId> so all model candidates are compared on the same professional quest.');
+if (!['ZM0', 'ZM1', 'ZM2'].includes(level)) throw new Error('This assessor currently supports ZM0, ZM1 and ZM2 only.');
+if (['ZM1', 'ZM2'].includes(level) && !questFilter) throw new Error(`${level} assessment requires --quest=<questId> so evidence is compared on the same professional quest.`);
 
 const sources = [
   { root: path.resolve('quest-runs', 'pending'), sourceState: 'pending' },
@@ -97,39 +166,19 @@ if (level === 'ZM0') {
   }
 }
 
-if (level === 'ZM1') {
-  const baseline = runs.filter(({ record }) => record.composition?.id === 'single' && modelId(record) && modelId(record) !== 'demo');
+function buildSingleCandidates() {
+  const baseline = runs.filter(({ record }) => record.composition?.id === 'single' && isRealModel(modelId(record)));
   const groups = new Map();
   for (const item of baseline) {
     const model = modelId(item.record);
     if (!groups.has(model)) groups.set(model, []);
     groups.get(model).push(item);
   }
+  return [...groups.entries()].map(([model, items]) => qualificationForSingleModel(model, items));
+}
 
-  const candidates = [];
-  for (const [model, items] of groups.entries()) {
-    const sorted = [...items].sort((a, b) => String(a.record.generatedAt).localeCompare(String(b.record.generatedAt)));
-    const qualificationRuns = sorted.slice(-3);
-    const reviewed = qualificationRuns.filter(({ record }) => record.strictReview?.state === 'REVIEWED');
-    const passing = reviewed.filter(({ record }) => ['PASS', 'STRONG_PASS'].includes(record.strictReview?.verdict));
-    const hardFails = qualificationRuns.filter(({ record }) => record.strictReview?.hardFail === true);
-    const scores = reviewed.map(({ record }) => Number(record.strictReview?.score)).filter(Number.isFinite);
-    const qualified = qualificationRuns.length >= 3 && reviewed.length === qualificationRuns.length && passing.length >= 2 && hardFails.length === 0;
-
-    candidates.push({
-      model,
-      totalRunsFound: sorted.length,
-      qualificationRuns: qualificationRuns.length,
-      reviewedRuns: reviewed.length,
-      passingReviews: passing.length,
-      hardFails: hardFails.length,
-      medianStrictScore: median(scores),
-      medianWallMs: median(qualificationRuns.map(({ record }) => Number(record.wallMs))),
-      qualified,
-      files: qualificationRuns.map(({ file }) => path.relative(process.cwd(), file).replaceAll('\\', '/')),
-    });
-  }
-
+if (level === 'ZM1') {
+  const candidates = buildSingleCandidates();
   const qualifiedModels = candidates.filter((item) => item.qualified);
   report.evidence = {
     questId: questFilter,
@@ -150,6 +199,106 @@ if (level === 'ZM1') {
     report.decision = 'PASS';
     report.reasons = ['At least two real models satisfy the repeated-run strict-review qualification rule on the same quest.'];
   } else if (candidates.length >= 2 && candidates.every((item) => item.qualificationRuns >= 3)) {
+    report.decision = 'READY_FOR_STRICT_REVIEW';
+  }
+}
+
+if (level === 'ZM2') {
+  const singleCandidates = buildSingleCandidates();
+  const singleByModel = new Map(singleCandidates.map((item) => [item.model, item]));
+  const relayRuns = runs.filter(({ record }) =>
+    record.composition?.id === 'relay_critic' &&
+    isRealModel(modelId(record, 'M1')) &&
+    isRealModel(modelId(record, 'M2'))
+  );
+  const relayGroups = new Map();
+  for (const item of relayRuns) {
+    const key = `${modelId(item.record, 'M1')} -> ${modelId(item.record, 'M2')}`;
+    if (!relayGroups.has(key)) relayGroups.set(key, []);
+    relayGroups.get(key).push(item);
+  }
+
+  const pairs = [];
+  for (const [pair, items] of relayGroups.entries()) {
+    const [draftModel, criticModel] = pair.split(' -> ');
+    const baseline = singleByModel.get(draftModel);
+    const qualificationRuns = latest(items, 2);
+    const reviewed = qualificationRuns.filter(({ record }) => isReviewed(record));
+    const passing = reviewed.filter(({ record }) => isPassingReview(record));
+    const hardFails = qualificationRuns.filter(({ record }) => record.strictReview?.hardFail === true);
+    const dissentPreserved = qualificationRuns.filter(({ record }) => record.strictReview?.dissentPreserved === true);
+    const scores = reviewed.map(({ record }) => strictScore(record)).filter(Number.isFinite);
+    const relayMedianScore = median(scores);
+    const baselineMedianScore = baseline?.medianStrictScore ?? null;
+    const qualityDeltaPoints = Number.isFinite(relayMedianScore) && Number.isFinite(baselineMedianScore) ? relayMedianScore - baselineMedianScore : null;
+    const relayWallMs = median(qualificationRuns.map(({ record }) => Number(record.wallMs)));
+    const relayCalls = median(qualificationRuns.map(({ record }) => Number(record.callsUsed)));
+    const relayUsageTokens = median(qualificationRuns.map(({ record }) => runUsageTokens(record)).filter(Number.isFinite));
+    const qualified = Boolean(
+      baseline?.qualified &&
+      qualificationRuns.length >= 2 &&
+      reviewed.length === qualificationRuns.length &&
+      passing.length === qualificationRuns.length &&
+      hardFails.length === 0 &&
+      dissentPreserved.length === qualificationRuns.length &&
+      Number.isFinite(qualityDeltaPoints) && qualityDeltaPoints >= 5
+    );
+
+    pairs.push({
+      pair,
+      draftModel,
+      criticModel,
+      baselineQualified: Boolean(baseline?.qualified),
+      baselineMedianStrictScore,
+      relayRunsFound: items.length,
+      qualificationRuns: qualificationRuns.length,
+      reviewedRuns: reviewed.length,
+      passingReviews: passing.length,
+      hardFails: hardFails.length,
+      dissentPreservedRuns: dissentPreserved.length,
+      relayMedianStrictScore,
+      qualityDeltaPoints,
+      operationalDelta: {
+        baselineMedianCalls: baseline?.medianCalls ?? null,
+        relayMedianCalls: relayCalls,
+        callMultiplier: ratio(relayCalls, baseline?.medianCalls),
+        baselineMedianWallMs: baseline?.medianWallMs ?? null,
+        relayMedianWallMs: relayWallMs,
+        wallTimeMultiplier: ratio(relayWallMs, baseline?.medianWallMs),
+        baselineMedianUsageTokens: baseline?.medianUsageTokens ?? null,
+        relayMedianUsageTokens: relayUsageTokens,
+        usageTokenMultiplier: ratio(relayUsageTokens, baseline?.medianUsageTokens),
+      },
+      qualified,
+      files: qualificationRuns.map(({ file }) => path.relative(process.cwd(), file).replaceAll('\\', '/')),
+    });
+  }
+
+  const qualifiedPairs = pairs.filter((item) => item.qualified);
+  report.evidence = {
+    questId: questFilter,
+    qualifiedSingleBaselines: singleCandidates.filter((item) => item.qualified).map((item) => item.model),
+    relayPairsFound: pairs.length,
+    qualifiedPairs: qualifiedPairs.map((item) => item.pair),
+    pairs,
+  };
+
+  if (!singleCandidates.some((item) => item.qualified)) report.reasons.push('Need at least one ZM1-qualified single-model baseline for the relay M1 model.');
+  if (!pairs.length) report.reasons.push('Need at least one real-model relay_critic pair on this quest.');
+  for (const item of pairs) {
+    if (!item.baselineQualified) report.reasons.push(`${item.pair}: M1 single baseline is not ZM1-qualified.`);
+    else if (item.qualificationRuns < 2) report.reasons.push(`${item.pair}: need 2 repeated relay runs.`);
+    else if (item.reviewedRuns < 2) report.reasons.push(`${item.pair}: both relay qualification runs require strict review.`);
+    else if (item.hardFails > 0) report.reasons.push(`${item.pair}: hard fail present.`);
+    else if (item.passingReviews < 2) report.reasons.push(`${item.pair}: both relay qualification runs must be PASS/STRONG_PASS.`);
+    else if (item.dissentPreservedRuns < 2) report.reasons.push(`${item.pair}: reviewer must set dissentPreserved=true on both relay runs.`);
+    else if (!Number.isFinite(item.qualityDeltaPoints) || item.qualityDeltaPoints < 5) report.reasons.push(`${item.pair}: reviewed median quality gain is below +5 points over the M1 single baseline.`);
+  }
+
+  if (qualifiedPairs.length) {
+    report.decision = 'PASS';
+    report.reasons = ['At least one critic pair demonstrates a reviewed +5 point or greater median quality gain over its qualified single-model baseline with preserved reviewer dissent.'];
+  } else if (pairs.length && pairs.some((item) => item.qualificationRuns >= 2)) {
     report.decision = 'READY_FOR_STRICT_REVIEW';
   }
 }
