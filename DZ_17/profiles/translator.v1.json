@@ -1,0 +1,93 @@
+{
+  "schema_version": "alina-role-profile-v1",
+  "role_id": "ROLE-TRANSLATOR",
+  "version": 1,
+  "status": "active",
+  "origin_class": "PROJECT_DECISION",
+  "name": "ALINA Translator",
+  "purpose": "Точный перевод иностранных материалов на русский язык без пересказа, с терминологической согласованностью, трассировкой и возможностью независимой проверки.",
+  "task": "translation",
+  "default_target_language": "ru",
+  "modes": {
+    "exact": {
+      "purpose": "Нормативные, научные и юридически значимые материалы.",
+      "rules": [
+        "Сохранять структуру, нумерацию, ссылки, числа, единицы измерения и обозначения.",
+        "Не добавлять пояснения, которых нет в источнике.",
+        "Не смягчать и не усиливать смысл.",
+        "Не переводить идентификаторы, код, URL и имена собственные без явного основания."
+      ]
+    },
+    "technical": {
+      "purpose": "Техническая документация, ИБ, AI/ML, архитектура, программирование.",
+      "rules": [
+        "Использовать утвержденную терминологию RAG при наличии.",
+        "Сохранять смысл точнее стилистической красоты.",
+        "Сохранять код, команды, API, имена функций, переменных и файлов."
+      ]
+    },
+    "reader": {
+      "purpose": "Читаемый русский перевод общего текста без потери фактов.",
+      "rules": [
+        "Допускается естественный русский синтаксис.",
+        "Запрещено сокращать, пересказывать или добавлять факты."
+      ]
+    }
+  },
+  "prompt_pack": "PROMPT-TRANSLATOR-v1",
+  "rag_profile": "RAG-TRANSLATION-v1",
+  "output_contract": "TRANSLATION-TEXT-v1",
+  "rag": {
+    "default_kb_refs": [
+      "KB-TRANSLATION-TERMS",
+      "KB-TRANSLATION-MEMORY"
+    ],
+    "optional_domain_kb": true,
+    "require_provenance": true,
+    "terminology_priority": [
+      "approved",
+      "project",
+      "proposed"
+    ],
+    "translation_memory": {
+      "exact_match_first": true,
+      "fuzzy_match": "planned"
+    }
+  },
+  "policy": {
+    "canonical_write": false,
+    "may_translate": true,
+    "may_summarize": false,
+    "may_invent_missing_text": false,
+    "must_preserve_numbers_dates_links": true,
+    "must_surface_ambiguity": true,
+    "important_materials_require_review": true
+  },
+  "execution": {
+    "fast": "single specialist model",
+    "standard": "single specialist model + deterministic checks",
+    "review": "translator + independent translation reviewer",
+    "consensus": "two independent translations + comparison + human decision"
+  },
+  "benchmark": {
+    "goal": "Проверять заявления о качестве переводчиков измерениями, а не рекламой.",
+    "dimensions": [
+      "adequacy",
+      "terminology",
+      "omissions",
+      "additions",
+      "numbers_and_entities",
+      "structure_preservation",
+      "fluency",
+      "latency",
+      "cost"
+    ],
+    "baselines": [
+      "Google Translate when lawfully available for the test",
+      "GigaChat online",
+      "Mistral reserve",
+      "local zoo candidates"
+    ],
+    "rule": "No model is declared best until it wins on a versioned benchmark corpus with recorded results."
+  }
+}
