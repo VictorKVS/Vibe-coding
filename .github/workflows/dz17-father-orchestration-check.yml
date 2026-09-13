@@ -5,6 +5,7 @@ on:
     branches: [main]
     paths:
       - 'DZ_17/app/scripts/run-father-orchestration.mjs'
+      - 'DZ_17/app/scripts/detect-idea-boundaries.mjs'
       - 'DZ_17/profiles/analyst.v1.json'
       - 'DZ_17/rag/analyst-zoo.v1.json'
       - 'DZ_17/orchestration/father-analyst-pipeline.v1.json'
@@ -15,6 +16,7 @@ on:
   pull_request:
     paths:
       - 'DZ_17/app/scripts/run-father-orchestration.mjs'
+      - 'DZ_17/app/scripts/detect-idea-boundaries.mjs'
       - 'DZ_17/profiles/analyst.v1.json'
       - 'DZ_17/rag/analyst-zoo.v1.json'
       - 'DZ_17/orchestration/father-analyst-pipeline.v1.json'
@@ -33,8 +35,10 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22.13.1'
-      - name: Check executable orchestrator syntax
-        run: node --check app/scripts/run-father-orchestration.mjs
+      - name: Check executable orchestration syntax
+        run: |
+          node --check app/scripts/run-father-orchestration.mjs
+          node --check app/scripts/detect-idea-boundaries.mjs
       - name: Parse machine-readable contracts
         run: |
           node -e "JSON.parse(require('fs').readFileSync('profiles/analyst.v1.json','utf8')); console.log('analyst profile OK')"
