@@ -1,5 +1,6 @@
 param(
   [string]$ZooRoot = $env:FATHER_MODELS_ROOT,
+  [string]$CaBundle = $env:NODE_EXTRA_CA_CERTS,
   [switch]$IncludeExperimental,
   [switch]$WriteEnv
 )
@@ -160,7 +161,7 @@ foreach ($item in $selected) {
   if ($item.Mmproj) { $lines.Add("mmproj = $(Ini-Path $item.Mmproj)") }
   $lines.Add('')
 }
-Set-Content -Path $PresetPath -Value $lines -Encoding UTF8
+[System.IO.File]::WriteAllLines($PresetPath,$lines,[System.Text.UTF8Encoding]::new($false))
 
 Write-Host ""
 Write-Host "[ALINA] Registered local models:" -ForegroundColor Cyan
@@ -198,6 +199,13 @@ if ($vision) {
   $envValues['LLAMA_VISION_MODELS']=$vision
 }
 
+if ($CaBundle) {
+  if (-not (Test-Path $CaBundle)) { throw "CA bundle not found: $CaBundle" }
+  $resolvedCa = (Resolve-Path $CaBundle).Path
+  $envValues['NODE_EXTRA_CA_CERTS']=$resolvedCa
+  $envValues['SSL_CERT_FILE']=$resolvedCa
+}
+
 Write-Host ""
 Write-Host "[ALINA] Recommended .env.local values:" -ForegroundColor Cyan
 foreach ($entry in $envValues.GetEnumerator()) {
@@ -209,7 +217,7 @@ if ($WriteEnv) {
   foreach ($entry in $envValues.GetEnumerator()) {
     $existing = Upsert-EnvLine -Lines $existing -Key $entry.Key -Value $entry.Value
   }
-  Set-Content -Path $EnvPath -Value $existing -Encoding UTF8
+  [System.IO.File]::WriteAllLines($EnvPath,$existing,[System.Text.UTF8Encoding]::new($false))
   Write-Host "[ALINA] .env.local updated without touching unrelated secret values." -ForegroundColor Green
 }
 
