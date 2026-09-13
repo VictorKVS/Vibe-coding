@@ -33,6 +33,8 @@ yarn-error.log*
 # local AI runtime / model weights
 /models/
 /runtime/llama/
+/runtime/config/
+/runtime/audit/
 *.gguf
 
 # deployment and generated files
