@@ -91,7 +91,13 @@ export async function persistIngestBundle(bundle:IngestBundle):Promise<IngestRes
   };
  }
  const source:SourceRecord={...bundle.source,source_id:sourceId,created_at:bundle.source.created_at||now};
- const capture:CaptureRecord={...bundle.capture,capture_id:captureId,source_id:sourceId,captured_at:bundle.capture.captured_at||now};
+ const capture:CaptureRecord={
+  ...bundle.capture,
+  capture_id:captureId,
+  source_id:sourceId,
+  captured_at:bundle.capture.captured_at||now,
+  security_status:'SECURITY_UNREVIEWED',
+ };
  await atomicJson(resolve(sourcesDir,`${sourceId}.json`),source);
  await atomicJson(resolve(capturesDir,`${captureId}.json`),capture);
  await atomicJson(resolve(structureDir,`${captureId}.json`),bundle.structure_nodes);
@@ -106,6 +112,7 @@ export async function persistIngestBundle(bundle:IngestBundle):Promise<IngestRes
   capture_id:captureId,
   structure_nodes:bundle.structure_nodes.length,
   source_spans:bundle.source_spans.length,
+  security_status:capture.security_status,
   trace:bundle.trace||{},
   created_at:now,
  })+'\n','utf8');
