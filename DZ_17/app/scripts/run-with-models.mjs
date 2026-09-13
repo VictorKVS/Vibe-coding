@@ -20,6 +20,12 @@ const ctx=process.env.LLAMA_CTX_SIZE||'8192';
 const parallel=process.env.LLAMA_PARALLEL||'1';
 const gpuLayers=process.env.LLAMA_GPU_LAYERS||'99';
 
+const nodeMajor=Number(process.versions.node.split('.')[0]||0);
+if(nodeMajor!==22){
+ console.warn(`[ALINA] Внимание: проект проверен на Node 22.x, сейчас ${process.version}.`);
+ console.warn('[ALINA] Если Vite/vinext/workerd ведут себя нестабильно, переключитесь на Node 22 LTS.');
+}
+
 let llama=null;
 let app=null;
 let stopping=false;
@@ -54,6 +60,7 @@ if(await healthy()){
   console.log(`[ALINA] запускаю llama.cpp router: ${bin}`);
   console.log(`[ALINA] models: ${modelsDir}`);
   llama=spawn(bin,['--models-dir',modelsDir,'--host',host,'--port',port,'-c',ctx,'-np',parallel,'-ngl',gpuLayers],{cwd,stdio:'inherit',windowsHide:false});
+  llama.on('error',error=>console.error(`[ALINA] Не удалось запустить llama.cpp: ${error.message}`));
   llama.on('exit',code=>{if(!stopping)console.warn(`[ALINA] llama.cpp router завершился, code=${code}`);});
   if(await waitHealthy())console.log(`[ALINA] LOCAL models ready: ${base}`);else console.warn('[ALINA] llama.cpp не успел перейти в ready; UI всё равно запустится и покажет доступные внешние модели.');
  }
@@ -61,6 +68,18 @@ if(await healthy()){
  console.log('[ALINA] LLAMA_AUTOSTART=0 — локальный router не запускается автоматически.');
 }
 
-const npm=process.platform==='win32'?'npm.cmd':'npm';
-app=spawn(npm,['run',mode],{cwd,stdio:'inherit',env:{...process.env},windowsHide:false});
+// Windows Node 24+ может возвращать spawn EINVAL при прямом запуске npm.cmd.
+// Через системный cmd.exe npm запускается одинаково на Node 22/24 и корректно работает
+// в каталогах с пробелами, например G:\\1\\Vibe coding\\....
+if(process.platform==='win32'){
+ const comspec=process.env.ComSpec||process.env.COMSPEC||'cmd.exe';
+ app=spawn(comspec,['/d','/s','/c',`npm run ${mode}`],{cwd,stdio:'inherit',env:{...process.env},windowsHide:false});
+}else{
+ app=spawn('npm',['run',mode],{cwd,stdio:'inherit',env:{...process.env},windowsHide:false});
+}
+app.on('error',error=>{
+ console.error(`[ALINA] Не удалось запустить приложение: ${error.message}`);
+ try{llama?.kill();}catch{}
+ process.exitCode=1;
+});
 app.on('exit',code=>{try{llama?.kill();}catch{}process.exit(code??0);});
