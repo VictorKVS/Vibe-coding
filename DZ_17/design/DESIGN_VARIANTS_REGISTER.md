@@ -1,6 +1,6 @@
 # ALINA Knowledge Factory — Design Variants Register
 
-Version: `0.2`  
+Version: `0.3`  
 Status: `ACTIVE`
 
 Этот документ хранит варианты проектных решений. Вариант не удаляется после отказа; меняется его статус и фиксируется причина.
@@ -55,6 +55,8 @@ SUPERSEDED
 | DV-031 | Knowledge/security state | independent domain status + security_status | SELECTED | ИБ может hold/restrict без переписывания предметного знания |
 | DV-032 | Source addressability | chunk как единственный locator | REJECTED | runtime segmentation не должна определять provenance |
 | DV-033 | Source addressability | StructureNode + SourceSpan as canonical locator | SELECTED | provenance сохраняется независимо от RAG chunking |
+| DV-034 | Deployment P0 | отдельный microservice на каждый логический блок | DEFERRED | лишняя операционная сложность до появления измеренного основания |
+| DV-035 | Deployment P0 | modular monolith + isolated local workers/stores | SELECTED | логические C4 границы сохраняются, физическое разделение только по telemetry/security/scale need |
 
 ## Как добавлять новый вариант
 
