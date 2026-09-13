@@ -5,6 +5,26 @@ export type AlinaTask = 'dialogue' | 'synthesis' | 'architecture';
 
 const rules: Array<{ agent: AgentId; patterns: RegExp[]; reason: string }> = [
   {
+    agent: 'security_engineer',
+    patterns: [/security intake/i, /threat.?model/i, /матриц.*угроз/i, /модел.*угроз/i, /границ.*довер/i, /trust boundary/i, /abuse case/i, /security requirement/i, /остаточн.*риск/i],
+    reason: 'security/threat-modeling intent'
+  },
+  {
+    agent: 'system_engineer',
+    patterns: [/system engineer/i, /системн.*инжен/i, /system context/i, /data flow/i, /поток.*данн/i, /интерфейс.*систем/i, /nfr/i, /нефункцион/i, /операционн.*режим/i],
+    reason: 'system-engineering intent'
+  },
+  {
+    agent: 'solution_architect',
+    patterns: [/solution architect/i, /архитектурн.*вариант/i, /архитектур.*решен/i, /\badr\b/i, /trade.?off/i, /компонентн.*архитект/i],
+    reason: 'solution-architecture intent'
+  },
+  {
+    agent: 'product_manager',
+    patterns: [/product manager/i, /продуктов.*требован/i, /ценност.*продукт/i, /product scope/i, /целев.*пользоват/i, /метрик.*успех/i, /product outcome/i],
+    reason: 'product-definition intent'
+  },
+  {
     agent: 'prompt_engineer',
     patterns: [/\bпромпт/i, /system prompt/i, /prompt engineer/i, /контекст.?инжен/i, /prompt.?eval/i, /инструкц.*агент/i],
     reason: 'prompt/context engineering intent'
