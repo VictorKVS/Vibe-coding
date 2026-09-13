@@ -37,6 +37,8 @@ yarn-error.log*
 /runtime/audit/
 /runtime/benchmarks/
 /runtime/translations/
+/runtime/knowledge-factory/
+/runtime/knowledge-factory-import/
 *.gguf
 
 # deployment and generated files
