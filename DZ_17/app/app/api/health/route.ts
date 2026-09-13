@@ -15,6 +15,7 @@ export async function GET(){
    ingest:'/api/v1/kf/ingest',
    sources:'/api/v1/kf/sources',
    sourceTrace:'/api/v1/kf/trace?source_id=<SRC-ID>',
+   structureProposal:'/api/v1/kf/structure?capture_id=<CAP-ID>',
    runtimeTrace:'/api/v1/trace?limit=100',
    runtimeTraceById:'/api/v1/trace?trace_id=<TRACE-ID>',
    runtimeTraceByTest:'/api/v1/trace?test_id=<TEST-ID>',
