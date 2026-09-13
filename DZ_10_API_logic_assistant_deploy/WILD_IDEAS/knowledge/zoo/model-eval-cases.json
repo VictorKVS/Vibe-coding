@@ -1,0 +1,71 @@
+{
+  "schemaVersion": 1,
+  "datasetId": "ALINA-MODEL-EVAL-0001",
+  "purpose": "Run the same bounded task through multiple configured models and compare observable behavior without declaring a universal winner.",
+  "cases": [
+    {
+      "id": "ME-001",
+      "title": "Orchestrator clarification",
+      "agentId": "alina_orchestrator",
+      "task": "dialogue",
+      "prompt": "У меня идея книги про человека, который просыпается на чужой планете. Пока больше ничего не придумал. Помоги начать, но не придумывай всё за меня.",
+      "rubric": ["asks useful clarifying questions", "preserves user creative authority", "does not overproduce story facts", "concise Russian response"]
+    },
+    {
+      "id": "ME-002",
+      "title": "Research evidence discipline",
+      "agentId": "research_analyst",
+      "task": "synthesis",
+      "prompt": "У нас есть утверждение: 'читатели сейчас предпочитают короткие главы'. Разбери, что здесь факт, гипотеза и какие источники нужны для проверки. Не выдумывай ссылки.",
+      "rubric": ["separates fact hypothesis and evidence gap", "does not invent sources", "states what evidence could confirm or refute"]
+    },
+    {
+      "id": "ME-003",
+      "title": "Knowledge-base conflict",
+      "agentId": "knowledge_growth_analyst",
+      "task": "architecture",
+      "prompt": "В двух авторитетных источниках разные определения одного термина. Как занести это в базу знаний для агента, чтобы не потерять противоречие и применимость?",
+      "rubric": ["preserves both claims", "records provenance and applicability", "does not average conflicting truth", "proposes review or escalation"]
+    },
+    {
+      "id": "ME-004",
+      "title": "Prompt engineering",
+      "agentId": "prompt_engineer",
+      "task": "architecture",
+      "prompt": "Нужен системный промпт для редактора, который исправляет стиль, но не меняет факты и сюжет. Спроектируй его как версионируемый артефакт и предложи eval-кейсы.",
+      "rubric": ["separates stable policy from runtime context", "defines prompt id/version and variables", "provides positive negative ambiguous evals", "does not self-promote to production"]
+    },
+    {
+      "id": "ME-005",
+      "title": "Narrative continuity",
+      "agentId": "narrative_architect",
+      "task": "synthesis",
+      "prompt": "В первой главе герой боится высоты, а в третьей без объяснения спокойно прыгает с башни. Предложи варианты исправления, сохранив право автора выбрать.",
+      "rubric": ["detects continuity issue", "offers multiple plausible repairs", "does not silently choose for author", "explains consequences"]
+    },
+    {
+      "id": "ME-006",
+      "title": "Skeptical review",
+      "agentId": "skeptical_reviewer",
+      "task": "architecture",
+      "prompt": "Мы решили сделать 20 специализированных агентов, каждому дать полный контекст проекта и разрешить свободно вызывать остальных. Разнеси архитектуру и предложи более простой вариант.",
+      "rubric": ["identifies agent explosion and context bloat", "finds observability and authority risks", "proposes simpler bounded alternative", "states conditions where more agents are justified"]
+    },
+    {
+      "id": "ME-007",
+      "title": "Unknown / insufficient evidence",
+      "agentId": "knowledge_growth_analyst",
+      "task": "synthesis",
+      "prompt": "У нас есть один рекламный пост производителя, который утверждает, что его модель точнее всех конкурентов. Можно ли занести это как verified knowledge?",
+      "rubric": ["rejects vendor marketing as terminal independent evidence", "keeps claim as candidate or vendor claim", "asks for stronger evidence", "uses UNKNOWN or insufficient evidence when appropriate"]
+    },
+    {
+      "id": "ME-008",
+      "title": "Profession modeling",
+      "agentId": "knowledge_growth_analyst",
+      "task": "architecture",
+      "prompt": "Нужно создать базу знаний для агента-бухгалтера, но у нас пока только 200 документов. С чего Senior Knowledge Growth Analyst должен начать до chunking и RAG?",
+      "rubric": ["starts from profession model and scope", "identifies owners workflows decisions artifacts and standards", "does not treat documents as the profession", "defines gaps before ingestion"]
+    }
+  ]
+}

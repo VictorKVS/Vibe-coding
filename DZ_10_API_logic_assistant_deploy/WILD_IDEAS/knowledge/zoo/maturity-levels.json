@@ -1,0 +1,78 @@
+{
+  "schemaVersion": 1,
+  "modelId": "ALINA-ZOO-MATURITY-0001",
+  "levels": [
+    {
+      "id": "ZM0",
+      "name": "Smoke / Reproducible Harness",
+      "goal": "Prove that Quest Arena, Agent Zoo, RAG trace and durable run recording work end to end.",
+      "compositions": ["single"],
+      "defaultRepeat": 1,
+      "defaultMaxRuns": 4,
+      "minimumDistinctModels": 1,
+      "demoAllowed": true,
+      "requiredEvidence": ["completed_run", "durable_json", "trace_present", "ci_green"],
+      "promotionGate": "At least one reproducible completed run and no broken trace or archive path."
+    },
+    {
+      "id": "ZM1",
+      "name": "Single-Model Professional Baseline",
+      "goal": "Measure individual models on the same professional quest before adding collaboration effects.",
+      "compositions": ["single"],
+      "defaultRepeat": 3,
+      "defaultMaxRuns": 12,
+      "minimumDistinctModels": 2,
+      "demoAllowed": false,
+      "requiredEvidence": ["two_or_more_real_models", "repeatability", "strict_review", "failure_cases"],
+      "promotionGate": "At least two real model candidates have repeated runs on the same quest and strict review exists."
+    },
+    {
+      "id": "ZM2",
+      "name": "Critic Pair",
+      "goal": "Determine whether Draft → Critic → Revision improves professional quality enough to justify extra calls.",
+      "compositions": ["single", "relay_critic"],
+      "defaultRepeat": 2,
+      "defaultMaxRuns": 16,
+      "minimumDistinctModels": 2,
+      "demoAllowed": false,
+      "requiredEvidence": ["single_baseline", "critic_pair_runs", "strict_review", "quality_delta", "latency_usage_delta"],
+      "promotionGate": "Critic pair shows a reviewed benefit on target cases without hiding reviewer objections or violating hard constraints."
+    },
+    {
+      "id": "ZM3",
+      "name": "Diversity + Synthesis",
+      "goal": "Test whether independent model diversity plus synthesis beats a single model and critic relay.",
+      "compositions": ["single", "relay_critic", "parallel_synthesis"],
+      "defaultRepeat": 2,
+      "defaultMaxRuns": 24,
+      "minimumDistinctModels": 3,
+      "demoAllowed": false,
+      "requiredEvidence": ["independent_candidates", "synthesis_trace", "dissent_preserved", "strict_review", "quality_efficiency_tradeoff"],
+      "promotionGate": "Parallel synthesis preserves meaningful disagreement and produces a reviewed quality gain on representative cases."
+    },
+    {
+      "id": "ZM4",
+      "name": "Role-Specialized Pipeline",
+      "goal": "Use different models for Research, Specialist, Reviewer and Synthesis roles with Zoo RAG and explicit authority boundaries.",
+      "compositions": ["single", "relay_critic", "parallel_synthesis", "specialist_pipeline"],
+      "defaultRepeat": 2,
+      "defaultMaxRuns": 32,
+      "minimumDistinctModels": 3,
+      "demoAllowed": false,
+      "requiredEvidence": ["role_specific_models", "rag_trace", "authority_boundaries", "strict_review", "hard_fail_monitoring", "operational_metrics"],
+      "promotionGate": "Role-specialized pipeline is better or materially safer than simpler compositions on the target professional family."
+    },
+    {
+      "id": "ZM5",
+      "name": "Bounded Production Candidate",
+      "goal": "Promote only a bounded, repeatedly tested model composition with regression, cost/latency evidence, rollback and independent review.",
+      "compositions": ["single", "relay_critic", "parallel_synthesis", "specialist_pipeline"],
+      "defaultRepeat": 3,
+      "defaultMaxRuns": 48,
+      "minimumDistinctModels": 3,
+      "demoAllowed": false,
+      "requiredEvidence": ["multiple_professional_quests", "repeated_runs", "strict_independent_review", "regression_gate", "p50_p95_latency", "usage_or_cost", "rollback_target", "no_unresolved_hard_fail"],
+      "promotionGate": "Bounded production candidate passes representative quests and adversarial cases with independent review, regression evidence and rollback path."
+    }
+  ]
+}
