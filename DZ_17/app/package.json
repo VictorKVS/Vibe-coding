@@ -12,6 +12,7 @@
     "start": "vinext start",
     "start:models": "node scripts/run-with-models.mjs start",
     "translate:pdf": "node scripts/translate-pdf-book.mjs",
+    "kf:ingest-pdf": "node scripts/ingest-pdf-kf.mjs",
     "lint": "oxlint",
     "format": "oxfmt"
   },
