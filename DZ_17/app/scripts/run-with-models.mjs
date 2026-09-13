@@ -14,7 +14,11 @@ const base=process.env.LLAMA_BASE_URL||`http://${host}:${port}`;
 const autostart=(process.env.LLAMA_AUTOSTART||'1')!=='0';
 const binRaw=process.env.LLAMA_SERVER_BIN||'runtime/llama/llama-server.exe';
 const modelsRaw=process.env.LLAMA_MODELS_DIR||'models';
+const presetRaw=(process.env.LLAMA_MODELS_PRESET||'').trim();
 const modelsDir=isAbsolute(modelsRaw)?modelsRaw:resolve(cwd,modelsRaw);
+const modelsPreset=presetRaw?(isAbsolute(presetRaw)?presetRaw:resolve(cwd,presetRaw)):'';
+const modelsMax=process.env.LLAMA_MODELS_MAX||'1';
+const modelsAutoload=(process.env.LLAMA_MODELS_AUTOLOAD||'1')!=='0';
 const ctx=process.env.LLAMA_CTX_SIZE||'8192';
 const parallel=process.env.LLAMA_PARALLEL||'1';
 const gpuLayers=process.env.LLAMA_GPU_LAYERS||'99';
@@ -70,18 +74,32 @@ if(await healthy()){
  if(!existsSync(bin)){
   console.warn(`[ALINA] llama-server не найден: ${bin}`);
   console.warn('[ALINA] На Windows можно установить через: winget install llama.cpp');
-  console.warn('[ALINA] После установки новый launcher найдёт llama-server.exe через PATH.');
+  console.warn('[ALINA] После установки launcher найдёт llama-server.exe через PATH.');
   console.warn('[ALINA] Приложение запустится без локальных моделей; GigaChat и другие настроенные providers останутся доступны.');
- }else if(!existsSync(modelsDir)){
+ }else if(modelsPreset&&!existsSync(modelsPreset)){
+  console.warn(`[ALINA] Preset локального model zoo не найден: ${modelsPreset}`);
+  console.warn('[ALINA] Запустите scripts/configure-existing-model-zoo.ps1 или исправьте LLAMA_MODELS_PRESET.');
+ }else if(!modelsPreset&&!existsSync(modelsDir)){
   console.warn(`[ALINA] Каталог моделей не найден: ${modelsDir}`);
-  console.warn('[ALINA] Создайте каталог и положите туда GGUF-модели. Приложение пока запустится без LOCAL моделей.');
+  console.warn('[ALINA] Укажите LLAMA_MODELS_PRESET для внешнего model zoo либо создайте LLAMA_MODELS_DIR.');
  }else{
+  const sourceArgs=modelsPreset?['--models-preset',modelsPreset]:['--models-dir',modelsDir];
+  const args=[
+   ...sourceArgs,
+   '--models-max',modelsMax,
+   modelsAutoload?'--models-autoload':'--no-models-autoload',
+   '--host',host,'--port',port,
+   '-c',ctx,'-np',parallel,'-ngl',gpuLayers
+  ];
   console.log(`[ALINA] запускаю llama.cpp router: ${bin}`);
-  console.log(`[ALINA] models: ${modelsDir}`);
-  llama=spawn(bin,['--models-dir',modelsDir,'--host',host,'--port',port,'-c',ctx,'-np',parallel,'-ngl',gpuLayers],{cwd,stdio:'inherit',windowsHide:false});
+  if(modelsPreset)console.log(`[ALINA] model preset: ${modelsPreset}`);
+  else console.log(`[ALINA] models dir: ${modelsDir}`);
+  console.log(`[ALINA] models max in memory: ${modelsMax}`);
+  llama=spawn(bin,args,{cwd,stdio:'inherit',windowsHide:false});
   llama.on('error',error=>console.error(`[ALINA] Не удалось запустить llama.cpp: ${error.message}`));
   llama.on('exit',code=>{if(!stopping)console.warn(`[ALINA] llama.cpp router завершился, code=${code}`);});
-  if(await waitHealthy())console.log(`[ALINA] LOCAL models ready: ${base}`);else console.warn('[ALINA] llama.cpp не успел перейти в ready; UI всё равно запустится и покажет доступные внешние модели.');
+  if(await waitHealthy())console.log(`[ALINA] LOCAL model zoo ready: ${base}`);
+  else console.warn('[ALINA] llama.cpp не успел перейти в ready; UI всё равно запустится и покажет доступные внешние модели.');
  }
 }else{
  console.log('[ALINA] LLAMA_AUTOSTART=0 — локальный router не запускается автоматически.');
