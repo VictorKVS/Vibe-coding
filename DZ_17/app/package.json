@@ -16,6 +16,7 @@
     "kf:ingest-pdf": "node scripts/ingest-pdf-kf.mjs",
     "kf:structure-book": "node scripts/reconstruct-book-structure.mjs",
     "kf:parallel5": "node scripts/run-kf-5-streams.mjs",
+    "kf:father": "node scripts/run-father-orchestration.mjs",
     "lint": "oxlint",
     "format": "oxfmt"
   },
