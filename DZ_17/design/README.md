@@ -1,7 +1,7 @@
 # ALINA Knowledge Factory — комплект проектной документации
 
 Статус: `ACTIVE DESIGN SET`  
-Версия комплекта: `0.2`  
+Версия комплекта: `0.3`  
 Дата основания: `2026-09-13`
 
 ## Назначение
@@ -71,12 +71,12 @@ L7  IMPLEMENTATION
 ```text
 L0  fixed enough for P0
 L1  global A-0/A1..A9 selected
-L2  existing BPMN requires alignment with A1..A9
+L2  BPMN v0.2 aligned with A1..A9
 L3  canonical data model v0.1 selected
-L4  C4 requires alignment with new Knowledge Factory blocks
-L5  API/contracts require extension for Claim/Evidence/Algorithm lifecycle
+L4  C4 v0.2 aligned; P0 modular-monolith deployment selected
+L5  API/contracts require extension for SourceSpan/Claim/Evidence/Algorithm lifecycle
 L6  process/security design exists; executable polygon/firewall pending
-L7  translation/model gateway exists; Knowledge Factory backend pending
+L7  translation/model gateway exists; Knowledge Factory backend vertical slice pending
 ```
 
 Изменение нижнего уровня не должно молча менять верхний смысл. Изменение верхнего уровня требует impact analysis нижележащих документов.
@@ -98,16 +98,25 @@ VALIDATED
 
 `SELECTED` означает только «используем как текущий проектный вариант», а не «доказано навсегда».
 
-## Следующий проектный шаг
-
-После фиксации L3 следующий обязательный шаг — синхронизировать процессный и программный слой:
+## Текущий P0 deployment principle
 
 ```text
-BPMN A1..A9
-→ C4 containers/components
-→ API resources/contracts
-→ JSON Schemas
-→ P0 backend repository/services
+LOGICAL BOUNDARIES NOW
+PHYSICAL MICROSERVICES ONLY WHEN MEASUREMENTS REQUIRE THEM
 ```
 
-До этого DDL остаётся design artifact и не применяется автоматически к production/local DB.
+Knowledge Factory начинаем как modular monolith с изолированными storage/model/background-worker границами. Микросервисы вводим только при измеренном основании: security isolation, scale profile, resource contention, latency/SLO или независимый lifecycle.
+
+## Следующий проектный шаг
+
+После синхронизации L1–L4 следующий обязательный шаг:
+
+```text
+API_CONTRACTS v2
+→ JSON Schemas
+→ repository/service interfaces
+→ first Source→Structure→Claim/Evidence vertical slice
+→ trace + tests
+```
+
+До этого design DDL остаётся design artifact и не применяется автоматически к production/local DB.
