@@ -9,6 +9,7 @@ function arg(name,fallback=''){
  return i>=0&&process.argv[i+1]?process.argv[i+1]:fallback;
 }
 function now(){return new Date().toISOString();}
+function captureNumber(text,label){const m=String(text||'').match(new RegExp(`\\[ALINA K5/K6\\] ${label}:\\s+(\\d+)`));return m?Number(m[1]):null;}
 const sourceId=arg('source-id');
 if(!sourceId)throw new Error('Use --source-id SRC-...');
 const base=arg('base','http://localhost:3000').replace(/\/$/,'');
@@ -74,7 +75,7 @@ stage('K3','language_translation_gate',translationRequired?'TRANSLATION_PROJECTI
  translator_role:'ROLE-TRANSLATOR',
 });
 
-// K4: ensure a structure proposal exists; run the deterministic A2 reconstructor if absent.
+// K4: ensure a structure proposal exists; run deterministic A2 if absent.
 await marker('K4','structure.ensure','start',{capture_id:captureId});
 let structureRead=await getJson(`${base}/api/v1/kf/structure?capture_id=${encodeURIComponent(captureId)}`);
 if(structureRead.response.status===404){
@@ -88,16 +89,24 @@ const structureNodes=Array.isArray(structure.nodes)?structure.nodes:[];
 stage('K4','structure_reconstruction','PROPOSED',{nodes:structureNodes.length,status:structure.status||null,origin_class:structure.origin_class||null});
 await marker('K4','structure.ensure','ok',{nodes:structureNodes.length});
 
-// Five-stream readiness run over current persisted state.
+// Current five-stream readiness run over persisted state.
 await marker('PAR5','five_stream.start','start',{source_id:sourceId});
 const par5=await runNode(resolve(process.cwd(),'scripts','run-kf-5-streams.mjs'),['--source-id',sourceId,'--base',base]);
 stage('PAR5','five_stream_readiness',par5.code===0?'READY':'PARTIAL',{exit_code:par5.code});
 await marker('PAR5','five_stream.complete',par5.code===0?'ok':'error',{exit_code:par5.code});
 
-// Downstream semantic/algorithm stages are designed but intentionally not faked.
+// K5/K6: deterministic idea-boundary seeds. They are proposals, not semantic truth.
+await marker('K5K6','idea_boundary.start','start',{source_id:sourceId,capture_id:captureId});
+const ideaPass=await runNode(resolve(process.cwd(),'scripts','detect-idea-boundaries.mjs'),['--source-id',sourceId,'--base',base]);
+if(ideaPass.code!==0)throw new Error(`K5/K6 idea-boundary pass failed with code ${ideaPass.code}`);
+const ideaCount=captureNumber(ideaPass.stdout,'ideas');
+const chunkCount=captureNumber(ideaPass.stdout,'chunks');
+stage('K5','idea_detection','PROPOSED',{ideas:ideaCount,semantic_model_applied:false,origin_class:'INFERENCE'});
+stage('K6','idea_boundary_segmentation','PROPOSED',{idea_chunks:chunkCount,canonical_text_duplicated:false,semantic_model_applied:false});
+await marker('K5K6','idea_boundary.complete','ok',{ideas:ideaCount,chunks:chunkCount});
+
+// K7+ contracts exist, but no fake semantic/algorithm result is generated yet.
 for(const [id,name] of [
- ['K5','idea_detection'],
- ['K6','idea_boundary_segmentation'],
  ['K7','knowledge_classification'],
  ['K8','method_algorithm_engineering'],
  ['K9','scenario_engineering'],
@@ -105,7 +114,7 @@ for(const [id,name] of [
  ['K11','validation'],
  ['K12','synthesis_changeset'],
  ['K13','review_publish'],
-])stage(id,name,'DESIGNED_NOT_IMPLEMENTED',{reason:'Executable runtime for this stage is the next implementation increment; no fake result produced.'});
+])stage(id,name,'DESIGNED_NOT_IMPLEMENTED',{reason:'Executable runtime for this stage is pending; no fake result produced.'});
 
 const report={
  schema_version:'father-orchestration-run-v1',
@@ -117,8 +126,8 @@ const report={
  total_duration_ms:Date.now()-started,
  translation_required_for_ru_projection:translationRequired,
  stages,
- next_executable_stage:'K5_idea_detection',
- safety:{canonical_auto_publish:false,original_preserved:true,structure_is_proposal:true},
+ next_executable_stage:'K7_knowledge_classification',
+ safety:{canonical_auto_publish:false,original_preserved:true,structure_is_proposal:true,idea_boundaries_are_proposals:true},
 };
 await mkdir(outputDir,{recursive:true});
 const out=resolve(outputDir,`${runId}.json`);
@@ -131,7 +140,9 @@ console.log(`[FATHER] source_id:  ${sourceId}`);
 console.log(`[FATHER] capture_id: ${captureId}`);
 console.log(`[FATHER] spans:      ${spans.length}`);
 console.log(`[FATHER] structure:  ${structureNodes.length} proposed nodes`);
+console.log(`[FATHER] ideas:      ${ideaCount}`);
+console.log(`[FATHER] chunks:     ${chunkCount}`);
 console.log(`[FATHER] translation projection recommended: ${translationRequired}`);
-console.log(`[FATHER] next:       K5 idea detection`);
+console.log('[FATHER] next:       K7 knowledge classification');
 console.log(`[FATHER] report:     ${out}`);
 console.log(`[FATHER] trace:      ${base}/api/v1/trace?trace_id=${encodeURIComponent(runId)}`);
