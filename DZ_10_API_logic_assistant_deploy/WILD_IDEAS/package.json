@@ -12,7 +12,8 @@
     "lint": "oxlint",
     "format": "oxfmt",
     "quest:run": "node scripts/run-quest-arena.mjs",
-    "quest:matrix": "node scripts/run-quest-matrix.mjs"
+    "quest:matrix": "node scripts/run-quest-matrix.mjs",
+    "quest:maturity": "node scripts/assess-zoo-maturity.mjs"
   },
   "dependencies": {
     "react": "19.2.6",
