@@ -1,4 +1,4 @@
-import {createHash} from 'node:crypto';
+import {createHash,randomUUID} from 'node:crypto';
 import {createReadStream,existsSync} from 'node:fs';
 import {mkdir,readFile} from 'node:fs/promises';
 import {spawnSync} from 'node:child_process';
@@ -32,9 +32,28 @@ const python=arg('python',process.env.PYTHON||'python');
 const language=arg('language','en');
 const sourceType=arg('source-type','book');
 const title=arg('title',basename(input));
+const traceId=arg('trace-id',`KF-CLI-${randomUUID()}`);
+const testId=arg('test-id','');
 const scriptDir=dirname(fileURLToPath(import.meta.url));
 const extractor=resolve(scriptDir,'extract-pdf-text.py');
+
+async function traceMark(stage,action,status='info',details={}){
+ console.log(`[TRACE] ${traceId} ${stage}/${action} ${status}`);
+ try{
+  await fetch(`${base}/api/v1/trace`,{
+   method:'POST',
+   headers:{'content-type':'application/json','x-trace-id':traceId},
+   body:JSON.stringify({stage,action,status,test_id:testId||undefined,details}),
+  });
+ }catch{
+  // Trace transport must never break the ingest itself.
+ }
+}
+
+await traceMark('CLIENT','pdf.ingest.start','start',{file:basename(input),source_type:sourceType,language});
+await traceMark('CLIENT','pdf.hash.start','start');
 const hash=await sha256File(input);
+await traceMark('CLIENT','pdf.hash.complete','ok',{sha256_prefix:hash.slice(0,16)});
 const key=hash.slice(0,16).toUpperCase();
 const sourceId=`SRC-${key}`;
 const captureId=`CAP-${key}`;
@@ -44,12 +63,20 @@ const extractPath=resolve(workDir,`${key}.extract.json`);
 await mkdir(workDir,{recursive:true});
 
 if(!existsSync(extractPath)){
+ await traceMark('A2','pdf.extract.start','start',{extractor:'pypdf'});
  const run=spawnSync(python,[extractor,'--input',input,'--output',extractPath],{stdio:'inherit'});
  if(run.error)throw run.error;
- if(run.status!==0)throw new Error(`PDF extraction failed: exit ${run.status}`);
+ if(run.status!==0){
+  await traceMark('A2','pdf.extract.failed','error',{exit_code:run.status});
+  throw new Error(`PDF extraction failed: exit ${run.status}`);
+ }
+ await traceMark('A2','pdf.extract.complete','ok');
+}else{
+ await traceMark('A2','pdf.extract.reuse','info',{extract_path:extractPath});
 }
 const extracted=JSON.parse(await readFile(extractPath,'utf8'));
 if(!Array.isArray(extracted.pages)||!extracted.pages.length)throw new Error('Extractor returned no pages.');
+await traceMark('A2','source-spans.build.start','start',{pages:extracted.pages.length});
 
 const sourceSpans=extracted.pages.map(page=>{
  const pageNo=Number(page.page_number);
@@ -72,6 +99,7 @@ const sourceSpans=extracted.pages.map(page=>{
   },
  };
 });
+await traceMark('A2','source-spans.build.complete','ok',{source_spans:sourceSpans.length,nonempty_pages:extracted.nonempty_pages});
 
 const bundle={
  schema_version:'alina-kf-ingest-v1',
@@ -114,22 +142,32 @@ const bundle={
  }],
  source_spans:sourceSpans,
  trace:{
+  trace_id:traceId,
+  test_id:testId||null,
   importer:'scripts/ingest-pdf-kf.mjs',
   input_sha256:hash,
   note:'P0 stores page-addressable source spans. Chapter/section semantics are reconstructed in A2, not guessed here.',
  },
 };
 
+await traceMark('A1','api.kf.ingest.request','start',{source_id:sourceId,capture_id:captureId,source_spans:sourceSpans.length});
 const response=await fetch(`${base}/api/v1/kf/ingest`,{
  method:'POST',
- headers:{'content-type':'application/json'},
+ headers:{'content-type':'application/json','x-trace-id':traceId},
  body:JSON.stringify(bundle),
 });
 const result=await response.json().catch(()=>({}));
-if(!response.ok)throw new Error(result?.error?.message||`HTTP ${response.status}`);
+if(!response.ok){
+ await traceMark('A1','api.kf.ingest.response','error',{http_status:response.status,error:result?.error?.message||null});
+ throw new Error(result?.error?.message||`HTTP ${response.status}`);
+}
+await traceMark('A1','api.kf.ingest.response','ok',{http_status:response.status,duplicate_capture:result.data.duplicate_capture});
 console.log('\n[ALINA KF] ingest complete');
+console.log(`[ALINA KF] trace_id:   ${traceId}`);
 console.log(`[ALINA KF] source_id:  ${result.data.source_id}`);
 console.log(`[ALINA KF] capture_id: ${result.data.capture_id}`);
 console.log(`[ALINA KF] spans:      ${result.data.source_spans}`);
 console.log(`[ALINA KF] duplicate:  ${result.data.duplicate_capture}`);
-console.log(`[ALINA KF] trace:      ${base}/api/v1/kf/trace?source_id=${encodeURIComponent(result.data.source_id)}`);
+console.log(`[ALINA KF] source:     ${base}/api/v1/kf/trace?source_id=${encodeURIComponent(result.data.source_id)}`);
+console.log(`[ALINA KF] runtime:    ${base}/api/v1/trace?trace_id=${encodeURIComponent(traceId)}`);
+await traceMark('CLIENT','pdf.ingest.complete','ok',{source_id:result.data.source_id,capture_id:result.data.capture_id});
