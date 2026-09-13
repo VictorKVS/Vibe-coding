@@ -121,6 +121,66 @@
         }
       }
     },
+    "evidence_basis": {
+      "type": "object",
+      "properties": {
+        "status": {"enum": ["unreviewed", "partial", "evidence_backed"]},
+        "claim_refs": {"type": "array", "items": {"type": "string"}},
+        "method_refs": {"type": "array", "items": {"type": "string"}},
+        "counter_evidence_refs": {"type": "array", "items": {"type": "string"}},
+        "synthesis_ref": {"type": ["string", "null"]}
+      }
+    },
+    "sandbox_validation": {
+      "type": "object",
+      "properties": {
+        "status": {"enum": ["not_run", "running", "passed", "failed", "needs_review"]},
+        "suite_id": {"type": ["string", "null"]},
+        "algorithm_version": {"type": ["string", "null"]},
+        "scenario_count": {"type": "integer", "minimum": 0},
+        "passed": {"type": "integer", "minimum": 0},
+        "failed": {"type": "integer", "minimum": 0},
+        "critical_failures": {"type": "integer", "minimum": 0},
+        "report_ref": {"type": ["string", "null"]}
+      }
+    },
+    "security_review": {
+      "type": "object",
+      "properties": {
+        "status": {"enum": ["unreviewed", "in_review", "approved", "restricted", "hold", "rejected"]},
+        "decision_ref": {"type": ["string", "null"]},
+        "reviewed_version": {"type": ["string", "null"]},
+        "reviewed_by": {"type": "array", "items": {"type": "string"}},
+        "open_findings": {"type": "array", "items": {"type": "string"}},
+        "approved_at": {"type": ["string", "null"]}
+      }
+    },
+    "immutable_parameters": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["name", "value", "change_authority"],
+        "properties": {
+          "name": {"type": "string"},
+          "value": {},
+          "reason": {"type": "string"},
+          "change_authority": {"type": "array", "items": {"type": "string"}},
+          "source_refs": {"type": "array", "items": {"type": "string"}},
+          "requires_retest": {"type": "boolean"}
+        }
+      }
+    },
+    "runtime_guards": {
+      "type": "object",
+      "properties": {
+        "data_cannot_mutate_control": {"type": "boolean"},
+        "fail_closed": {"type": "boolean"},
+        "approved_version_required": {"type": "boolean"},
+        "security_review_required": {"type": "boolean"},
+        "tool_allowlist_required": {"type": "boolean"},
+        "kb_security_hold_enforced": {"type": "boolean"}
+      }
+    },
     "failure_modes": {"type": "array", "items": {"type": "string"}},
     "security_constraints": {"type": "array", "items": {"type": "string"}},
     "explanation": {
