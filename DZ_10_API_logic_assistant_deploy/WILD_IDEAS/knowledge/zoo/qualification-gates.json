@@ -1,0 +1,33 @@
+{
+  "schemaVersion": 1,
+  "gateModelId": "ALINA-ZOO-QUALIFICATION-0001",
+  "principle": "Automation verifies evidence presence and repeatability; it does not replace strict professional review.",
+  "gates": {
+    "ZM0": {
+      "name": "Smoke / Reproducible Harness",
+      "requirements": {
+        "minimumCompletedRuns": 1,
+        "allowedCompositions": ["single"],
+        "demoAllowed": true,
+        "traceRequired": ["agentId", "promptId", "promptVersion", "knowledgeRefs"],
+        "ciEvidence": "external"
+      },
+      "passRule": "At least one completed durable run has complete trace; CI must be green separately."
+    },
+    "ZM1": {
+      "name": "Single-Model Professional Baseline",
+      "requirements": {
+        "allowedCompositions": ["single"],
+        "minimumDistinctRealModels": 2,
+        "minimumRunsPerModel": 3,
+        "demoAllowed": false,
+        "allQualificationRunsStrictReviewed": true,
+        "minimumPassingReviewsPerModel": 2,
+        "passingVerdicts": ["PASS", "STRONG_PASS"],
+        "disqualifyOnAnyHardFail": true
+      },
+      "modelQualificationRule": "A model needs at least three reviewed repeated runs on the same quest, no hard fail, and at least two PASS/STRONG_PASS verdicts.",
+      "levelPassRule": "At least two distinct real models meet the model qualification rule on the same professional quest."
+    }
+  }
+}
