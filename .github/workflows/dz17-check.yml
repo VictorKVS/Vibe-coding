@@ -31,6 +31,9 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Ensure build-only dev packages
+        run: npm install --no-save @openai/sites-vite-plugin@0.2.0 @tailwindcss/postcss@4.2.1
+
       - name: Check Knowledge Factory scripts
         run: |
           node --check scripts/knowledge-factory-sidecar.mjs
