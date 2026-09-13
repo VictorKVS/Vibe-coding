@@ -1,0 +1,115 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://alina.local/schemas/domain-profile.schema.json",
+  "title": "ALINA Domain Profile",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "id",
+    "version",
+    "entity_types",
+    "relation_types",
+    "event_types",
+    "required_analysts",
+    "validators",
+    "evidence_rules",
+    "confidence_thresholds",
+    "model_routes"
+  ],
+  "properties": {
+    "schema_version": {"const": "alina-domain-profile-v1"},
+    "id": {"type": "string", "pattern": "^[a-z0-9_-]+$"},
+    "version": {"type": "string", "minLength": 1},
+    "title": {"type": "string"},
+    "description": {"type": "string"},
+    "ontology": {"type": "object", "default": {}},
+    "entity_types": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {"type": "string"}
+    },
+    "relation_types": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {"type": "string"}
+    },
+    "event_types": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {"type": "string"}
+    },
+    "required_analysts": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {"type": "string"}
+    },
+    "optional_analysts": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {"type": "string"},
+      "default": []
+    },
+    "validators": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["id", "severity"],
+        "properties": {
+          "id": {"type": "string"},
+          "severity": {"enum": ["low", "medium", "high"]},
+          "enabled": {"type": "boolean", "default": true},
+          "config": {"type": "object", "default": {}}
+        },
+        "additionalProperties": false
+      }
+    },
+    "evidence_rules": {
+      "type": "object",
+      "required": ["verified_requires_provenance"],
+      "properties": {
+        "verified_requires_provenance": {"const": true},
+        "minimum_sources_for_fact": {"type": "integer", "minimum": 1, "default": 1},
+        "require_counter_evidence_check": {"type": "boolean", "default": false},
+        "allow_model_only_fact": {"type": "boolean", "default": false}
+      },
+      "additionalProperties": true
+    },
+    "confidence_thresholds": {
+      "type": "object",
+      "required": ["auto_accept_for_senior_review", "human_escalation"],
+      "properties": {
+        "auto_accept_for_senior_review": {"type": "number", "minimum": 0, "maximum": 1},
+        "human_escalation": {"type": "number", "minimum": 0, "maximum": 1},
+        "entity_merge": {"type": "number", "minimum": 0, "maximum": 1}
+      },
+      "additionalProperties": true
+    },
+    "model_routes": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "object",
+        "required": ["preferred"],
+        "properties": {
+          "preferred": {"type": "array", "minItems": 1, "items": {"type": "string"}},
+          "fallback": {"type": "array", "items": {"type": "string"}, "default": []}
+        },
+        "additionalProperties": false
+      }
+    },
+    "prompts": {
+      "type": "object",
+      "additionalProperties": {"type": "string"},
+      "default": {}
+    },
+    "schemas": {
+      "type": "object",
+      "additionalProperties": {"type": "string"},
+      "default": {}
+    }
+  }
+}

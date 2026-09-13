@@ -1,0 +1,246 @@
+{
+  "schema_version": "alina-analyst-source-registry-v1",
+  "purpose": "Методические и нормативные источники для ALINA Analyst Meta-KB",
+  "sources": [
+    {
+      "id": "STD-RU-71540-2024",
+      "kind": "standard",
+      "priority": "P0",
+      "title": "ГОСТ Р 71540-2024 (ИСО/МЭК 5392:2024). Искусственный интеллект. Эталонная архитектура инженерии знаний",
+      "topics": ["knowledge_engineering", "roles", "activities", "architecture"],
+      "status": "registered"
+    },
+    {
+      "id": "STD-RU-71476-2024",
+      "kind": "standard",
+      "priority": "P0",
+      "title": "ГОСТ Р 71476-2024. Искусственный интеллект. Концепции и терминология искусственного интеллекта",
+      "topics": ["terminology", "ai_concepts"],
+      "status": "registered"
+    },
+    {
+      "id": "STD-RU-71539-2024",
+      "kind": "standard",
+      "priority": "P0",
+      "title": "ГОСТ Р 71539-2024 (ISO/IEC 5338:2023). Процессы жизненного цикла системы искусственного интеллекта",
+      "topics": ["ai_lifecycle", "governance", "operations"],
+      "status": "registered"
+    },
+    {
+      "id": "STD-ISO-42001-2024-RU",
+      "kind": "standard",
+      "priority": "P0",
+      "title": "ГОСТ Р ИСО/МЭК 42001-2024. Искусственный интеллект. Система менеджмента",
+      "topics": ["ai_management", "governance", "continuous_improvement"],
+      "status": "registered"
+    },
+    {
+      "id": "STD-ISO-30401-2020-RU",
+      "kind": "standard",
+      "priority": "P0",
+      "title": "ГОСТ Р ИСО 30401-2020. Системы менеджмента знаний. Основные требования",
+      "topics": ["knowledge_management", "knowledge_lifecycle"],
+      "status": "registered"
+    },
+    {
+      "id": "STD-RU-58545-2019",
+      "kind": "standard",
+      "priority": "P0",
+      "title": "ГОСТ Р 58545-2019. Менеджмент знаний. Руководящие указания по сбору, классификации, маркировке и обработке информации",
+      "topics": ["ingest", "classification", "marking", "handling"],
+      "status": "registered"
+    },
+    {
+      "id": "STD-RU-70889-2023",
+      "kind": "standard",
+      "priority": "P0",
+      "title": "ГОСТ Р 70889-2023 (ISO/IEC 8183:2023). Искусственный интеллект. Структура жизненного цикла данных",
+      "topics": ["data_lifecycle", "data_governance"],
+      "status": "registered"
+    },
+    {
+      "id": "STD-RU-71484-1-2024",
+      "kind": "standard",
+      "priority": "P0",
+      "title": "ГОСТ Р 71484.1-2024. Качество данных для аналитики и машинного обучения. Часть 1",
+      "topics": ["data_quality", "terminology"],
+      "status": "registered"
+    },
+    {
+      "id": "STD-RU-71484-2-2024",
+      "kind": "standard",
+      "priority": "P0",
+      "title": "ГОСТ Р 71484.2-2024. Качество данных. Показатели качества данных",
+      "topics": ["data_quality", "metrics"],
+      "status": "registered"
+    },
+    {
+      "id": "STD-RU-71484-3-2024",
+      "kind": "standard",
+      "priority": "P0",
+      "title": "ГОСТ Р 71484.3-2024. Управление качеством данных",
+      "topics": ["data_quality", "quality_management"],
+      "status": "registered"
+    },
+    {
+      "id": "STD-RU-71484-4-2024",
+      "kind": "standard",
+      "priority": "P0",
+      "title": "ГОСТ Р 71484.4-2024. Структура процесса управления качеством данных",
+      "topics": ["data_quality", "quality_process"],
+      "status": "registered"
+    },
+    {
+      "id": "STD-RU-72663-2026",
+      "kind": "standard",
+      "priority": "P0",
+      "title": "ГОСТ Р 72663-2026. SQuaRE. Измерение качества данных",
+      "topics": ["data_quality", "measurement"],
+      "status": "registered"
+    },
+    {
+      "id": "STD-RU-59276-2020",
+      "kind": "standard",
+      "priority": "P0",
+      "title": "ГОСТ Р 59276-2020. Системы искусственного интеллекта. Способы обеспечения доверия. Общие положения",
+      "topics": ["trustworthiness", "validation", "quality"],
+      "status": "registered"
+    },
+    {
+      "id": "STD-RU-R50-1-028-2001",
+      "kind": "standard",
+      "priority": "P1",
+      "title": "Р 50.1.028-2001. Методология функционального моделирования",
+      "topics": ["idef0", "process_modeling"],
+      "status": "registered"
+    },
+    {
+      "id": "W3C-PROV-O",
+      "kind": "web_standard",
+      "priority": "P0",
+      "title": "W3C PROV-O / PROV-DM",
+      "topics": ["provenance", "entity_activity_agent", "traceability"],
+      "status": "registered"
+    },
+    {
+      "id": "W3C-RDF11",
+      "kind": "web_standard",
+      "priority": "P1",
+      "title": "W3C RDF 1.1 Concepts and Abstract Syntax",
+      "topics": ["knowledge_graph", "triples"],
+      "status": "registered"
+    },
+    {
+      "id": "W3C-OWL2",
+      "kind": "web_standard",
+      "priority": "P1",
+      "title": "W3C OWL 2",
+      "topics": ["ontology", "semantics"],
+      "status": "registered"
+    },
+    {
+      "id": "W3C-SHACL",
+      "kind": "web_standard",
+      "priority": "P1",
+      "title": "W3C SHACL",
+      "topics": ["knowledge_graph", "validation", "constraints"],
+      "status": "registered"
+    },
+    {
+      "id": "NIST-AI-RMF-1",
+      "kind": "framework",
+      "priority": "P1",
+      "title": "NIST AI Risk Management Framework 1.0",
+      "topics": ["govern", "map", "measure", "manage", "ai_risk"],
+      "status": "registered"
+    },
+    {
+      "id": "OWASP-LLM-TOP10",
+      "kind": "security_framework",
+      "priority": "P1",
+      "title": "OWASP GenAI / LLM Top 10",
+      "topics": ["prompt_injection", "data_leakage", "poisoning", "agent_security"],
+      "status": "registered"
+    },
+    {
+      "id": "MITRE-ATLAS",
+      "kind": "security_knowledge_base",
+      "priority": "P1",
+      "title": "MITRE ATLAS",
+      "topics": ["ai_security", "threats", "ttps"],
+      "status": "registered"
+    },
+    {
+      "id": "BOOK-HOGAN-KG",
+      "kind": "book",
+      "priority": "P0",
+      "title": "Aidan Hogan et al. — Knowledge Graphs",
+      "topics": ["knowledge_graph", "identity", "schema", "quality", "refinement"],
+      "status": "registered"
+    },
+    {
+      "id": "BOOK-MANNING-IR",
+      "kind": "book",
+      "priority": "P0",
+      "title": "Manning, Raghavan, Schütze — Introduction to Information Retrieval",
+      "topics": ["retrieval", "ranking", "relevance", "evaluation"],
+      "status": "registered"
+    },
+    {
+      "id": "BOOK-JURAFSKY-MARTIN",
+      "kind": "book",
+      "priority": "P0",
+      "title": "Jurafsky, Martin — Speech and Language Processing",
+      "topics": ["nlp", "information_extraction", "language_models", "semantics"],
+      "status": "registered"
+    },
+    {
+      "id": "BOOK-BATINI-DIQ",
+      "kind": "book",
+      "priority": "P0",
+      "title": "Batini, Scannapieco — Data and Information Quality: Dimensions, Principles and Techniques",
+      "topics": ["data_quality", "matching", "completeness", "consistency", "provenance"],
+      "status": "registered"
+    },
+    {
+      "id": "BOOK-KOLLER-FRIEDMAN",
+      "kind": "book",
+      "priority": "P1",
+      "title": "Koller, Friedman — Probabilistic Graphical Models",
+      "topics": ["uncertainty", "probability", "graphical_models", "inference"],
+      "status": "registered"
+    },
+    {
+      "id": "BOOK-PEARL-CAUSALITY",
+      "kind": "book",
+      "priority": "P1",
+      "title": "Judea Pearl — Causality",
+      "topics": ["causality", "causal_models", "counterfactuals"],
+      "status": "registered"
+    },
+    {
+      "id": "BOOK-KLEPPMANN-DDIA",
+      "kind": "book",
+      "priority": "P1",
+      "title": "Martin Kleppmann — Designing Data-Intensive Applications",
+      "topics": ["data_systems", "logs", "consistency", "streaming", "reliability"],
+      "status": "registered"
+    },
+    {
+      "id": "BOOK-DUMAS-BPM",
+      "kind": "book",
+      "priority": "P1",
+      "title": "Dumas, La Rosa, Mendling, Reijers — Fundamentals of Business Process Management",
+      "topics": ["business_processes", "bpmn", "process_analysis", "monitoring"],
+      "status": "registered"
+    },
+    {
+      "id": "BOOK-SHOSTACK-TM",
+      "kind": "book",
+      "priority": "P1",
+      "title": "Adam Shostack — Threat Modeling: Designing for Security",
+      "topics": ["threat_modeling", "security_design"],
+      "status": "registered"
+    }
+  ]
+}

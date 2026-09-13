@@ -1,0 +1,503 @@
+openapi: 3.1.0
+info:
+  title: ALINA Universal Analyst Core API
+  version: 1.0.0
+  description: P0 API for source ingest, analysis, senior review, human review and verified knowledge publishing.
+servers:
+  - url: /api/v1
+paths:
+  /cases:
+    post:
+      summary: Create analysis case
+      operationId: createCase
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateCaseRequest'
+      responses:
+        '200':
+          description: Case created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Case'
+  /cases/{caseId}:
+    get:
+      summary: Get case
+      operationId: getCase
+      parameters:
+        - $ref: '#/components/parameters/CaseId'
+      responses:
+        '200':
+          description: Case
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Case'
+  /sources:
+    post:
+      summary: Register source by reference
+      operationId: createSource
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateSourceRequest'
+      responses:
+        '200':
+          description: Source registered
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Source'
+  /sources/{sourceId}/ingest:
+    post:
+      summary: Start source ingest
+      operationId: ingestSource
+      parameters:
+        - $ref: '#/components/parameters/SourceId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/IngestRequest'
+      responses:
+        '202':
+          description: Ingest job queued
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JobRef'
+  /sources/{sourceId}/fragments:
+    get:
+      summary: List source fragments
+      operationId: listFragments
+      parameters:
+        - $ref: '#/components/parameters/SourceId'
+      responses:
+        '200':
+          description: Fragments
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [source_id, fragments]
+                properties:
+                  source_id:
+                    type: string
+                  fragments:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Fragment'
+  /cases/{caseId}/analysis:
+    post:
+      summary: Start analysis pipeline
+      operationId: startAnalysis
+      parameters:
+        - $ref: '#/components/parameters/CaseId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/StartAnalysisRequest'
+      responses:
+        '202':
+          description: Analysis queued
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JobRef'
+  /jobs/{jobId}:
+    get:
+      summary: Get job status
+      operationId: getJob
+      parameters:
+        - name: jobId
+          in: path
+          required: true
+          schema: {type: string}
+      responses:
+        '200':
+          description: Job
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Job'
+  /cases/{caseId}/packages:
+    post:
+      summary: Build Candidate Knowledge Package
+      operationId: buildPackage
+      parameters:
+        - $ref: '#/components/parameters/CaseId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BuildPackageRequest'
+      responses:
+        '200':
+          description: Package created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PackageRef'
+  /packages/{packageId}:
+    get:
+      summary: Get Candidate Knowledge Package
+      operationId: getPackage
+      parameters:
+        - name: packageId
+          in: path
+          required: true
+          schema: {type: string}
+      responses:
+        '200':
+          description: Candidate package
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: true
+  /reviews/senior:
+    post:
+      summary: Start GPT Senior review
+      operationId: startSeniorReview
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SeniorReviewRequest'
+      responses:
+        '202':
+          description: Review queued
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JobRef'
+  /reviews/{reviewId}:
+    get:
+      summary: Get review result
+      operationId: getReview
+      parameters:
+        - name: reviewId
+          in: path
+          required: true
+          schema: {type: string}
+      responses:
+        '200':
+          description: Review result
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SeniorReviewResult'
+  /reviews/human/queue:
+    get:
+      summary: List human review queue
+      operationId: listHumanReviewQueue
+      responses:
+        '200':
+          description: Human review items
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/HumanReviewItem'
+  /reviews/human/{reviewItemId}:
+    post:
+      summary: Submit human decision
+      operationId: submitHumanReview
+      parameters:
+        - name: reviewItemId
+          in: path
+          required: true
+          schema: {type: string}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/HumanReviewDecision'
+      responses:
+        '200':
+          description: Decision stored
+  /kb/commit:
+    post:
+      summary: Commit verified knowledge batch
+      operationId: commitKnowledge
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/VerifiedKnowledgeBatch'
+      responses:
+        '200':
+          description: Commit result
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CommitResult'
+  /kb/search:
+    post:
+      summary: Search domain knowledge base
+      operationId: searchKnowledge
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/KnowledgeSearchRequest'
+      responses:
+        '200':
+          description: Search results
+  /models:
+    get:
+      summary: List models and routes
+      operationId: listModels
+      responses:
+        '200':
+          description: Model catalog
+  /models/select:
+    post:
+      summary: Set model override
+      operationId: selectModel
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ModelSelection'
+      responses:
+        '200':
+          description: Selection stored
+  /health:
+    get:
+      summary: Health check
+      operationId: health
+      responses:
+        '200':
+          description: Health state
+components:
+  parameters:
+    CaseId:
+      name: caseId
+      in: path
+      required: true
+      schema: {type: string}
+    SourceId:
+      name: sourceId
+      in: path
+      required: true
+      schema: {type: string}
+  schemas:
+    CreateCaseRequest:
+      type: object
+      required: [title, profile]
+      properties:
+        title: {type: string}
+        profile: {type: string}
+        description: {type: string}
+    Case:
+      type: object
+      required: [case_id, status, profile]
+      properties:
+        case_id: {type: string}
+        status: {type: string, enum: [open, processing, waiting_review, completed, archived]}
+        profile: {type: string}
+        title: {type: string}
+    CreateSourceRequest:
+      type: object
+      required: [case_id, source_type]
+      properties:
+        case_id: {type: string}
+        profile: {type: string}
+        source_type: {type: string, enum: [file, url, text, image, audio, video, osint]}
+        uri: {type: string}
+        label: {type: string}
+        metadata: {type: object, additionalProperties: true}
+    Source:
+      type: object
+      required: [source_id, status]
+      properties:
+        source_id: {type: string}
+        capture_id: {type: string}
+        sha256: {type: string}
+        mime_type: {type: string}
+        size_bytes: {type: integer}
+        status: {type: string}
+    IngestRequest:
+      type: object
+      properties:
+        parser_policy: {type: string, default: auto}
+        extract_metadata: {type: boolean, default: true}
+        create_fragments: {type: boolean, default: true}
+        ocr: {type: string, enum: [auto, on, off], default: auto}
+        stt: {type: string, enum: [auto, on, off], default: auto}
+        vision: {type: string, enum: [auto, on, off], default: auto}
+    Fragment:
+      type: object
+      required: [fragment_id, kind]
+      properties:
+        fragment_id: {type: string}
+        kind: {type: string}
+        locator: {type: object, additionalProperties: true}
+        text_preview: {type: string}
+        sha256: {type: string}
+    StartAnalysisRequest:
+      type: object
+      required: [profile, source_ids]
+      properties:
+        profile: {type: string}
+        source_ids:
+          type: array
+          items: {type: string}
+        mode: {type: string, enum: [interactive, balanced, batch]}
+        requested_roles:
+          type: array
+          items: {type: string}
+        build_candidate_package: {type: boolean, default: true}
+        request_senior_review: {type: boolean, default: false}
+    JobRef:
+      type: object
+      required: [job_id, status]
+      properties:
+        job_id: {type: string}
+        status: {type: string}
+    Job:
+      type: object
+      required: [job_id, type, status]
+      properties:
+        job_id: {type: string}
+        type: {type: string}
+        status: {type: string, enum: [queued, running, waiting_external, waiting_human, completed, failed, cancelled]}
+        stage: {type: string}
+        progress: {type: object, additionalProperties: true}
+        metrics: {type: object, additionalProperties: true}
+    BuildPackageRequest:
+      type: object
+      required: [analysis_run_id, requested_review]
+      properties:
+        analysis_run_id: {type: string}
+        include: {type: object, additionalProperties: {type: boolean}}
+        requested_review: {type: string}
+    PackageRef:
+      type: object
+      required: [package_id, status, schema_version]
+      properties:
+        package_id: {type: string}
+        status: {type: string}
+        schema_version: {type: string}
+        quality_metrics: {type: object, additionalProperties: true}
+    SeniorReviewRequest:
+      type: object
+      required: [package_id, review_type, profile]
+      properties:
+        package_id: {type: string}
+        review_type: {type: string, enum: [VERIFY_AND_CORRECT, CHECK_CONTRADICTIONS, VALIDATE_KB, SYNTHESIZE, ASK_QUESTIONS]}
+        profile: {type: string}
+        review_rules: {type: object, additionalProperties: true}
+    SeniorReviewResult:
+      type: object
+      required: [review_id, package_id, status, decisions]
+      properties:
+        review_id: {type: string}
+        package_id: {type: string}
+        status: {type: string}
+        summary: {type: string}
+        decisions:
+          type: array
+          items:
+            $ref: '#/components/schemas/ReviewDecision'
+        new_questions:
+          type: array
+          items: {type: object, additionalProperties: true}
+        human_review_required:
+          type: array
+          items: {type: string}
+        package_assessment: {type: object, additionalProperties: true}
+    ReviewDecision:
+      type: object
+      required: [candidate_id, decision]
+      properties:
+        candidate_id: {type: string}
+        decision: {type: string, enum: [accept, reject, correct, keep_hypothesis, request_more_evidence, human_review]}
+        confidence: {type: number, minimum: 0, maximum: 1}
+        replacement: {type: object, additionalProperties: true}
+        reason: {type: string}
+        evidence_refs:
+          type: array
+          items: {type: string}
+    HumanReviewItem:
+      type: object
+      required: [review_item_id, candidate_id]
+      properties:
+        review_item_id: {type: string}
+        candidate_id: {type: string}
+        severity: {type: string}
+        candidate: {type: object, additionalProperties: true}
+        evidence_refs:
+          type: array
+          items: {type: string}
+    HumanReviewDecision:
+      type: object
+      required: [decision]
+      properties:
+        decision: {type: string, enum: [approve, reject, edit_and_approve, request_recheck, keep_proposed]}
+        edited_candidate: {type: object, additionalProperties: true}
+        comment: {type: string}
+        reviewer: {type: string}
+    VerifiedKnowledgeBatch:
+      type: object
+      required: [case_id, profile, records]
+      properties:
+        case_id: {type: string}
+        profile: {type: string}
+        review_refs:
+          type: array
+          items: {type: string}
+        records:
+          type: array
+          items:
+            type: object
+            required: [candidate_id, final_record]
+            properties:
+              candidate_id: {type: string}
+              final_record: {type: object, additionalProperties: true}
+        expected_current_kb_version: {type: integer}
+    CommitResult:
+      type: object
+      required: [kb_version, status]
+      properties:
+        kb_version: {type: integer}
+        published_ids:
+          type: array
+          items: {type: string}
+        superseded_ids:
+          type: array
+          items: {type: string}
+        status: {type: string}
+    KnowledgeSearchRequest:
+      type: object
+      required: [profile, query]
+      properties:
+        profile: {type: string}
+        scope: {type: object, additionalProperties: true}
+        query: {type: string}
+        mode: {type: string, enum: [structured, vector, fulltext, hybrid, graph], default: hybrid}
+        top_k: {type: integer, default: 20}
+        include_provenance: {type: boolean, default: true}
+    ModelSelection:
+      type: object
+      required: [scope, role, model_id]
+      properties:
+        scope: {type: string, enum: [session, case, global]}
+        role: {type: string}
+        model_id: {type: string}

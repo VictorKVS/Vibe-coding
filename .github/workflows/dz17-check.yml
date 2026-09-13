@@ -1,0 +1,54 @@
+name: DZ-17 ALINA Multimodal Check
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'DZ_17/app/**'
+      - '.github/workflows/dz17-check.yml'
+  pull_request:
+    paths:
+      - 'DZ_17/app/**'
+      - '.github/workflows/dz17-check.yml'
+
+jobs:
+  build-and-smoke:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: DZ_17/app
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22.13.1'
+          cache: npm
+          cache-dependency-path: DZ_17/app/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build
+        run: npm run build
+
+      - name: Smoke test production health
+        env:
+          PORT: '8080'
+          HOST: '0.0.0.0'
+        run: |
+          npm start > /tmp/dz17-server.log 2>&1 &
+          SERVER_PID=$!
+          trap 'kill $SERVER_PID || true' EXIT
+          for i in $(seq 1 30); do
+            if curl --fail --silent --show-error http://127.0.0.1:8080/api/health; then
+              echo
+              echo 'DZ-17 production health check passed.'
+              exit 0
+            fi
+            sleep 1
+          done
+          cat /tmp/dz17-server.log
+          exit 1

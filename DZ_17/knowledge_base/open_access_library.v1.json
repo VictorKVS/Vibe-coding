@@ -1,0 +1,81 @@
+{
+  "schema_version": "alina-open-access-library-v1",
+  "purpose": "Легально доступные открытые источники для извлечения идей, методов и алгоритмов в Analyst Meta-KB",
+  "sources": [
+    {
+      "id": "OA-MANNING-IR-STANFORD",
+      "type": "book_online",
+      "title": "Introduction to Information Retrieval",
+      "authors": ["Christopher D. Manning", "Prabhakar Raghavan", "Hinrich Schütze"],
+      "access": "author/university hosted online edition",
+      "topics": ["information_retrieval", "ranking", "relevance", "evaluation"],
+      "status": "registered_for_extraction"
+    },
+    {
+      "id": "OA-JURAFSKY-MARTIN-SLP3",
+      "type": "author_draft",
+      "title": "Speech and Language Processing, Third Edition draft",
+      "authors": ["Dan Jurafsky", "James H. Martin"],
+      "access": "author-hosted Stanford draft",
+      "topics": ["nlp", "normalization", "embeddings", "information_extraction", "language_models"],
+      "status": "registered_for_extraction"
+    },
+    {
+      "id": "OA-HAMILTON-GRL",
+      "type": "author_draft",
+      "title": "Graph Representation Learning",
+      "authors": ["William L. Hamilton"],
+      "access": "pre-publication draft publicly hosted by author with publisher permission",
+      "topics": ["graph_embeddings", "gnn", "multi_relational_graphs", "knowledge_graphs"],
+      "status": "registered_for_extraction"
+    },
+    {
+      "id": "OA-KG-BIG-DATA-SPRINGER",
+      "type": "open_access_book",
+      "title": "Knowledge Graphs and Big Data Processing",
+      "access": "Springer Open Access",
+      "topics": ["knowledge_graphs", "data_integration", "big_data", "semantic_processing"],
+      "status": "registered_for_extraction"
+    },
+    {
+      "id": "OA-W3C-PROV",
+      "type": "official_specification",
+      "title": "W3C PROV-DM / PROV-O",
+      "access": "public official specification",
+      "topics": ["provenance", "traceability", "entity_activity_agent"],
+      "status": "registered_for_extraction"
+    },
+    {
+      "id": "OA-W3C-RDF-OWL-SHACL",
+      "type": "official_specification_family",
+      "title": "W3C RDF / OWL / SPARQL / JSON-LD / SHACL",
+      "access": "public official specifications",
+      "topics": ["knowledge_graph", "ontology", "queries", "validation", "linked_data"],
+      "status": "registered_for_extraction"
+    },
+    {
+      "id": "OA-NIST-AI-RMF",
+      "type": "official_framework",
+      "title": "NIST AI Risk Management Framework and GenAI Profile",
+      "access": "public official publication",
+      "topics": ["ai_governance", "risk", "measurement", "genai"],
+      "status": "registered_for_extraction"
+    },
+    {
+      "id": "OA-OWASP-GENAI",
+      "type": "security_framework",
+      "title": "OWASP GenAI / LLM Security guidance",
+      "access": "public official project materials",
+      "topics": ["prompt_injection", "data_leakage", "poisoning", "agent_security"],
+      "status": "registered_for_extraction"
+    },
+    {
+      "id": "OA-MITRE-ATLAS",
+      "type": "security_knowledge_base",
+      "title": "MITRE ATLAS",
+      "access": "public official knowledge base",
+      "topics": ["ai_security", "adversarial_ml", "threats", "ttps"],
+      "status": "registered_for_extraction"
+    }
+  ]
+}
