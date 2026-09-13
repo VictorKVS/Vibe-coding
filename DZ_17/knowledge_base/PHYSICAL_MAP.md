@@ -16,6 +16,7 @@
 |---|---|---|---|
 | EXISTS | `DZ_17/knowledge_base/README.md` | назначение и общая структура Meta/Universal KB | документация |
 | EXISTS | `DZ_17/knowledge_base/ANALYST_KB_SPEC.md` | логическая модель знаний, методы, controls, metrics, trace | спецификация |
+| EXISTS | `DZ_17/knowledge_base/FATHER_ANALYST_FOUNDATION.md` | FATHER-маршрут source → idea → algorithm → scenario → conditions | orchestration/knowledge foundation |
 | EXISTS | `DZ_17/knowledge_base/source_registry.v1.json` | единый реестр ГОСТ/ISO/W3C/NIST/OWASP/MITRE/книг | **да, для библиографии источников** |
 | EXISTS | `DZ_17/knowledge_base/analyst_method_cards.v1.json` | карточки аналитических методов и `source_refs` | да, для текущих Method Cards |
 | EXISTS | `DZ_17/knowledge_base/trace_contract.v1.json` | контракт аудируемой трассировки действий | да, для trace contract |
@@ -50,8 +51,12 @@
 
 | Статус | Путь | Назначение |
 |---|---|---|
+| EXISTS | `DZ_17/profiles/analyst.v1.json` | ROLE-ANALYST-FATHER: Главный Аналитик, zoo roles, 5-stream routing, gates |
 | EXISTS | `DZ_17/profiles/narrative.v1.json` | первый Domain Profile для narrative |
 | EXISTS | `DZ_17/profiles/translator.v1.json` | ROLE-TRANSLATOR: режимы exact/technical/reader, RAG и benchmark policy |
+| EXISTS | `DZ_17/rag/analyst-zoo.v1.json` | retrieval policy для ролей Analyst Zoo |
+| EXISTS | `DZ_17/orchestration/father-analyst-pipeline.v1.json` | машиночитаемый K0–K13 pipeline и 5 потоков |
+| EXISTS | `DZ_17/prompts/analyst-zoo.v1.md` | prompt pack ролей Source/Structure/Idea/Algorithm/Scenario/Review |
 | EXISTS | `DZ_17/schemas/candidate-knowledge-package.schema.json` | пакет кандидатов знаний для review |
 | EXISTS | `DZ_17/schemas/domain-profile.schema.json` | общий контракт Domain Profile |
 | EXISTS | `DZ_17/openapi/analyst-core.v1.yaml` | API Analyst Core |
@@ -60,6 +65,7 @@
 
 ```text
 DZ_17/profiles/
+├── analyst.v1.json
 ├── narrative.v1.json
 ├── translator.v1.json
 ├── osint.v1.json                 # PLANNED
@@ -86,6 +92,8 @@ DZ_17/profiles/
 | EXISTS | `DZ_17/app/app/research-lab.tsx` | research UI |
 | EXISTS | `DZ_17/app/app/narrative-lab.tsx` | narrative specialization UI |
 | EXISTS | `DZ_17/app/scripts/run-with-models.mjs` | запуск локальных моделей вместе с приложением |
+| EXISTS | `DZ_17/app/scripts/run-kf-5-streams.mjs` | фактический 5-поточный аналитический baseline и телеметрия |
+| EXISTS | `DZ_17/app/scripts/run-father-orchestration.mjs` | исполнимый верхний orchestration pass: verify Source/Capture → translation gate → A2 ensure → PAR5 → честный stop на K5, пока runtime K5 не реализован |
 | EXISTS | `DZ_17/app/scripts/configure-existing-model-zoo.ps1` | регистрация существующего FATHER_MODELS без копирования весов и назначение specialist routes |
 | EXISTS | `DZ_17/app/app/admin-security-console.tsx` | единый side-panel Control Center для Admin и ИБ/AI Security |
 | EXISTS | `DZ_17/app/app/admin-security-console.css` | стили боковой шестерёнки и Control Center |
@@ -104,6 +112,7 @@ DZ_17/profiles/
 | EXISTS | `DZ_17/processes/PROCESS_CATALOG.md` | каталог процессов |
 | EXISTS | `DZ_17/processes/IDEF0_MODEL.md` | IDEF0 |
 | EXISTS | `DZ_17/processes/BPMN_MAIN_PROCESS.md` | BPMN основного процесса |
+| EXISTS | `DZ_17/processes/FATHER_DOCUMENT_KNOWLEDGE_PIPELINE.md` | подробный K0–K13 путь документа до ChangeSet/Review/Canonical KB |
 | EXISTS | `DZ_17/processes/KB_AND_MODEL_LIFECYCLE.md` | жизненный цикл KB/Domain Profile/models |
 | EXISTS | `DZ_17/processes/RACI_AND_KPI.md` | роли и KPI |
 | EXISTS | `DZ_17/processes/AI_SECURITY_PROCESS.md` | AI security process |
@@ -148,6 +157,21 @@ acquisition_uri
 accessed_at
 ```
 
+Runtime Knowledge Factory дополнительно хранит производные исполнимые состояния:
+
+```text
+DZ_17/app/runtime/knowledge-factory/             # LOCAL_ONLY / ignored
+├── sources/
+├── captures/
+├── structure/
+├── spans/
+├── structure-proposals/
+├── parallel-runs/
+└── father-runs/
+```
+
+`father-runs/` содержит отчёты верхнего orchestration pass и не является канонической KB.
+
 ---
 
 ## 7. Где хранится конкретное извлечённое знание
@@ -164,6 +188,24 @@ METHOD / CONCEPT / CONTROL / METRIC
 DOMAIN PROFILE / AGENT PROFILE
   ↓ reference only
 RUNTIME CONTEXT
+```
+
+Для FATHER полный исполнимый маршрут выглядит так:
+
+```text
+Source/Capture
+→ SourceSpan
+→ StructureProposal
+→ IdeaCandidate / IdeaChunk (planned runtime K5/K6)
+→ KnowledgeCandidate
+→ MethodCandidate
+→ AlgorithmCandidate
+→ ScenarioSet
+→ RealizationConditions
+→ Validation
+→ ChangeSet
+→ authorized ReviewDecision
+→ CanonicalVersion
 ```
 
 Пример физической трассы будущей подтверждённой записи:
