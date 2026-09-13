@@ -1,6 +1,7 @@
 import {evaluateKbRefs,kbRefsForTask,modelPolicyDecision,promptIdForTask,promptPolicyDecision,readRuntimePolicy,routeOverrideForTask,type RuntimePolicyState} from '@/lib/runtime-policy';
+import {enrichTranslationContext} from '@/lib/translator-rag';
 
-type Task='dialogue'|'synthesis'|'architecture'|'vision'|'kb_extract'|'kb_validate';
+type Task='dialogue'|'synthesis'|'architecture'|'vision'|'translation'|'kb_extract'|'kb_validate';
 type Message={role:'user'|'assistant';content:string};
 type ImageInput={dataUrl:string;name?:string};
 type RequestBody={selection?:string;task?:Task;messages?:Message[];context?:Record<string,unknown>;images?:ImageInput[]};
@@ -9,9 +10,11 @@ type Provider='llamacpp'|'gigachat'|'openai'|'compatible'|'ollama'|'demo';
 type RuntimeCatalog={llamaModels:string[];llamaOnline:boolean;gigaModels:string[];gigaOnline:boolean};
 
 const OPENAI_DEFAULTS=['gpt-5.6-luna','gpt-5.6-terra','gpt-5.6-sol'];
-const TEXT_TASKS:Task[]=['dialogue','synthesis','architecture','kb_extract','kb_validate'];
+const TEXT_TASKS:Task[]=['dialogue','synthesis','architecture','translation','kb_extract','kb_validate'];
+const DEMO_TASKS:Task[]=['dialogue','synthesis','architecture','kb_extract','kb_validate'];
 const ALL_TASKS:Task[]=[...TEXT_TASKS,'vision'];
 const BASE_SYSTEM=`Ты — Алина, AI-продюсер и аналитик проекта «Дикие идеи → в деньги». Отвечай по-русски, кратко и предметно. Ты помогаешь человеку проектировать историю и базу знаний, но не утверждаешь канон без подтверждения автора. Разделяй факты, наблюдения, интерпретации и гипотезы. Не обещай коммерческий успех. При работе с изображением сначала опиши только наблюдаемые признаки, затем отдельно объясни, как они могут быть использованы в творческой задаче. Не выдумывай детали, которых не видно на изображении.`;
+const TRANSLATION_SYSTEM=`Ты — ALINA Translator, специализированный переводчик. Твоя задача — переводить, а не пересказывать. Целевой язык по умолчанию русский, если контекст не задаёт другой targetLanguage. Сохраняй факты, отрицания, модальность, причинно-следственные связи, числа, даты, единицы измерения, ссылки, идентификаторы, структуру абзацев, нумерацию и форматирование настолько точно, насколько это возможно. Не добавляй объяснений, выводов, оценок и фактов от себя. Код, команды, API, URL, имена функций, переменных и файлов не переводи. Имена собственные транслитерируй или сохраняй по контексту, но не выдумывай локализованные формы. Используй translationRag.terminologyMatches как терминологические подсказки: approved имеет высший приоритет; project — следующий; proposed — только подсказка и не должна ломать контекст. Если translationRag.exactMemoryMatches содержит approved exact-match, его перевод считается предпочтительным. Режим exact требует максимально близкого перевода и сохранения структуры; technical — точности терминологии и естественного технического русского; reader — читаемого русского без сокращения смысла. Возвращай только перевод без вступления, послесловия и комментариев.`;
 const KB_EXTRACT_SYSTEM=`${BASE_SYSTEM}\n\nРЕЖИМ: KNOWLEDGE BASE ANALYST. Разложи пользовательскую идею в черновик структурированной базы знаний. Возвращай ТОЛЬКО валидный JSON без markdown и пояснений вокруг него. Все автоматически извлечённые элементы имеют status="proposed". Не создавай канонические факты, которых пользователь не сообщил. Если данных недостаточно, помещай вопрос в open_questions. JSON schema: {"schema_version":"alina-kb-v1","project":{"title":string,"kind":"standalone"|"series"|"spin_off"|"prequel"|"parallel"|"adaptation"|"unknown","universe_relation":{"mode":"new"|"existing"|"unknown","name":string|null},"summary":string},"entities":[{"temp_id":string,"type":"character"|"location"|"organization"|"artifact"|"event"|"concept","name":string,"description":string,"status":"proposed"}],"facts":[{"subject":string,"predicate":string,"object":string,"scope":"universe"|"series"|"project"|"scene"|"unknown","status":"proposed","confidence":number,"source":"user_input"}],"relationships":[{"from":string,"type":string,"to":string,"status":"proposed"}],"timeline":[{"event":string,"time":string|null,"order_hint":number|null,"status":"proposed"}],"knowledge_states":[{"character":string,"knowledge":string,"state":"knows"|"believes"|"rumor"|"secret"|"unknown","status":"proposed"}],"plot_threads":[{"name":string,"description":string,"status":"proposed"}],"visual_requirements":[{"subject":string,"requirement":string,"status":"proposed"}],"open_questions":[string],"conflicts":[string]}.`;
 const KB_VALIDATE_SYSTEM=`${BASE_SYSTEM}\n\nРЕЖИМ: KB VALIDATOR. Пользователь передаст JSON-черновик базы знаний. Проверь внутренние противоречия, недостаточную трассируемость, смешение фактов и интерпретаций, неоднозначные сущности и пропущенные связи. Возвращай ТОЛЬКО JSON: {"schema_version":"alina-kb-validation-v1","valid":boolean,"issues":[{"severity":"low"|"medium"|"high","path":string,"message":string}],"recommended_changes":[string],"open_questions":[string]}. Не меняй канон самостоятельно.`;
 
@@ -27,6 +30,8 @@ function compatibleModels(){return list(env('COMPATIBLE_MODELS'));}
 function ollamaModels(){return list(env('OLLAMA_MODELS'));}
 function llamaBase(){return (env('LLAMA_BASE_URL')||'http://127.0.0.1:8081').replace(/\/$/,'');}
 function gigaBase(){return (env('GIGACHAT_BASE_URL')||'https://api.giga.chat').replace(/\/$/,'');}
+function taskTemperature(task:Task){return task==='translation'?0.1:task.startsWith('kb_')?0.2:0.65;}
+function taskMaxTokens(task:Task){return task==='translation'?3200:task.startsWith('kb_')?2600:900;}
 
 async function getGigaToken(){
  const now=Date.now();
@@ -100,6 +105,7 @@ function explicitModel(provider:Provider,task:Task){
  if(task==='dialogue')return env(`${p}_DIALOGUE_MODEL`);
  if(task==='synthesis')return env(`${p}_SYNTHESIS_MODEL`);
  if(task==='architecture')return env(`${p}_ARCHITECTURE_MODEL`);
+ if(task==='translation')return env(`${p}_TRANSLATION_MODEL`)||env(`${p}_SYNTHESIS_MODEL`);
  if(task==='vision')return env(`${p}_VISION_MODEL`);
  if(task==='kb_extract')return env(`${p}_KB_MODEL`)||env(`${p}_SYNTHESIS_MODEL`);
  if(task==='kb_validate')return env(`${p}_KB_VALIDATE_MODEL`)||env(`${p}_ARCHITECTURE_MODEL`)||env(`${p}_KB_MODEL`);
@@ -108,12 +114,12 @@ function explicitModel(provider:Provider,task:Task){
 function defaultPreferred(provider:Provider,task:Task){
  if(provider==='openai'){
   if(task==='architecture'||task==='kb_validate')return 'gpt-5.6-sol';
-  if(task==='synthesis'||task==='kb_extract')return 'gpt-5.6-terra';
+  if(task==='synthesis'||task==='kb_extract'||task==='translation')return 'gpt-5.6-terra';
   if(task==='dialogue')return 'gpt-5.6-luna';
  }
  if(provider==='gigachat'){
   if(task==='architecture'||task==='kb_validate')return 'GigaChat-3-Ultra';
-  if(task==='synthesis'||task==='kb_extract')return 'GigaChat-2-Pro';
+  if(task==='synthesis'||task==='kb_extract'||task==='translation')return 'GigaChat-2-Pro';
   if(task==='dialogue')return 'GigaChat-2-Pro';
  }
  return '';
@@ -129,7 +135,7 @@ function modelFor(provider:Provider,task:Task,runtime:RuntimeCatalog){
  return preferredModel(models,explicitModel(provider,task)||defaultPreferred(provider,task));
 }
 function capabilities(provider:Provider,model:string):Task[]{
- if(provider==='demo')return [...TEXT_TASKS];
+ if(provider==='demo')return [...DEMO_TASKS];
  const caps=[...TEXT_TASKS];
  const explicitVision=explicitModel(provider,'vision');
  const visionList=provider==='llamacpp'?list(env('LLAMA_VISION_MODELS')):provider==='openai'?list(env('OPENAI_VISION_MODELS')):provider==='compatible'?list(env('COMPATIBLE_VISION_MODELS')):provider==='ollama'?list(env('OLLAMA_VISION_MODELS')):[];
@@ -137,7 +143,7 @@ function capabilities(provider:Provider,model:string):Task[]{
  return caps;
 }
 function catalog(runtime:RuntimeCatalog):ModelItem[]{
- const items:ModelItem[]=[{id:'auto',provider:'auto',model:'auto',label:'AUTO · умный роутинг',available:true,note:'ALINA сама выбирает локальную или внешнюю модель по задаче.',capabilities:ALL_TASKS},{id:'demo',provider:'demo',model:'demo',label:'DEMO · без модели',available:true,note:'Только интерфейсный fallback; реальные изображения не анализирует.',capabilities:[...TEXT_TASKS]}];
+ const items:ModelItem[]=[{id:'auto',provider:'auto',model:'auto',label:'AUTO · умный роутинг',available:true,note:'ALINA сама выбирает локальную или внешнюю модель по задаче.',capabilities:ALL_TASKS},{id:'demo',provider:'demo',model:'demo',label:'DEMO · без модели',available:true,note:'Только интерфейсный fallback; перевод и реальные изображения не имитирует.',capabilities:[...DEMO_TASKS]}];
  for(const m of runtime.llamaModels)items.push({id:`llamacpp:${m}`,provider:'llamacpp',model:m,label:`LOCAL · ${m}`,available:runtime.llamaOnline,note:`llama.cpp router · ${llamaBase()} · модель загружается/выгружается по выбору`,capabilities:capabilities('llamacpp',m)});
  for(const m of runtime.gigaModels)items.push({id:`gigachat:${m}`,provider:'gigachat',model:m,label:`GigaChat · ${m}`,available:runtime.gigaOnline,note:'Прямое подключение к GigaChat API; access token обновляется на сервере автоматически.',capabilities:capabilities('gigachat',m)});
  for(const m of openAIModels())items.push({id:`openai:${m}`,provider:'openai',model:m,label:`OpenAI · ${m}`,available:configured('openai',runtime),note:'OpenAI Responses API',capabilities:capabilities('openai',m)});
@@ -146,10 +152,10 @@ function catalog(runtime:RuntimeCatalog):ModelItem[]{
  return items;
 }
 function providerOrder():Provider[]{
- const raw=list(env('ALINA_PROVIDER_ORDER'),['llamacpp','gigachat','demo']);
+ const raw=list(env('ALINA_PROVIDER_ORDER'),['llamacpp','gigachat','compatible','demo']);
  const allowed=new Set<Provider>(['llamacpp','gigachat','openai','compatible','ollama','demo']);
  const result=raw.filter((x):x is Provider=>allowed.has(x as Provider));
- return result.length?result:['llamacpp','gigachat','demo'];
+ return result.length?result:['llamacpp','gigachat','compatible','demo'];
 }
 function autoCandidates(task:Task,runtime:RuntimeCatalog){
  const items=catalog(runtime),out:ModelItem[]=[];
@@ -185,29 +191,29 @@ function resolveManual(selection:string,task:Task,runtime:RuntimeCatalog){
 function contextText(context:Record<string,unknown>|undefined){if(!context)return '';try{return `\n\nКОНТЕКСТ ПРОЕКТА:\n${JSON.stringify(context,null,2).slice(0,16000)}`;}catch{return '';}}
 function dialogueText(messages:Message[],context?:Record<string,unknown>){return messages.slice(-12).map(m=>`${m.role==='user'?'Пользователь':'Алина'}: ${m.content}`).join('\n')+contextText(context);}
 function validImages(images:ImageInput[]|undefined){return (images||[]).slice(0,3).filter(img=>typeof img?.dataUrl==='string'&&img.dataUrl.length<=8_000_000&&/^data:image\/(png|jpeg|jpg|webp);base64,/i.test(img.dataUrl));}
-function systemFor(task:Task){return task==='kb_extract'?KB_EXTRACT_SYSTEM:task==='kb_validate'?KB_VALIDATE_SYSTEM:BASE_SYSTEM;}
+function systemFor(task:Task){return task==='translation'?TRANSLATION_SYSTEM:task==='kb_extract'?KB_EXTRACT_SYSTEM:task==='kb_validate'?KB_VALIDATE_SYSTEM:BASE_SYSTEM;}
 function extractOpenAI(data:unknown){const value=data as {output_text?:string;output?:Array<{content?:Array<{text?:string}>}>};if(typeof value?.output_text==='string'&&value.output_text.trim())return value.output_text.trim();const parts:string[]=[];for(const item of value?.output||[])for(const c of item?.content||[])if(typeof c?.text==='string')parts.push(c.text);return parts.join('\n').trim();}
 function openAIStyleContent(prompt:string,images:ImageInput[]){return images.length?[{type:'text',text:prompt},...images.map(img=>({type:'image_url',image_url:{url:img.dataUrl}}))]:prompt;}
 
 async function callLlama(model:string,task:Task,messages:Message[],context:Record<string,unknown>|undefined,images:ImageInput[]){
- const prompt=dialogueText(messages,context);const r=await fetch(`${llamaBase()}/v1/chat/completions`,{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({model,messages:[{role:'system',content:systemFor(task)},{role:'user',content:openAIStyleContent(prompt,images)}],temperature:task.startsWith('kb_')?0.2:0.65,max_tokens:task.startsWith('kb_')?2600:900})});
+ const prompt=dialogueText(messages,context);const r=await fetch(`${llamaBase()}/v1/chat/completions`,{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({model,messages:[{role:'system',content:systemFor(task)},{role:'user',content:openAIStyleContent(prompt,images)}],temperature:taskTemperature(task),max_tokens:taskMaxTokens(task)})});
  const data=await r.json().catch(()=>({})) as {error?:{message?:string};choices?:Array<{message?:{content?:string}}>;usage?:unknown};if(!r.ok)throw new Error(data?.error?.message||`llama.cpp HTTP ${r.status}`);const text=data?.choices?.[0]?.message?.content?.trim();if(!text)throw new Error('Локальная модель вернула пустой ответ.');return {text,usage:data.usage||null};
 }
 async function callGiga(model:string,task:Task,messages:Message[],context:Record<string,unknown>|undefined,images:ImageInput[]){
  if(images.length)throw new Error('GigaChat adapter пока используется для текстовых задач; vision направьте в LOCAL VISION или другой vision-provider.');
- const token=await getGigaToken();const prompt=dialogueText(messages,context);const r=await fetch(`${gigaBase()}/v1/chat/completions`,{method:'POST',headers:{'content-type':'application/json','accept':'application/json','authorization':`Bearer ${token}`},body:JSON.stringify({model,messages:[{role:'system',content:systemFor(task)},{role:'user',content:prompt}],temperature:task.startsWith('kb_')?0.2:0.65})});
+ const token=await getGigaToken();const prompt=dialogueText(messages,context);const r=await fetch(`${gigaBase()}/v1/chat/completions`,{method:'POST',headers:{'content-type':'application/json','accept':'application/json','authorization':`Bearer ${token}`},body:JSON.stringify({model,messages:[{role:'system',content:systemFor(task)},{role:'user',content:prompt}],temperature:taskTemperature(task)})});
  const data=await r.json().catch(()=>({})) as {message?:string;choices?:Array<{message?:{content?:string}}>;usage?:unknown};if(!r.ok)throw new Error(data.message||`GigaChat HTTP ${r.status}`);const text=data?.choices?.[0]?.message?.content?.trim();if(!text)throw new Error('GigaChat вернул пустой ответ.');return {text,usage:data.usage||null};
 }
 async function callOpenAI(model:string,task:Task,messages:Message[],context:Record<string,unknown>|undefined,images:ImageInput[]){
- const text=dialogueText(messages,context);const input=images.length?[{role:'user',content:[{type:'input_text',text},...images.map(img=>({type:'input_image',image_url:img.dataUrl}))]}]:text;const r=await fetch('https://api.openai.com/v1/responses',{method:'POST',headers:{'content-type':'application/json','authorization':`Bearer ${env('OPENAI_API_KEY')}`},body:JSON.stringify({model,instructions:systemFor(task),input,max_output_tokens:task.startsWith('kb_')?2600:900})});
+ const text=dialogueText(messages,context);const input=images.length?[{role:'user',content:[{type:'input_text',text},...images.map(img=>({type:'input_image',image_url:img.dataUrl}))]}]:text;const r=await fetch('https://api.openai.com/v1/responses',{method:'POST',headers:{'content-type':'application/json','authorization':`Bearer ${env('OPENAI_API_KEY')}`},body:JSON.stringify({model,instructions:systemFor(task),input,max_output_tokens:taskMaxTokens(task)})});
  const data=await r.json().catch(()=>({}));if(!r.ok){const e=data as {error?:{message?:string}};throw new Error(e?.error?.message||`OpenAI HTTP ${r.status}`);}const out=extractOpenAI(data);if(!out)throw new Error('OpenAI вернул пустой ответ.');return {text:out,usage:(data as {usage?:unknown})?.usage||null};
 }
 async function callCompatible(model:string,task:Task,messages:Message[],context:Record<string,unknown>|undefined,images:ImageInput[]){
- const base=env('COMPATIBLE_BASE_URL').replace(/\/$/,'');const headers:Record<string,string>={'content-type':'application/json'};const key=env('COMPATIBLE_API_KEY');if(key)headers.authorization=`Bearer ${key}`;if(env('COMPATIBLE_SITE_URL'))headers['HTTP-Referer']=env('COMPATIBLE_SITE_URL');if(env('COMPATIBLE_APP_NAME'))headers['X-Title']=env('COMPATIBLE_APP_NAME');const prompt=dialogueText(messages,context);const r=await fetch(`${base}/chat/completions`,{method:'POST',headers,body:JSON.stringify({model,messages:[{role:'system',content:systemFor(task)},{role:'user',content:openAIStyleContent(prompt,images)}],temperature:task.startsWith('kb_')?0.2:0.65,max_tokens:task.startsWith('kb_')?2600:900})});
+ const base=env('COMPATIBLE_BASE_URL').replace(/\/$/,'');const headers:Record<string,string>={'content-type':'application/json'};const key=env('COMPATIBLE_API_KEY');if(key)headers.authorization=`Bearer ${key}`;if(env('COMPATIBLE_SITE_URL'))headers['HTTP-Referer']=env('COMPATIBLE_SITE_URL');if(env('COMPATIBLE_APP_NAME'))headers['X-Title']=env('COMPATIBLE_APP_NAME');const prompt=dialogueText(messages,context);const r=await fetch(`${base}/chat/completions`,{method:'POST',headers,body:JSON.stringify({model,messages:[{role:'system',content:systemFor(task)},{role:'user',content:openAIStyleContent(prompt,images)}],temperature:taskTemperature(task),max_tokens:taskMaxTokens(task)})});
  const data=await r.json().catch(()=>({})) as {error?:{message?:string};choices?:Array<{message?:{content?:string}}>;usage?:unknown};if(!r.ok)throw new Error(data?.error?.message||`Compatible API HTTP ${r.status}`);const text=data?.choices?.[0]?.message?.content?.trim();if(!text)throw new Error('Провайдер вернул пустой ответ.');return {text,usage:data?.usage||null};
 }
 async function callOllama(model:string,task:Task,messages:Message[],context:Record<string,unknown>|undefined,images:ImageInput[]){
- const base=(env('OLLAMA_BASE_URL')||'http://127.0.0.1:11434').replace(/\/$/,'');const prompt=dialogueText(messages,context);const ollamaImages=images.map(img=>img.dataUrl.split(',',2)[1]).filter(Boolean);const userMessage:Record<string,unknown>={role:'user',content:prompt};if(ollamaImages.length)userMessage.images=ollamaImages;const r=await fetch(`${base}/api/chat`,{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({model,stream:false,messages:[{role:'system',content:systemFor(task)},userMessage],options:{temperature:task.startsWith('kb_')?0.2:0.65}})});const data=await r.json().catch(()=>({})) as {error?:string;message?:{content?:string}};if(!r.ok)throw new Error(data?.error||`Ollama HTTP ${r.status}`);const text=data?.message?.content?.trim();if(!text)throw new Error('Ollama вернула пустой ответ.');return {text,usage:null};
+ const base=(env('OLLAMA_BASE_URL')||'http://127.0.0.1:11434').replace(/\/$/,'');const prompt=dialogueText(messages,context);const ollamaImages=images.map(img=>img.dataUrl.split(',',2)[1]).filter(Boolean);const userMessage:Record<string,unknown>={role:'user',content:prompt};if(ollamaImages.length)userMessage.images=ollamaImages;const r=await fetch(`${base}/api/chat`,{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({model,stream:false,messages:[{role:'system',content:systemFor(task)},userMessage],options:{temperature:taskTemperature(task)}})});const data=await r.json().catch(()=>({})) as {error?:string;message?:{content?:string}};if(!r.ok)throw new Error(data?.error||`Ollama HTTP ${r.status}`);const text=data?.message?.content?.trim();if(!text)throw new Error('Ollama вернула пустой ответ.');return {text,usage:null};
 }
 function demoKb(last:string){return JSON.stringify({schema_version:'alina-kb-v1',project:{title:'Черновой проект',kind:'unknown',universe_relation:{mode:'unknown',name:null},summary:last.slice(0,500)},entities:[],facts:[],relationships:[],timeline:[],knowledge_states:[],plot_threads:[],visual_requirements:[],open_questions:['DEMO не выполняет полноценное извлечение. Подключите рабочую LLM для анализа.'],conflicts:[]},null,2);}
 function demoReply(task:Task,messages:Message[],context:Record<string,unknown>|undefined){const last=[...messages].reverse().find(x=>x.role==='user')?.content||'идею';if(task==='kb_extract')return {text:demoKb(last),usage:null};if(task==='kb_validate')return {text:JSON.stringify({schema_version:'alina-kb-validation-v1',valid:false,issues:[{severity:'medium',path:'$',message:'DEMO не выполняет семантическую валидацию базы знаний.'}],recommended_changes:['Подключить рабочую LLM и повторить проверку.'],open_questions:[]},null,2),usage:null};const next=typeof context?.nextQuestion==='string'?` ${context.nextQuestion}`:'';return {text:`Я услышала: ${last.slice(0,220)}. Зафиксирую это как рабочую гипотезу и не буду менять без вашего подтверждения.${next}`,usage:null};}
@@ -222,15 +228,21 @@ export async function POST(request:Request){
  const started=Date.now();
  try{
   const body=(await request.json()) as RequestBody;const task=body.task||'dialogue';const messages=(body.messages||[]).filter(x=>x&&typeof x.content==='string').slice(-20);const images=validImages(body.images);if(!messages.length)return Response.json({error:'messages required'},{status:400});if(task==='vision'&&!images.length)return Response.json({error:'vision task requires image'},{status:400});
+  const effectiveContext=task==='translation'?await enrichTranslationContext(messages,body.context):body.context;
   const [runtime,policy]=await Promise.all([runtimeCatalog(),readRuntimePolicy()]);
   const promptId=promptIdForTask(task);const promptDecision=promptPolicyDecision(policy,promptId);if(!promptDecision.allowed)return Response.json({error:`Prompt policy denied ${promptId}: ${promptDecision.reason}`,code:'PROMPT_POLICY_DENY',policyVersion:policy.version},{status:403});
-  const kbRefs=kbRefsForTask(task,body.context);const kbDecision=evaluateKbRefs(policy,kbRefs);if(!kbDecision.allowed)return Response.json({error:`KB policy denied: ${kbDecision.reason}`,code:'KB_POLICY_DENY',kbRefs,policyVersion:policy.version},{status:403});
+  const kbRefs=kbRefsForTask(task,effectiveContext);const kbDecision=evaluateKbRefs(policy,kbRefs);if(!kbDecision.allowed)return Response.json({error:`KB policy denied: ${kbDecision.reason}`,code:'KB_POLICY_DENY',kbRefs,policyVersion:policy.version},{status:403});
+  if(task==='translation'){
+   const rag=effectiveContext?.translationRag as {exactMemoryMatches?:Array<{target?:string}>}|undefined;
+   const exact=rag?.exactMemoryMatches?.find(x=>typeof x?.target==='string'&&x.target.trim());
+   if(exact?.target)return Response.json({text:exact.target,usage:null,selection:'translation-memory:exact',provider:'translation-memory',model:'exact-match',task,imagesReceived:0,latencyMs:Date.now()-started,attempts:[],policyVersion:policy.version,promptId,kbRefs,routeOverride:null,translationRag:rag});
+  }
   const attempts:{model:string;error:string}[]=[];let candidates:ModelItem[];
   if(body.selection&&body.selection!=='auto'){
    const item=resolveManual(body.selection,task,runtime);const modelDecision=modelPolicyDecision(policy,item.id);if(!modelDecision.allowed)return Response.json({error:`Model policy denied ${item.id}: ${modelDecision.reason}`,code:'MODEL_POLICY_DENY',policyVersion:policy.version},{status:403});candidates=[item];
   }else candidates=effectiveAutoCandidates(task,runtime,policy);
   if(!candidates.length)throw new Error(`Нет разрешённой и доступной модели для задачи ${task}. Проверьте provider configuration и Control Center policy.`);
-  for(const item of candidates){try{const result=await call(item,task,messages,body.context,images);return Response.json({...result,selection:item.id,provider:item.provider,model:item.model,task,imagesReceived:images.length,latencyMs:Date.now()-started,attempts,policyVersion:policy.version,promptId,kbRefs,routeOverride:routeOverrideForTask(policy,task)||null});}catch(error){attempts.push({model:item.id,error:error instanceof Error?error.message:'provider error'});if(body.selection&&body.selection!=='auto')throw error;}}
+  for(const item of candidates){try{const result=await call(item,task,messages,effectiveContext,images);return Response.json({...result,selection:item.id,provider:item.provider,model:item.model,task,imagesReceived:images.length,latencyMs:Date.now()-started,attempts,policyVersion:policy.version,promptId,kbRefs,routeOverride:routeOverrideForTask(policy,task)||null,translationRag:task==='translation'?effectiveContext?.translationRag:null});}catch(error){attempts.push({model:item.id,error:error instanceof Error?error.message:'provider error'});if(body.selection&&body.selection!=='auto')throw error;}}
   throw new Error(`Все модели завершились ошибкой: ${attempts.map(x=>x.model).join(', ')}`);
  }catch(error){return Response.json({error:error instanceof Error?error.message:'LLM gateway error'},{status:500});}
 }

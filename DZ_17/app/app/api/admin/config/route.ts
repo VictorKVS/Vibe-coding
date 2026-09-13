@@ -15,9 +15,10 @@ type ControlState={
 };
 type Mutation={role?:Role;action?:string;target?:string;value?:unknown;reason?:string};
 
-const ROUTABLE_TASKS=['dialogue','synthesis','architecture','kb_extract','kb_validate'];
+const ROUTABLE_TASKS=['dialogue','synthesis','architecture','translation','kb_extract','kb_validate'];
 const prompts:PromptDescriptor[]=[
  {id:'PROMPT-BASE-ALINA',task:'dialogue/synthesis/architecture/vision',source:'app/api/llm/route.ts',status:'active',editable:false,version:1,reviewStatus:'approved'},
+ {id:'PROMPT-TRANSLATOR',task:'translation',source:'app/api/llm/route.ts + ../profiles/translator.v1.json',status:'active',editable:false,version:1,reviewStatus:'approved'},
  {id:'PROMPT-KB-EXTRACT',task:'kb_extract',source:'app/api/llm/route.ts',status:'active',editable:false,version:1,reviewStatus:'approved'},
  {id:'PROMPT-KB-VALIDATE',task:'kb_validate',source:'app/api/llm/route.ts',status:'active',editable:false,version:1,reviewStatus:'approved'},
  {id:'PROMPT-SENIOR-REVIEW',task:'senior_review',source:'knowledge_base/analyst_method_cards.v1.json',status:'planned',editable:false,version:0,reviewStatus:'pending'},
@@ -27,6 +28,8 @@ const kbConnections=[
  {id:'KB-FOUNDATION',label:'Universal Foundation / Analyst Meta-KB',path:'../knowledge_base',kind:'foundation',status:'configured'},
  {id:'KB-SOURCES',label:'Source Registry',path:'../knowledge_base/source_registry.v1.json',kind:'registry',status:'configured'},
  {id:'KB-METHODS',label:'Analyst Method Cards',path:'../knowledge_base/analyst_method_cards.v1.json',kind:'methods',status:'configured'},
+ {id:'KB-TRANSLATION-TERMS',label:'Translation Terminology Registry',path:'../knowledge_base/translation_terminology.v1.json',kind:'terminology',status:'configured'},
+ {id:'KB-TRANSLATION-MEMORY',label:'Translation Memory',path:'../knowledge_base/translation_memory.v1.json',kind:'translation_memory',status:'configured'},
  {id:'KB-NARRATIVE',label:'Narrative Domain Profile',path:'../profiles/narrative.v1.json',kind:'domain_profile',status:'configured'},
  {id:'KB-OSINT',label:'OSINT Domain Profile',path:'../profiles/osint.v1.json',kind:'domain_profile',status:'planned'},
  {id:'KB-CYBER',label:'Cybersecurity Domain Profile',path:'../profiles/cybersecurity.v1.json',kind:'domain_profile',status:'planned'},

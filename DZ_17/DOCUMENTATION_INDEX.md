@@ -13,7 +13,27 @@
 | `METHODOLOGY_AND_STANDARDS.md` | Мастер-перечень стандартов, методик и литературы |
 | `DEVELOPMENT_JOURNAL.md` | Журнал разработки: что изменено/придумано, источник, физические пути, review и результат |
 
-## 2. Process documentation
+## 2. Формальный комплект проектирования
+
+| Документ | Назначение |
+|---|---|
+| `design/README.md` | Точка входа, уровни проектирования, статусы и связь с IDEF0/BPMN/C4 |
+| `design/DESIGN_BASELINE.md` | Текущая выбранная проектная база ALINA Knowledge Factory; допускает управляемую эволюцию |
+| `design/DESIGN_VARIANTS_REGISTER.md` | Реестр альтернатив, гипотез, выбранных/отложенных/отклонённых вариантов |
+| `design/DESIGN_CHANGE_CONTROL.md` | Минимальный formal change-control для изменения baseline |
+| `design/DESIGN_DECISION_RECORD_TEMPLATE.md` | Шаблон DDR для решений, меняющих baseline или выбирающих вариант |
+
+Правило комплекта:
+
+```text
+CURRENT BASELINE != FINAL TRUTH
+
+варианты можно менять,
+но изменение должно быть версионным,
+сохранять историю и impact analysis.
+```
+
+## 3. Process documentation
 
 | Документ | Нотация/тип |
 |---|---|
@@ -27,7 +47,7 @@
 | `processes/KB_AND_MODEL_LIFECYCLE.md` | Lifecycle KB / Domain Profile / Models / Routing |
 | `processes/RACI_AND_KPI.md` | RACI / KPI / SLA/SLO / производственная статистика |
 
-## 3. Схемы и машинные контракты
+## 4. Схемы и машинные контракты
 
 | Артефакт | Назначение |
 |---|---|
@@ -36,7 +56,7 @@
 | `profiles/narrative.v1.json` | Первый Domain Profile |
 | `openapi/analyst-core.v1.yaml` | OpenAPI Analyst Core |
 
-## 4. Universal / Analyst Meta Knowledge Base
+## 5. Universal / Analyst Meta Knowledge Base
 
 | Артефакт | Назначение |
 |---|---|
@@ -77,16 +97,20 @@ DOMAIN KB
 facts / claims / entities / relations / events / hypotheses
 ```
 
-## 5. Связь уровней документации
+## 6. Связь уровней документации
 
 ```text
 IDEA / PRODUCT GOAL
         ↓
+DESIGN BASELINE / VARIANTS / DDR
+        ↓
 ANALYST_CORE_TZ
         ↓
-C4_ARCHITECTURE
+IDEF0 / BPMN
         ↓
-PROCESS MAP / IDEF0 / BPMN
+KNOWLEDGE / DATA MODEL
+        ↓
+C4_ARCHITECTURE
         ↓
 METHODOLOGY_AND_STANDARDS
         ↓
@@ -105,26 +129,27 @@ CODE / TESTS / TELEMETRY
 DEVELOPMENT_JOURNAL
 ```
 
-## 6. Правило актуальности
+## 7. Правило актуальности
 
 Изменение бизнес-процесса, аналитического метода или KB считается завершённым только если синхронно обновлены, где применимо:
 
-1. процессная карта/IDEF0/BPMN;
-2. API contract;
-3. JSON Schema;
-4. Domain Profile;
-5. Method Card / Meta-KB;
-6. `source_registry.v1.json`, если появился новый внешний источник;
-7. точный source locator для `SOURCE_DERIVED`;
-8. `PHYSICAL_MAP.md`, если появился/перемещён физический файл;
-9. UI/process-state representation;
-10. tests;
-11. telemetry/event model;
-12. security controls;
-13. changelog/version;
-14. `DEVELOPMENT_JOURNAL.md` с причиной, origin class, путями и review status.
+1. `DESIGN_BASELINE.md` / `DESIGN_VARIANTS_REGISTER.md` / DDR, если затронуто проектное решение;
+2. процессная карта/IDEF0/BPMN;
+3. API contract;
+4. JSON Schema;
+5. Domain Profile;
+6. Method Card / Meta-KB;
+7. `source_registry.v1.json`, если появился новый внешний источник;
+8. точный source locator для `SOURCE_DERIVED`;
+9. `PHYSICAL_MAP.md`, если появился/перемещён физический файл;
+10. UI/process-state representation;
+11. tests;
+12. telemetry/event model;
+13. security controls;
+14. changelog/version;
+15. `DEVELOPMENT_JOURNAL.md` с причиной, origin class, путями и review status.
 
-## 7. Правило происхождения данных
+## 8. Правило происхождения данных
 
 Нельзя писать «взято из ГОСТа/ISO/книги», пока не зафиксированы:
 
@@ -141,12 +166,17 @@ review_status
 
 Если точный locator не проверен, запись остаётся `draft / pending_verification`.
 
-## 8. Следующий этап реализации
+## 9. Следующий этап реализации
 
-Следующий слой после документационного governance:
+Следующий слой после design/documentation governance:
 
 ```text
-Meta/Universal KB Loader
+Canonical Knowledge/Data Model
+→ Claim/Evidence/Source contracts
+→ Method/Algorithm lifecycle contracts
+→ Polygon contracts
+→ Security knowledge gates
+→ Meta/Universal KB Loader
 → Source/Method Registry API
 → Analyst Planner
 → KB Query / Evidence Retrieval

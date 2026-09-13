@@ -34,21 +34,65 @@ jobs:
       - name: Build
         run: npm run build
 
-      - name: Smoke test production health
+      - name: Smoke test production health and trace
         env:
           PORT: '8080'
           HOST: '0.0.0.0'
         run: |
+          set -euo pipefail
           npm start > /tmp/dz17-server.log 2>&1 &
           SERVER_PID=$!
           trap 'kill $SERVER_PID || true' EXIT
+
+          echo '[TEST] waiting for /api/health'
+          READY=0
           for i in $(seq 1 30); do
-            if curl --fail --silent --show-error http://127.0.0.1:8080/api/health; then
-              echo
-              echo 'DZ-17 production health check passed.'
-              exit 0
+            if curl --fail --silent --show-error http://127.0.0.1:8080/api/health >/tmp/health.json; then
+              READY=1
+              break
             fi
             sleep 1
           done
-          cat /tmp/dz17-server.log
-          exit 1
+          if [ "$READY" != '1' ]; then
+            cat /tmp/dz17-server.log
+            exit 1
+          fi
+          cat /tmp/health.json
+          echo
+
+          TRACE_ID="CI-TRACE-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          TEST_ID="CI-KF-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          echo "[TRACE] trace_id=$TRACE_ID test_id=$TEST_ID"
+
+          echo '[1/4] POST /api/v1/trace test marker'
+          curl --fail --silent --show-error \
+            -X POST http://127.0.0.1:8080/api/v1/trace \
+            -H 'content-type: application/json' \
+            -H "x-trace-id: $TRACE_ID" \
+            --data "{\"stage\":\"CI\",\"action\":\"smoke.start\",\"status\":\"start\",\"test_id\":\"$TEST_ID\",\"details\":{\"workflow\":\"dz17-check\"}}"
+          echo
+
+          echo '[2/4] GET /api/v1/kf/sources with same trace id'
+          curl --fail --silent --show-error \
+            -H "x-trace-id: $TRACE_ID" \
+            http://127.0.0.1:8080/api/v1/kf/sources
+          echo
+
+          echo '[3/4] POST completion marker'
+          curl --fail --silent --show-error \
+            -X POST http://127.0.0.1:8080/api/v1/trace \
+            -H 'content-type: application/json' \
+            -H "x-trace-id: $TRACE_ID" \
+            --data "{\"stage\":\"CI\",\"action\":\"smoke.complete\",\"status\":\"ok\",\"test_id\":\"$TEST_ID\"}"
+          echo
+
+          echo '[4/4] GET trace ledger for this test'
+          curl --fail --silent --show-error \
+            "http://127.0.0.1:8080/api/v1/trace?test_id=$TEST_ID&limit=100" \
+            | tee /tmp/kf-trace.json
+          echo
+          grep -q "$TEST_ID" /tmp/kf-trace.json
+
+          echo '[SERVER TRACE]'
+          grep '\[TRACE\]' /tmp/dz17-server.log || true
+          echo 'DZ-17 production health + Knowledge Factory trace smoke passed.'

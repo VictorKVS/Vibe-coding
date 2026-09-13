@@ -1,0 +1,65 @@
+{
+  "schema_version": "alina-translation-terminology-v1",
+  "registry_id": "KB-TRANSLATION-TERMS",
+  "version": 1,
+  "status": "active",
+  "origin_class": "PROJECT_DECISION",
+  "description": "Единый реестр терминов для ALINA Translator. Записи со status=proposed являются подсказками и не считаются утвержденной терминологией до review.",
+  "terms": [
+    {
+      "term_id": "TERM-EN-RU-0001",
+      "source_language": "en",
+      "target_language": "ru",
+      "source_term": "threat actor",
+      "preferred_target": "субъект угрозы",
+      "allowed_variants": ["актор угрозы"],
+      "domain": "cybersecurity",
+      "status": "proposed",
+      "notes": "Предпочтительный вариант зависит от контекста и принятой терминологии проекта."
+    },
+    {
+      "term_id": "TERM-EN-RU-0002",
+      "source_language": "en",
+      "target_language": "ru",
+      "source_term": "provenance",
+      "preferred_target": "происхождение данных",
+      "allowed_variants": ["провенанс"],
+      "domain": "knowledge_management",
+      "status": "proposed",
+      "notes": "В техническом контексте допустим термин «провенанс», если он уже закреплен в проекте."
+    },
+    {
+      "term_id": "TERM-EN-RU-0003",
+      "source_language": "en",
+      "target_language": "ru",
+      "source_term": "retrieval",
+      "preferred_target": "поиск",
+      "allowed_variants": ["извлечение"],
+      "domain": "rag",
+      "status": "proposed",
+      "notes": "Выбор зависит от смысла: поиск релевантного контекста либо извлечение данных."
+    },
+    {
+      "term_id": "TERM-EN-RU-0004",
+      "source_language": "en",
+      "target_language": "ru",
+      "source_term": "knowledge graph",
+      "preferred_target": "граф знаний",
+      "allowed_variants": [],
+      "domain": "knowledge_management",
+      "status": "proposed",
+      "notes": ""
+    },
+    {
+      "term_id": "TERM-EN-RU-0005",
+      "source_language": "en",
+      "target_language": "ru",
+      "source_term": "control",
+      "preferred_target": "мера защиты",
+      "allowed_variants": ["контроль", "мера контроля"],
+      "domain": "cybersecurity",
+      "status": "proposed",
+      "notes": "Нельзя применять вне контекста ИБ автоматически: слово control многозначно."
+    }
+  ]
+}

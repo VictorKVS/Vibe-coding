@@ -56,6 +56,7 @@ export function kbPolicyDecision(state:RuntimePolicyState,kbId:string):PolicyDec
 export function routeOverrideForTask(state:RuntimePolicyState,task:string){return String(state.routeOverrides?.[task]||'').trim();}
 
 export function promptIdForTask(task:string){
+ if(task==='translation')return 'PROMPT-TRANSLATOR';
  if(task==='kb_extract')return 'PROMPT-KB-EXTRACT';
  if(task==='kb_validate')return 'PROMPT-KB-VALIDATE';
  return 'PROMPT-BASE-ALINA';
@@ -65,6 +66,7 @@ export function kbRefsForTask(task:string,context?:Record<string,unknown>):strin
  const explicit=Array.isArray(context?.kbRefs)?context?.kbRefs.filter((x):x is string=>typeof x==='string'&&Boolean(x.trim())).map(x=>x.trim()):[];
  if(explicit.length)return Array.from(new Set(explicit));
  const workflow=typeof context?.workflow==='string'?context.workflow:'';
+ if(task==='translation'||workflow==='translation')return ['KB-TRANSLATION-TERMS','KB-TRANSLATION-MEMORY'];
  if(workflow==='idea_to_knowledge_base'||workflow==='kb_validation')return ['KB-FOUNDATION','KB-METHODS','KB-NARRATIVE'];
  if(task==='kb_extract'||task==='kb_validate')return ['KB-FOUNDATION','KB-METHODS'];
  return [];

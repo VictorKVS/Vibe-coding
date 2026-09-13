@@ -1,0 +1,9 @@
+{
+  "schema_version": "alina-translation-memory-v1",
+  "memory_id": "KB-TRANSLATION-MEMORY",
+  "version": 1,
+  "status": "active",
+  "origin_class": "PROJECT_DECISION",
+  "description": "Translation Memory для повторного использования ранее проверенных переводов. В Git хранится только структура и безопасные утвержденные пары; большие/закрытые корпуса должны храниться во внешнем локальном хранилище.",
+  "segments": []
+}

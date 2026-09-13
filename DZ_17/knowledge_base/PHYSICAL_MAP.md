@@ -20,6 +20,9 @@
 | EXISTS | `DZ_17/knowledge_base/analyst_method_cards.v1.json` | карточки аналитических методов и `source_refs` | да, для текущих Method Cards |
 | EXISTS | `DZ_17/knowledge_base/trace_contract.v1.json` | контракт аудируемой трассировки действий | да, для trace contract |
 | EXISTS | `DZ_17/knowledge_base/open_access_library.v1.json` | перечень легально доступных открытых материалов | реестр доступа |
+| EXISTS | `DZ_17/knowledge_base/translation_terminology.v1.json` | единый реестр терминологии переводчика | **да, для translation terminology** |
+| EXISTS | `DZ_17/knowledge_base/translation_memory.v1.json` | Translation Memory проверенных сегментов | **да, для TM структуры** |
+| EXISTS | `DZ_17/knowledge_base/translation_benchmark.v1.json` | версия корпуса/метрик сравнения переводчиков | benchmark contract |
 | EXISTS | `DZ_17/knowledge_base/algorithm_decision_card.schema.json` | схема карточки алгоритмического решения | schema source |
 | EXISTS | `DZ_17/knowledge_base/DECISION_AND_TRAINING_FRAMEWORK.md` | правила выбора решений, обучения и review | методика проекта |
 | EXISTS | `DZ_17/knowledge_base/ANALYST_PROFESSOR_ROLE.md` | роль старшего/профессорского Analyst | role specification |
@@ -48,6 +51,7 @@
 | Статус | Путь | Назначение |
 |---|---|---|
 | EXISTS | `DZ_17/profiles/narrative.v1.json` | первый Domain Profile для narrative |
+| EXISTS | `DZ_17/profiles/translator.v1.json` | ROLE-TRANSLATOR: режимы exact/technical/reader, RAG и benchmark policy |
 | EXISTS | `DZ_17/schemas/candidate-knowledge-package.schema.json` | пакет кандидатов знаний для review |
 | EXISTS | `DZ_17/schemas/domain-profile.schema.json` | общий контракт Domain Profile |
 | EXISTS | `DZ_17/openapi/analyst-core.v1.yaml` | API Analyst Core |
@@ -57,6 +61,7 @@
 ```text
 DZ_17/profiles/
 ├── narrative.v1.json
+├── translator.v1.json
 ├── osint.v1.json                 # PLANNED
 ├── cybersecurity.v1.json         # PLANNED
 ├── regulatory.v1.json            # PLANNED
@@ -73,15 +78,18 @@ DZ_17/profiles/
 | Статус | Путь | Назначение |
 |---|---|---|
 | EXISTS | `DZ_17/app/app/kb-analyst.tsx` | UI/logic текущего KB Analyst MVP |
-| EXISTS | `DZ_17/app/app/api/llm/route.ts` | LLM provider/router layer |
+| EXISTS | `DZ_17/app/app/api/llm/route.ts` | LLM provider/router layer + task `translation` |
+| EXISTS | `DZ_17/app/lib/translator-rag.ts` | deterministic terminology retrieval + exact Translation Memory retrieval |
+| EXISTS | `DZ_17/app/lib/runtime-policy.ts` | prompt/KB/model policy enforcement для runtime |
 | EXISTS | `DZ_17/app/app/use-llm.ts` | клиентский LLM hook |
 | EXISTS | `DZ_17/app/app/model-switcher.tsx` | UI выбора модели |
 | EXISTS | `DZ_17/app/app/research-lab.tsx` | research UI |
 | EXISTS | `DZ_17/app/app/narrative-lab.tsx` | narrative specialization UI |
 | EXISTS | `DZ_17/app/scripts/run-with-models.mjs` | запуск локальных моделей вместе с приложением |
+| EXISTS | `DZ_17/app/scripts/configure-existing-model-zoo.ps1` | регистрация существующего FATHER_MODELS без копирования весов и назначение specialist routes |
 | EXISTS | `DZ_17/app/app/admin-security-console.tsx` | единый side-panel Control Center для Admin и ИБ/AI Security |
 | EXISTS | `DZ_17/app/app/admin-security-console.css` | стили боковой шестерёнки и Control Center |
-| EXISTS | `DZ_17/app/app/api/admin/config/route.ts` | безопасные read-only метаданные моделей/промтов/KB/DB/security без secret values |
+| EXISTS | `DZ_17/app/app/api/admin/config/route.ts` | безопасные метаданные моделей/промтов/KB/DB/security + route override |
 | EXISTS | `DZ_17/app/app/neural-hud.tsx` | HUD + физическая точка монтирования кнопки `SYS` |
 
 Код не является местом хранения канонического нормативного знания. Он должен получать правила из KB/профилей/контрактов.
