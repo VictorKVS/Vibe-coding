@@ -1,7 +1,8 @@
 param(
   [ValidateSet('qwen','gemma','all')]
   [string]$Models = 'all',
-  [switch]$SkipRuntime
+  [switch]$SkipRuntime,
+  [switch]$ForceDownload
 )
 
 $ErrorActionPreference = 'Stop'
@@ -9,7 +10,24 @@ $AppDir = Split-Path -Parent $PSScriptRoot
 $ModelsDir = Join-Path $AppDir 'models'
 New-Item -ItemType Directory -Force -Path $ModelsDir | Out-Null
 
-Write-Host "[ALINA] Local model zoo setup" -ForegroundColor Cyan
+$existingZoo = @(
+  $env:FATHER_MODELS_ROOT,
+  'F:\FATHER_MODELS',
+  'D:\FATHER_MODELS',
+  'E:\FATHER_MODELS',
+  'G:\FATHER_MODELS'
+) | Where-Object { $_ -and (Test-Path $_) } | Select-Object -First 1
+
+if ($existingZoo -and -not $ForceDownload) {
+  Write-Host "[ALINA] Existing centralized model zoo detected: $existingZoo" -ForegroundColor Green
+  Write-Host "[ALINA] Nothing will be downloaded or copied." -ForegroundColor Green
+  Write-Host "[ALINA] Use the existing-zoo registrar instead:" -ForegroundColor Cyan
+  Write-Host "  powershell -ExecutionPolicy Bypass -File .\scripts\configure-existing-model-zoo.ps1 -ZooRoot `"$existingZoo`" -WriteEnv"
+  Write-Host "[ALINA] Pass -ForceDownload only if you intentionally want extra duplicate weights." -ForegroundColor Yellow
+  exit 0
+}
+
+Write-Host "[ALINA] Fallback local model downloader" -ForegroundColor Cyan
 Write-Host "[ALINA] app:    $AppDir"
 Write-Host "[ALINA] models: $ModelsDir"
 
@@ -38,7 +56,6 @@ function Download-Gguf([string]$Url,[string]$Name,[string]$Label) {
 }
 
 if ($Models -eq 'qwen' -or $Models -eq 'all') {
-  # Official Qwen GGUF, Apache-2.0. Q4_K_M is about 2.5 GB.
   Download-Gguf `
     'https://huggingface.co/Qwen/Qwen3-4B-GGUF/resolve/main/Qwen3-4B-Q4_K_M.gguf?download=true' `
     'Qwen3-4B-Q4_K_M.gguf' `
@@ -46,7 +63,6 @@ if ($Models -eq 'qwen' -or $Models -eq 'all') {
 }
 
 if ($Models -eq 'gemma' -or $Models -eq 'all') {
-  # ggml-org conversion of Gemma 3 4B IT, Gemma license. Q4_K_M is about 2.49 GB.
   Download-Gguf `
     'https://huggingface.co/ggml-org/gemma-3-4b-it-GGUF/resolve/main/gemma-3-4b-it-Q4_K_M.gguf?download=true' `
     'gemma-3-4b-it-Q4_K_M.gguf' `
@@ -55,17 +71,8 @@ if ($Models -eq 'gemma' -or $Models -eq 'all') {
 
 Write-Host ""
 Write-Host "[ALINA] Local GGUF inventory:" -ForegroundColor Cyan
-Get-ChildItem $ModelsDir -Filter '*.gguf' | Select-Object Name,@{n='SizeGB';e={[math]::Round($_.Length/1GB,2)}} | Format-Table -AutoSize
+Get-ChildItem $ModelsDir -Filter '*.gguf' |
+  Select-Object Name,@{n='SizeGB';e={[math]::Round($_.Length/1GB,2)}} |
+  Format-Table -AutoSize
 
-Write-Host "[ALINA] Recommended .env.local local section:" -ForegroundColor Cyan
-Write-Host 'LLAMA_AUTOSTART=1'
-Write-Host 'LLAMA_SERVER_BIN=llama-server.exe'
-Write-Host 'LLAMA_MODELS_DIR=models'
-Write-Host 'LLAMA_HOST=127.0.0.1'
-Write-Host 'LLAMA_PORT=8081'
-Write-Host 'LLAMA_BASE_URL=http://127.0.0.1:8081'
-Write-Host 'LLAMA_CTX_SIZE=8192'
-Write-Host 'LLAMA_PARALLEL=1'
-Write-Host 'LLAMA_GPU_LAYERS=99'
-Write-Host ""
 Write-Host "[ALINA] Restart with: npm run dev:models" -ForegroundColor Green
