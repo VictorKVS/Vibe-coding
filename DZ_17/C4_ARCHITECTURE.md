@@ -1,31 +1,39 @@
-# ALINA / Universal Analyst Core — C4 Architecture
+# ALINA Knowledge Factory / Universal Analyst Core — C4 Architecture
+
+Version: `0.2`  
+Status: `SELECTED / EVOLVING`
 
 ## 0. Назначение
 
-Этот документ фиксирует архитектуру Universal Analyst Core в модели C4 и является переходом от генерального ТЗ к API-контрактам.
+C4 отвечает на вопрос **где и какими программными границами реализуются функции IDEF0 A1–A9**.
 
-Ключевой принцип:
+Функциональная master-модель: `processes/IDEF0_MODEL.md`.  
+Последовательность/роли: `processes/BPMN_MAIN_PROCESS.md`.  
+Data model: `design/CANONICAL_KNOWLEDGE_DATA_MODEL.md`.
+
+Ключевой поток:
 
 ```text
-RAW DATA
-→ TOOL ZOO
-→ OBSERVATIONS / EVIDENCE
-→ ANALYSIS ZOO
-→ CANDIDATE KNOWLEDGE PACKAGE
-→ GPT SENIOR ANALYST
-→ HUMAN REVIEW when required
-→ VERIFIED KNOWLEDGE
-→ DOMAIN KB
-→ EXPERIENCE STORE
+SOURCE
+→ STRUCTURE
+→ SEMANTIC OBJECTS
+→ PRIOR ART / EVIDENCE
+→ METHOD / ALGORITHM
+→ POLYGON
+→ SECURITY GATE
+→ CANONICAL KB
+→ MINIMAL SUFFICIENT RAG
+→ FEEDBACK / NEW VERSION
 ```
 
-В C4 используем:
+P0 архитектурный принцип:
 
-- Level 1 — System Context;
-- Level 2 — Containers;
-- Level 3 — Components;
-- Level 4 — code-level boundaries/модули ключевых контейнеров;
-- Deployment — отдельная схема развёртывания на текущем ПК.
+```text
+LOGICAL BOUNDARIES NOW
+PHYSICAL MICROSERVICES ONLY WHEN MEASUREMENTS REQUIRE THEM
+```
+
+То есть на первом этапе строим модульный монолит/несколько локальных процессов, а не заранее размножаем сервисы.
 
 ---
 
@@ -33,402 +41,417 @@ RAW DATA
 
 ```mermaid
 flowchart LR
-    U[Пользователь / Аналитик] -->|создаёт кейс, загружает материалы, review| A[ALINA Universal Analyst Core]
+    U[Пользователь / Аналитик] -->|материалы, задачи, review| A[ALINA Knowledge Factory]
 
-    S1[Документы / файлы] -->|PDF DOCX TXT MD XLSX PPTX| A
-    S2[Изображения] -->|JPG PNG WEBP| A
-    S3[Аудио / Видео] -->|audio video| A
-    S4[OSINT / Web / внешние источники] -->|source material| A
-
-    A -->|Candidate Knowledge Package| GPT[GPT Senior Analyst]
-    GPT -->|accept / reject / correct / questions| A
-
-    A -->|deep review / fallback / second opinion| GIGA[GigaChat]
-    GIGA -->|analysis result| A
+    SRC[Books / Papers / Laws / Standards / Web / Media] -->|source material| A
+    SCI[Scientific & Professional Sources] <-->|prior art / evidence discovery| A
 
     A -->|human escalation| H[Human Reviewer]
-    H -->|approve / reject / edit / recheck| A
+    H -->|approve / reject / edit| A
 
-    A -->|verified records| KB[Domain Knowledge Bases]
-    KB -->|RAG / graph / query context| A
+    A <-->|LLM execution| EXT[External LLM providers]
+    A <-->|local inference| LOC[Local Model Zoo / llama.cpp]
+
+    A -->|approved knowledge / methods / algorithms| AG[ALINA Agents / Human users]
+    AG -->|feedback / corrections / telemetry| A
 ```
 
-## Ответственность системы
+ALINA отвечает за provenance, canonical identity, evidence graph, algorithm lifecycle, polygon, security admission и controlled delivery.
 
-ALINA отвечает за:
-
-- регистрацию источников;
-- сохранение оригинала и provenance;
-- декомпозицию и нормализацию;
-- Tool Zoo;
-- Evidence Layer;
-- Analysis Zoo;
-- Candidate Knowledge Package;
-- взаимодействие с GPT Senior Analyst;
-- human review workflow;
-- запись verified knowledge;
-- Experience/Correction Store;
-- Model Manager;
-- scheduler и telemetry.
-
-ALINA **не** должна скрыто повышать статус `observation/claim/hypothesis` до `verified fact`.
+ALINA не принимает model output за независимое доказательство и не позволяет retrieved content менять control-plane конфигурацию.
 
 ---
 
-# 2. C4 Level 2 — Containers
+# 2. C4 Level 2 — Logical Containers
 
 ```mermaid
 flowchart TB
-    UI[Web UI\nNext.js / vinext]
-    API[Analyst API Gateway]
-    ING[Ingestion Service]
-    ORCH[Analysis Orchestrator]
-    TOOL[Tool Zoo]
-    AZ[Analysis Zoo]
-    PKG[Candidate Package Builder]
-    VERIFY[Verification Service]
-    MM[Model Manager]
+    UI[Web UI]
+    API[API + Orchestrator]
+    SS[Source & Structure]
+    SE[Semantic & Evidence]
+    AE[Method & Algorithm Engineering]
+    POLY[Polygon / QA]
+    SEC[Security Gate / Algorithm Firewall]
+    RET[Retrieval & Delivery]
+    MM[Model Gateway / Router]
     Q[Queue / Scheduler]
     TEL[Telemetry / Audit]
-    DB[(PostgreSQL + pgvector)]
-    OBJ[(Object/File Storage)]
-    GPT[GPT Senior Analyst]
-    GIGA[GigaChat API]
-    LOCAL[llama.cpp local runtime]
+
+    DB[(PostgreSQL + pgvector\nCanonical Knowledge Store)]
+    OBJ[(Object Storage\nOriginals / cold artifacts)]
+    CTRL[(Protected Control Store\npolicies / approved configs)]
+
+    LOC[llama.cpp / Local Zoo]
+    EXT[External LLMs]
+    WEB[Scientific/Web sources]
 
     UI --> API
-    API --> ING
-    API --> ORCH
-    API --> VERIFY
-    API --> MM
+    API --> SS
+    API --> SE
+    API --> AE
+    API --> RET
 
-    ING --> OBJ
-    ING --> DB
-    ING --> Q
+    SS --> OBJ
+    SS --> DB
+    SS --> Q
 
-    Q --> TOOL
-    Q --> AZ
-    Q --> VERIFY
+    SE --> DB
+    SE --> WEB
+    SE --> MM
 
-    TOOL --> DB
-    TOOL --> OBJ
-    TOOL --> ORCH
+    AE --> DB
+    AE --> MM
+    AE --> POLY
 
-    ORCH --> AZ
-    AZ --> DB
-    AZ --> PKG
+    POLY --> DB
+    POLY --> SEC
+    POLY --> MM
 
-    PKG --> DB
-    PKG --> VERIFY
+    SEC --> DB
+    SEC --> CTRL
 
-    VERIFY --> GPT
-    VERIFY --> GIGA
-    VERIFY --> DB
+    RET --> DB
+    RET --> OBJ
+    RET --> CTRL
 
-    MM --> LOCAL
-    MM --> GIGA
-    MM --> GPT
-    ORCH --> MM
-    AZ --> MM
-    VERIFY --> MM
+    MM --> LOC
+    MM --> EXT
+
+    Q --> SS
+    Q --> SE
+    Q --> POLY
 
     TEL -.-> API
-    TEL -.-> ING
-    TEL -.-> TOOL
-    TEL -.-> AZ
-    TEL -.-> VERIFY
-    TEL -.-> MM
+    TEL -.-> SS
+    TEL -.-> SE
+    TEL -.-> AE
+    TEL -.-> POLY
+    TEL -.-> SEC
+    TEL -.-> RET
 ```
 
-## Контейнеры
+## 2.1 Container responsibilities
 
-| Container | Назначение | Принимает | Отдаёт |
-|---|---|---|---|
-| Web UI | пользовательская работа | actions/forms/files | REST calls, review decisions |
-| Analyst API Gateway | единая входная точка | HTTP/JSON/multipart | normalized API responses |
-| Ingestion Service | регистрация и разбор источника | SourceCreate, file refs | Source, Capture, Fragment jobs |
-| Analysis Orchestrator | строит план анализа | case/profile/source refs | ToolTask/AnalysisTask/PackageTask |
-| Tool Zoo | извлекает observations | source/fragment refs | Observation/Evidence candidates |
-| Analysis Zoo | строит кандидаты знаний | evidence refs/profile | entity/claim/fact/relation/event/... candidates |
-| Candidate Package Builder | компактный пакет для Senior | candidates + provenance | CandidateKnowledgePackage |
-| Verification Service | Senior/Human review | package/review task | ReviewDecision/Corrections/Questions |
-| Model Manager | модель/провайдер/маршрут | role/task/capability | model execution/result/trace |
-| Queue/Scheduler | приоритеты и ресурсы | jobs | assigned jobs/status |
-| Storage Layer | source of truth | domain records | DB/object records |
-| Telemetry/Audit | трассировка | events/metrics | dashboards/logs/ETA |
+| Container | IDEF0 | Responsibility |
+|---|---|---|
+| Web UI | all | управление задачами, review, trace, карты знаний |
+| API + Orchestrator | A1–A9 | jobs, state transitions, routing, contracts |
+| Source & Structure | A1–A2 | Source/Capture/hash/security intake, parsing, StructureNode/SourceSpan |
+| Semantic & Evidence | A3–A4 | Claim/Concept, prior art, Evidence graph, contradiction, synthesis |
+| Method & Algorithm Engineering | A5 | Method/Algorithm/ImplementationOption и trace каждого шага |
+| Polygon / QA | A6 | benchmark, normal/boundary/what-if/adversarial scenarios |
+| Security Gate | A1/A7 | knowledge security status, algorithm firewall, allow/restrict/hold/reject |
+| Retrieval & Delivery | A8 | minimal sufficient evidence, RAG escalation, localized projection |
+| Model Gateway | support | local/cloud routing, provider isolation, model trace |
+| Queue/Scheduler | support | long-running work, retries, resource limits |
+| Telemetry/Audit | A9/support | immutable-ish events, metrics, regression/feedback |
+| PostgreSQL + pgvector | A1–A9 | canonical data model + graph projection + vector indexes |
+| Object Storage | A1–A2/A8 | original captures/cold artifacts; content-addressed dedup |
+| Protected Control Store | A5–A8 | approved runtime config/policies/tool permissions; no RAG write path |
 
 ---
 
-# 3. C4 Level 3 — Components
+# 3. P0 physical choice: modular monolith
 
-## 3.1 Analysis Orchestrator
+Logical container does not automatically mean separate deployable service.
 
-```mermaid
-flowchart LR
-    PLAN[Plan Builder] --> ROUTE[Role Router]
-    ROUTE --> RES[Resource Scheduler]
-    RES --> EXEC[Task Executor]
-    EXEC --> MERGE[Result Merger]
-    MERGE --> QC[Quality Gate]
-    QC --> NEXT[Next-Step Planner]
-    NEXT --> ROUTE
-```
-
-### Компоненты
-
-- `PlanBuilder` — строит DAG анализа по Domain Profile;
-- `RoleRouter` — определяет аналитика/инструмент;
-- `ResourceScheduler` — CPU/GPU/EXTERNAL;
-- `TaskExecutor` — выполняет ToolTask/AnalysisTask;
-- `ResultMerger` — объединяет результаты, не скрывая disagreement;
-- `QualityGate` — проверяет schema/provenance/confidence;
-- `NextStepPlanner` — решает: продолжать, эскалировать, собрать package.
-
-## 3.2 Tool Zoo
-
-```mermaid
-flowchart TB
-    SRC[Source/Fragment] --> PARSE[Parsers]
-    SRC --> OCR[OCR]
-    SRC --> STT[STT]
-    SRC --> META[Metadata / EXIF]
-    SRC --> VISION[Vision Observation]
-    PARSE --> NORM[Normalizer]
-    OCR --> NORM
-    STT --> NORM
-    META --> NORM
-    VISION --> NORM
-    NORM --> OBS[Observation Records]
-    OBS --> EMB[Embeddings / Rerank]
-    OBS --> EVID[Evidence Candidates]
-```
-
-Tool Zoo выдаёт **Observation**, а не knowledge fact.
-
-## 3.3 Analysis Zoo
-
-```mermaid
-flowchart TB
-    E[Evidence Set] --> EN[Entity Analyst]
-    E --> CL[Claim Analyst]
-    E --> FA[Fact Candidate Analyst]
-    E --> RE[Relation Analyst]
-    E --> EV[Event Analyst]
-    E --> TL[Timeline Analyst]
-    E --> CA[Cause/Effect Analyst]
-    E --> KS[Knowledge-State Analyst]
-    E --> DI[Dialogue Analyst]
-    E --> VI[Visual/Continuity Analyst]
-    E --> HY[Hypothesis Analyst]
-    E --> CO[Contradiction Analyst]
-    E --> SR[Source Reliability Analyst]
-
-    EN --> AGG[Candidate Aggregator]
-    CL --> AGG
-    FA --> AGG
-    RE --> AGG
-    EV --> AGG
-    TL --> AGG
-    CA --> AGG
-    KS --> AGG
-    DI --> AGG
-    VI --> AGG
-    HY --> AGG
-    CO --> AGG
-    SR --> AGG
-
-    AGG --> PKG[Candidate Package Builder]
-```
-
-## 3.4 Verification Service
-
-```mermaid
-flowchart LR
-    P[Candidate Package] --> PRE[Pre-check]
-    PRE --> SEN[GPT Senior Review]
-    SEN --> D{Decision}
-    D -->|accept| A[Accepted candidates]
-    D -->|correct| C[Corrections]
-    D -->|reject| R[Rejected candidates]
-    D -->|ask_more| Q[Research gaps]
-    D -->|human_required| H[Human Review Queue]
-    H --> HF[Human Decision]
-    A --> PUB[KB Publisher]
-    C --> PUB
-    HF --> PUB
-    C --> EXP[Experience Store]
-    R --> EXP
-    HF --> EXP
-```
-
----
-
-# 4. C4 Level 4 — Code boundaries
-
-P0 не фиксирует конкретные классы навсегда, но задаёт модульные границы.
+P0:
 
 ```text
-analyst-core/
-├── api/
-│   ├── sources.py
-│   ├── cases.py
-│   ├── jobs.py
-│   ├── analysis.py
-│   ├── reviews.py
-│   ├── kb.py
-│   └── models.py
-├── ingest/
-│   ├── registry.py
-│   ├── capture.py
-│   ├── chunking.py
-│   └── adapters/
-├── tools/
-│   ├── parser/
-│   ├── ocr/
-│   ├── stt/
-│   ├── metadata/
-│   ├── vision/
-│   └── embeddings/
-├── analysis/
-│   ├── orchestrator.py
-│   ├── router.py
-│   ├── merger.py
-│   ├── entity.py
-│   ├── claim_fact.py
-│   ├── relation.py
-│   ├── event_timeline.py
-│   ├── contradiction.py
-│   ├── hypothesis.py
-│   └── domain/
-├── review/
-│   ├── package_builder.py
-│   ├── senior_client.py
-│   ├── decision_engine.py
-│   └── human_queue.py
-├── kb/
-│   ├── publisher.py
-│   ├── provenance.py
-│   ├── versioning.py
-│   └── query.py
-├── experience/
-│   ├── corrections.py
-│   └── examples.py
-├── models/
-│   ├── manager.py
-│   ├── llama_cpp.py
-│   ├── gigachat.py
-│   └── openai.py
-├── scheduler/
-│   ├── queue.py
-│   └── resources.py
+ALINA WEB/RUNTIME PROCESS
+├── api-orchestrator module
+├── source-structure module
+├── semantic-evidence module
+├── algorithm-engineering module
+├── retrieval module
+├── security-policy adapter
+└── telemetry adapter
+
+SEPARATE LOCAL PROCESSES
+├── llama.cpp router
+├── PostgreSQL + pgvector
+└── optional polygon workers
+
+STORAGE
+├── PostgreSQL
+└── local/object filesystem
+```
+
+Выносить модуль в отдельный process/service будем при измеренном основании: изоляция безопасности, отдельный scaling profile, ресурсный конфликт, latency/SLO или независимый lifecycle.
+
+---
+
+# 4. C4 Level 3 — Components
+
+## 4.1 Source & Structure
+
+```mermaid
+flowchart LR
+    IN[Source Intake] --> HASH[Capture + Hash]
+    HASH --> TRIAGE[Security Intake Triage]
+    TRIAGE --> PARSE[Parser/OCR/STT/Vision adapters]
+    PARSE --> STR[Structure Reconstructor]
+    STR --> SPAN[SourceSpan Registry]
+    SPAN --> QC[Structure Quality Gate]
+```
+
+Не создаёт canonical semantic knowledge.
+
+## 4.2 Semantic & Evidence
+
+```mermaid
+flowchart TB
+    SP[SourceSpan refs] --> CLAIM[Claim/Concept Extractor]
+    CLAIM --> RESOLVE[Canonical Resolver / Dedup]
+    RESOLVE --> PA[Prior-Art Planner]
+    PA --> DISC[Evidence Discovery]
+    DISC --> MAP[Evidence Mapper]
+    MAP --> CONTRA[Contradiction / Limitation Analysis]
+    CONTRA --> SYN[Evidence Synthesis]
+    SYN --> GAP[Gap / Open Question Detector]
+```
+
+Принцип: новый canonical object создаётся только после resolve/search existing.
+
+## 4.3 Method & Algorithm Engineering
+
+```mermaid
+flowchart LR
+    K[Claims + Evidence Synthesis] --> M[Method Builder]
+    M --> A[Algorithm Builder]
+    A --> T[Step Trace Binder]
+    T --> ALT[Alternatives / Applicability]
+    ALT --> INV[Invariants / Parameters]
+    INV --> CAND[Algorithm Candidate Version]
+```
+
+Каждый значимый step должен иметь evidence/requirement/project-decision origin.
+
+## 4.4 Polygon / QA
+
+```mermaid
+flowchart TB
+    ALG[Algorithm Candidate] --> GEN[Scenario Generator]
+    GEN --> N[Normal]
+    GEN --> B[Boundary]
+    GEN --> W[What-if]
+    GEN --> A[Adversarial]
+    N --> RUN[Scenario Runner]
+    B --> RUN
+    W --> RUN
+    A --> RUN
+    RUN --> INV[Invariant Evaluator]
+    INV --> REP[Benchmark / Scenario Report]
+```
+
+## 4.5 Security Gate / Algorithm Firewall
+
+```mermaid
+flowchart LR
+    OBJ[Knowledge/Algorithm Candidate] --> KG[Knowledge Security Gate]
+    KG --> AF[Algorithm Firewall Review]
+    AF --> P[Parameter / Policy Integrity]
+    P --> D{Decision}
+    D -->|allow| OK[SECURITY_APPROVED]
+    D -->|restrict| R[SECURITY_RESTRICTED]
+    D -->|hold| H[SECURITY_HOLD]
+    D -->|reject| X[SECURITY_REJECTED]
+```
+
+Security plane может блокировать использование, но не переписывает предметное знание.
+
+## 4.6 Retrieval & Delivery
+
+```mermaid
+flowchart TB
+    Q[Task/Question] --> OBJ[Canonical Claim/Method/Algorithm]
+    OBJ --> SYN[Evidence Synthesis]
+    SYN --> ENOUGH{Enough?}
+    ENOUGH--yes--> CTX[Runtime Context]
+    ENOUGH--no--> EC[Top Evidence Cards]
+    EC --> E2{Enough?}
+    E2--yes--> CTX
+    E2--no--> SP[Exact SourceSpans]
+    SP --> E3{Enough?}
+    E3--yes--> CTX
+    E3--no--> NB[Neighboring Structure]
+    NB --> FULL[Full Capture only when justified]
+    FULL --> CTX
+```
+
+Mandatory policy/security controls are hard-pinned outside ordinary relevance ranking.
+
+---
+
+# 5. Data ownership
+
+Canonical SoT is not split by agent.
+
+```text
+PostgreSQL
+├── SOURCE PLANE
+├── KNOWLEDGE PLANE
+├── VALIDATION PLANE
+└── DELIVERY METADATA
+
+Object Storage
+└── originals / large captures / cold artifacts
+
+Protected Control Store
+└── policies / approved algorithm runtime configs / permissions
+```
+
+P0 Protected Control Store may physically be a separately permissioned PostgreSQL schema, but application DB roles must prevent retrieval/LLM code from mutating it.
+
+Design DDL: `design/postgres/knowledge_factory_v0.sql`.
+
+---
+
+# 6. Code boundaries — target module map
+
+Current implementation may remain in `DZ_17/app`; this map defines responsibilities rather than forcing a language/framework migration.
+
+```text
+knowledge-factory/
+├── source/
+│   ├── registry
+│   ├── capture
+│   ├── structure
+│   └── spans
+├── semantic/
+│   ├── claim-extractor
+│   ├── canonical-resolver
+│   ├── contradiction
+│   └── concept-mapper
+├── evidence/
+│   ├── discovery
+│   ├── mapper
+│   ├── synthesis
+│   └── source-quality
+├── algorithm/
+│   ├── method-builder
+│   ├── algorithm-builder
+│   ├── trace-binder
+│   └── config-change
+├── polygon/
+│   ├── scenario-generator
+│   ├── runner
+│   └── invariant-evaluator
+├── security/
+│   ├── knowledge-gate
+│   ├── algorithm-firewall
+│   └── control-plane-policy
+├── retrieval/
+│   ├── planner
+│   ├── evidence-ladder
+│   ├── context-budget
+│   └── localization
+├── storage/
+│   ├── postgres
+│   ├── object-store
+│   └── vector-index
 └── telemetry/
-    ├── metrics.py
-    └── audit.py
+    ├── trace
+    └── metrics
 ```
 
-Правило зависимостей:
+Provider adapters remain outside domain logic:
 
 ```text
-api → application/orchestrator
-application → domain contracts
-adapters → external systems
-storage/model providers implement interfaces
-
-domain logic MUST NOT import concrete provider SDKs
+models/providers/llamacpp
+models/providers/gigachat
+models/providers/compatible
 ```
 
 ---
 
-# 5. Deployment — текущий ПК
+# 7. Deployment — current workstation P0
 
 ```mermaid
 flowchart LR
-    subgraph PC[Windows 11 / текущий ПК]
+    subgraph PC[Windows workstation]
         UI[ALINA Web UI]
-        API[Analyst API]
-        CORE[Analyst Core]
+        APP[Knowledge Factory modular runtime]
         LLAMA[llama.cpp router]
         PG[(PostgreSQL + pgvector)]
-        FS[(Local Object Storage)]
-        Q[Queue/Scheduler]
-        UI --> API --> CORE
-        CORE --> PG
-        CORE --> FS
-        CORE --> Q
-        Q --> LLAMA
+        FS[(Local object storage)]
+        WORK[Polygon/background worker]
+
+        UI --> APP
+        APP --> PG
+        APP --> FS
+        APP --> LLAMA
+        APP --> WORK
+        WORK --> PG
     end
 
-    CORE -->|HTTPS| GIGA[GigaChat]
-    CORE -->|HTTPS| GPT[GPT Senior]
+    APP -->|HTTPS| GIGA[GigaChat]
+    APP -->|HTTPS when configured| COMP[Compatible cloud provider]
+    APP -->|HTTPS| WEB[Scientific/Web sources]
 ```
 
-Плановый resource policy:
-
-```text
-CPU-heavy workers = 4
-GPU-heavy workers = 1
-External concurrent = 2 baseline
-```
+Начальный resource policy измеряется, а не считается постоянной архитектурой.
 
 ---
 
-# 6. Главная последовательность взаимодействия
+# 8. Main sequence
 
 ```mermaid
 sequenceDiagram
     participant U as User
-    participant API as Analyst API
-    participant I as Ingest
-    participant O as Orchestrator
-    participant T as Tool Zoo
-    participant A as Analysis Zoo
-    participant P as Package Builder
-    participant S as GPT Senior
-    participant H as Human Review
-    participant K as Knowledge Base
-    participant E as Experience Store
+    participant A as API/Orchestrator
+    participant S as Source/Structure
+    participant E as Semantic/Evidence
+    participant G as Algorithm Engineering
+    participant P as Polygon
+    participant X as Security Gate
+    participant K as Canonical KB
+    participant R as Retrieval
 
-    U->>API: Create case + source
-    API->>I: Source/Capture registration
-    I-->>API: source_id, fragments
-    API->>O: Start analysis(case_id, profile)
-    O->>T: ToolTask(fragment refs)
-    T-->>O: observations + provenance
-    O->>A: AnalysisTask(evidence refs)
-    A-->>O: candidates + contradictions
-    O->>P: Build Candidate Package
-    P-->>O: package_id
-    O->>S: SeniorReviewRequest(package)
-    S-->>O: ReviewDecision + corrections/questions
-    alt Human review required
-        O->>H: HumanReviewTask
-        H-->>O: approve/reject/edit
+    U->>A: source/task
+    A->>S: ingest + structure
+    S-->>A: Source/Capture/StructureNode/SourceSpan refs
+    A->>E: semantic + prior-art task
+    E-->>A: Claims/Concepts/Evidence/Synthesis
+    opt executable method/algorithm required
+        A->>G: build candidate method/algorithm
+        G-->>A: algorithm version + invariants + trace
+        A->>P: scenario/benchmark plan
+        P-->>A: ScenarioRuns/BenchmarkRuns
+        A->>X: security review
+        X-->>A: SecurityDecision
     end
-    O->>K: Commit verified knowledge
-    O->>E: Store local result + corrections + reason
-    O-->>API: analysis completed
-    API-->>U: verified result + trace
+    A->>K: versioned commit if gates allow
+    U->>R: question/agent task
+    R->>K: retrieve canonical object + minimal evidence
+    K-->>R: refs/synthesis/spans
+    R-->>U: answer/context + trace
 ```
 
 ---
 
-# 7. Что кому передаётся — краткая матрица
+# 9. Architecture invariants
 
-| From | To | Contract | Содержимое |
-|---|---|---|---|
-| UI | API | `CreateSourceRequest` | metadata + file/reference |
-| API | Ingest | `IngestCommand` | source_id + capture policy |
-| Ingest | Storage | `Source/Capture/Fragment` | originals + hashes + chunks |
-| Orchestrator | Tool Zoo | `ToolTask` | refs, requested tool, profile |
-| Tool Zoo | Orchestrator | `ToolResult` | observations + provenance + metrics |
-| Orchestrator | Analysis Zoo | `AnalysisTask` | evidence refs + role + profile + schema |
-| Analysis Zoo | Orchestrator | `AnalysisResult` | candidates + confidence + trace |
-| Orchestrator | Package Builder | `PackageBuildRequest` | selected candidates + provenance |
-| Package Builder | Senior | `CandidateKnowledgePackage` | compact verified-for-review package |
-| Senior | Verification | `SeniorReviewResult` | accept/reject/correct/ask/human_required |
-| Verification | Human UI | `HumanReviewTask` | disputed/high-impact candidates + evidence |
-| Human UI | Verification | `HumanReviewDecision` | approve/reject/edit/recheck |
-| Verification | KB Publisher | `VerifiedKnowledgeBatch` | only publishable records |
-| KB Publisher | Experience Store | `CorrectionExample` | before/after/reason/reviewer/model |
+1. Original source stored/addressed independently from semantic knowledge.
+2. Runtime chunk/window is not canonical identity.
+3. LLM/provider SDK cannot be imported into domain contracts as authority.
+4. Canonical objects are shared across agents/languages.
+5. Evidence and contradictions remain addressable after synthesis.
+6. Approved control-plane configuration has no write path from retrieved/user/model text.
+7. Security decision and subject-matter review are separate artifacts.
+8. Full source retrieval is escalation, not default behavior.
+9. P0 remains modular and simple until telemetry justifies physical decomposition.
 
-Следующий документ: [`API_CONTRACTS.md`](API_CONTRACTS.md).
+---
+
+# 10. Next architecture step
+
+C4 v0.2 establishes the software boundaries. Next synchronization target:
+
+```text
+API_CONTRACTS
+→ JSON Schemas
+→ repository/service interfaces
+→ first Source→Structure→Claim/Evidence vertical slice
+```
