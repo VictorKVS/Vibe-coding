@@ -32,6 +32,36 @@ Node.js >= 22.13. Сборка: `npm run build`.
 
 Каждый ответ `/api/llm` может возвращать trace: `agentId`, `promptId`, `promptVersion`, `knowledgeRefs`, модель/provider, task class, latency и причину маршрутизации.
 
+## Уровни зрелости Zoo
+
+Зрелость повышается не по количеству агентов, а по доказательствам:
+
+`ZM0 → ZM1 → ZM2 → ZM3 → ZM4 → ZM5`.
+
+- `ZM0` — smoke / воспроизводимый стенд;
+- `ZM1` — baseline отдельных реальных моделей;
+- `ZM2` — `Draft → Critic → Revision`;
+- `ZM3` — независимые модели + synthesis;
+- `ZM4` — role-specialized pipeline;
+- `ZM5` — bounded production candidate с repeated runs, regression, latency/usage, rollback и independent review.
+
+Подробно: [`ZOO_MATURITY_ROADMAP.md`](./ZOO_MATURITY_ROADMAP.md). Машиночитаемые gates: `knowledge/zoo/maturity-levels.json`.
+
+Примеры:
+
+```bash
+# только технический smoke, DEMO допустим
+npm run quest:matrix -- --quest=Q-KB-001 --maturity=ZM0 --models=demo
+
+# baseline: минимум две реальные модели, DEMO уже запрещён
+npm run quest:matrix -- --quest=Q-KB-001 --maturity=ZM1 --models=openai:model-a,ollama:model-b --push
+
+# single + critic pair
+npm run quest:matrix -- --quest=Q-KB-001 --maturity=ZM2 --models=openai:model-a,ollama:model-b --push
+```
+
+Runner сам подставляет разрешённые для уровня compositions, repeat и max-runs. Если попытаться использовать DEMO на `ZM1+`, недостаточно разных моделей или композицию выше разрешённого уровня, запуск останавливается до расходования LLM-вызовов.
+
 ## Model Lab — заменяем модели и сравниваем
 
 После локального запуска откройте:
