@@ -15,6 +15,7 @@
     "kf:sidecar": "node scripts/knowledge-factory-sidecar.mjs",
     "kf:ingest-pdf": "node scripts/ingest-pdf-kf.mjs",
     "kf:structure-book": "node scripts/reconstruct-book-structure.mjs",
+    "kf:parallel5": "node scripts/run-kf-5-streams.mjs",
     "lint": "oxlint",
     "format": "oxfmt"
   },
