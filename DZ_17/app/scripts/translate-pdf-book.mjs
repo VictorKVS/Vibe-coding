@@ -2,6 +2,7 @@ import {appendFile,mkdir,readFile,writeFile} from 'node:fs/promises';
 import {existsSync} from 'node:fs';
 import {spawnSync} from 'node:child_process';
 import {basename,dirname,extname,resolve} from 'node:path';
+import {fileURLToPath} from 'node:url';
 import process from 'node:process';
 
 function arg(name,fallback=''){
@@ -112,7 +113,8 @@ const extractPath=resolve(outDir,'source.extract.json');
 const progressPath=resolve(outDir,'translation.progress.jsonl');
 const markdownPath=resolve(outDir,'translation.ru.md');
 const manifestPath=resolve(outDir,'manifest.json');
-const extractor=resolve(dirname(new URL(import.meta.url).pathname.replace(/^\/(.:)/,'$1')),'extract-pdf-text.py');
+const scriptDir=dirname(fileURLToPath(import.meta.url));
+const extractor=resolve(scriptDir,'extract-pdf-text.py');
 
 await mkdir(outDir,{recursive:true});
 console.log(`[ALINA BOOK] source: ${input}`);
@@ -134,7 +136,7 @@ if(maxChunks>0)chunks=chunks.slice(0,maxChunks);
 console.log(`[ALINA BOOK] pages=${extracted.page_count}; text_pages=${extracted.nonempty_pages}; chunks=${chunks.length}`);
 
 const catalog=await fetchJson(`${base}/api/llm`);
-if(selection!=='auto'&&!Array.isArray(catalog.models)?.valueOf())throw new Error('Model catalog unavailable.');
+if(!Array.isArray(catalog.models))throw new Error('Model catalog unavailable.');
 if(selection!=='auto'&&!catalog.models.some(m=>m.id===selection))throw new Error(`Unknown model selection: ${selection}`);
 
 let records=await readJsonl(progressPath);
