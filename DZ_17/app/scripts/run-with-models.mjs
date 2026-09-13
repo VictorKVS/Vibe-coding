@@ -23,6 +23,11 @@ const ctx=process.env.LLAMA_CTX_SIZE||'8192';
 const parallel=process.env.LLAMA_PARALLEL||'1';
 const gpuLayers=process.env.LLAMA_GPU_LAYERS||'99';
 
+const kfHost=process.env.KF_SIDECAR_HOST||'127.0.0.1';
+const kfPort=process.env.KF_SIDECAR_PORT||'8791';
+const kfBase=process.env.KF_SIDECAR_BASE_URL||`http://${kfHost}:${kfPort}`;
+const kfScript=resolve(cwd,'scripts','knowledge-factory-sidecar.mjs');
+
 function commandFromPath(name){
  try{
   const finder=process.platform==='win32'?'where.exe':'which';
@@ -48,27 +53,43 @@ if(nodeMajor!==22){
 }
 
 let llama=null;
+let kf=null;
 let app=null;
 let stopping=false;
 
-async function healthy(){
- try{const r=await fetch(`${base.replace(/\/$/,'')}/health`);return r.ok;}catch{return false;}
-}
-async function waitHealthy(ms=60000){
+async function endpointHealthy(url){try{const r=await fetch(url);return r.ok;}catch{return false;}}
+async function waitHealthy(url,ms=60000){
  const end=Date.now()+ms;
- while(Date.now()<end){if(await healthy())return true;await new Promise(r=>setTimeout(r,750));}
+ while(Date.now()<end){if(await endpointHealthy(url))return true;await new Promise(r=>setTimeout(r,500));}
  return false;
 }
 function stop(){
  if(stopping)return;stopping=true;
  try{app?.kill();}catch{}
  try{llama?.kill();}catch{}
+ try{kf?.kill();}catch{}
  setTimeout(()=>process.exit(),250);
 }
 process.on('SIGINT',stop);
 process.on('SIGTERM',stop);
 
-if(await healthy()){
+if(await endpointHealthy(`${kfBase.replace(/\/$/,'')}/health`)){
+ console.log(`[ALINA] Knowledge Factory sidecar уже работает: ${kfBase}`);
+}else{
+ console.log(`[ALINA] запускаю Knowledge Factory sidecar: ${kfBase}`);
+ kf=spawn(process.execPath,[kfScript],{
+  cwd,
+  stdio:'inherit',
+  env:{...process.env,KF_SIDECAR_HOST:kfHost,KF_SIDECAR_PORT:String(kfPort),KF_SIDECAR_BASE_URL:kfBase},
+  windowsHide:false,
+ });
+ kf.on('error',error=>console.error(`[ALINA] Не удалось запустить Knowledge Factory sidecar: ${error.message}`));
+ kf.on('exit',code=>{if(!stopping)console.warn(`[ALINA] Knowledge Factory sidecar завершился, code=${code}`);});
+ if(await waitHealthy(`${kfBase.replace(/\/$/,'')}/health`,15000))console.log(`[ALINA] Knowledge Factory sidecar ready: ${kfBase}`);
+ else console.warn('[ALINA] Knowledge Factory sidecar не перешёл в ready; KF API вернёт 503 вместо скрытой 500 ошибки.');
+}
+
+if(await endpointHealthy(`${base.replace(/\/$/,'')}/health`)){
  console.log(`[ALINA] llama.cpp router уже работает: ${base}`);
 }else if(autostart){
  if(!existsSync(bin)){
@@ -84,21 +105,14 @@ if(await healthy()){
   console.warn('[ALINA] Укажите LLAMA_MODELS_PRESET для внешнего model zoo либо создайте LLAMA_MODELS_DIR.');
  }else{
   const sourceArgs=modelsPreset?['--models-preset',modelsPreset]:['--models-dir',modelsDir];
-  const args=[
-   ...sourceArgs,
-   '--models-max',modelsMax,
-   modelsAutoload?'--models-autoload':'--no-models-autoload',
-   '--host',host,'--port',port,
-   '-c',ctx,'-np',parallel,'-ngl',gpuLayers
-  ];
+  const args=[...sourceArgs,'--models-max',modelsMax,modelsAutoload?'--models-autoload':'--no-models-autoload','--host',host,'--port',port,'-c',ctx,'-np',parallel,'-ngl',gpuLayers];
   console.log(`[ALINA] запускаю llama.cpp router: ${bin}`);
-  if(modelsPreset)console.log(`[ALINA] model preset: ${modelsPreset}`);
-  else console.log(`[ALINA] models dir: ${modelsDir}`);
+  if(modelsPreset)console.log(`[ALINA] model preset: ${modelsPreset}`);else console.log(`[ALINA] models dir: ${modelsDir}`);
   console.log(`[ALINA] models max in memory: ${modelsMax}`);
   llama=spawn(bin,args,{cwd,stdio:'inherit',windowsHide:false});
   llama.on('error',error=>console.error(`[ALINA] Не удалось запустить llama.cpp: ${error.message}`));
   llama.on('exit',code=>{if(!stopping)console.warn(`[ALINA] llama.cpp router завершился, code=${code}`);});
-  if(await waitHealthy())console.log(`[ALINA] LOCAL model zoo ready: ${base}`);
+  if(await waitHealthy(`${base.replace(/\/$/,'')}/health`))console.log(`[ALINA] LOCAL model zoo ready: ${base}`);
   else console.warn('[ALINA] llama.cpp не успел перейти в ready; UI всё равно запустится и покажет доступные внешние модели.');
  }
 }else{
@@ -110,13 +124,14 @@ if(await healthy()){
 // в каталогах с пробелами, например G:\\1\\Vibe coding\\....
 if(process.platform==='win32'){
  const comspec=process.env.ComSpec||process.env.COMSPEC||'cmd.exe';
- app=spawn(comspec,['/d','/s','/c',`npm run ${mode}`],{cwd,stdio:'inherit',env:{...process.env},windowsHide:false});
+ app=spawn(comspec,['/d','/s','/c',`npm run ${mode}`],{cwd,stdio:'inherit',env:{...process.env,KF_SIDECAR_BASE_URL:kfBase},windowsHide:false});
 }else{
- app=spawn('npm',['run',mode],{cwd,stdio:'inherit',env:{...process.env},windowsHide:false});
+ app=spawn('npm',['run',mode],{cwd,stdio:'inherit',env:{...process.env,KF_SIDECAR_BASE_URL:kfBase},windowsHide:false});
 }
 app.on('error',error=>{
  console.error(`[ALINA] Не удалось запустить приложение: ${error.message}`);
  try{llama?.kill();}catch{}
+ try{kf?.kill();}catch{}
  process.exitCode=1;
 });
-app.on('exit',code=>{try{llama?.kill();}catch{}process.exit(code??0);});
+app.on('exit',code=>{try{llama?.kill();}catch{}try{kf?.kill();}catch{}process.exit(code??0);});
