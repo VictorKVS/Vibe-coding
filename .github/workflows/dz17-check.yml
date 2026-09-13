@@ -31,10 +31,15 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Check Knowledge Factory scripts
+        run: |
+          node --check scripts/knowledge-factory-sidecar.mjs
+          node --check scripts/reconstruct-book-structure.mjs
+
       - name: Build
         run: npm run build
 
-      - name: Smoke test production health and trace
+      - name: Smoke test production health, trace and A2 structure
         env:
           PORT: '8080'
           HOST: '0.0.0.0'
@@ -62,8 +67,6 @@ jobs:
             cat /tmp/kf-sidecar.log
             exit 1
           fi
-          cat /tmp/kf-health.json
-          echo
 
           echo '[TEST] waiting for /api/health'
           READY=0
@@ -83,9 +86,11 @@ jobs:
 
           TRACE_ID="CI-TRACE-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
           TEST_ID="CI-KF-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          SRC_ID="SRC-CI-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          CAP_ID="CAP-CI-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
           echo "[TRACE] trace_id=$TRACE_ID test_id=$TEST_ID"
 
-          echo '[1/4] POST /api/v1/trace test marker'
+          echo '[1/7] POST /api/v1/trace test marker'
           curl --fail --silent --show-error \
             -X POST http://127.0.0.1:8080/api/v1/trace \
             -H 'content-type: application/json' \
@@ -93,13 +98,35 @@ jobs:
             --data "{\"stage\":\"CI\",\"action\":\"smoke.start\",\"status\":\"start\",\"test_id\":\"$TEST_ID\",\"details\":{\"workflow\":\"dz17-check\"}}"
           echo
 
-          echo '[2/4] GET /api/v1/kf/sources with same trace id'
-          curl --fail --silent --show-error \
-            -H "x-trace-id: $TRACE_ID" \
-            http://127.0.0.1:8080/api/v1/kf/sources
+          echo '[2/7] GET /api/v1/kf/sources'
+          curl --fail --silent --show-error -H "x-trace-id: $TRACE_ID" http://127.0.0.1:8080/api/v1/kf/sources
           echo
 
-          echo '[3/4] POST completion marker'
+          echo '[3/7] POST synthetic ingest for A2'
+          curl --fail --silent --show-error \
+            -X POST http://127.0.0.1:8080/api/v1/kf/ingest \
+            -H 'content-type: application/json' \
+            -H "x-trace-id: $TRACE_ID" \
+            --data "{\"schema_version\":\"alina-kf-ingest-v1\",\"source\":{\"source_id\":\"$SRC_ID\",\"source_type\":\"test\",\"title\":\"CI fixture\",\"language\":\"en\",\"metadata\":{},\"status\":\"registered\"},\"capture\":{\"capture_id\":\"$CAP_ID\",\"source_id\":\"$SRC_ID\",\"sha256\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"mime_type\":\"text/plain\",\"storage_ref\":\"ci://fixture\",\"parser_status\":\"fixture\",\"security_status\":\"SECURITY_UNREVIEWED\",\"metadata\":{}},\"structure_nodes\":[{\"structure_node_id\":\"STN-CI-DOC\",\"capture_id\":\"$CAP_ID\",\"parent_id\":null,\"node_type\":\"document\",\"ordinal\":0,\"label\":\"CI fixture\",\"page_from\":1,\"page_to\":1,\"metadata\":{}}],\"source_spans\":[{\"span_id\":\"SPAN-CI-P0001\",\"capture_id\":\"$CAP_ID\",\"structure_node_id\":\"STN-CI-DOC\",\"page_from\":1,\"page_to\":1,\"char_from\":0,\"char_to\":12,\"text_hash\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"text_content\":\"1. Test Node\",\"storage_ref\":null,\"metadata\":{}}],\"trace\":{\"fixture\":true}}"
+          echo
+
+          echo '[4/7] POST A2 structure proposal'
+          curl --fail --silent --show-error \
+            -X POST http://127.0.0.1:8080/api/v1/kf/structure \
+            -H 'content-type: application/json' \
+            -H "x-trace-id: $TRACE_ID" \
+            --data "{\"schema_version\":\"alina-kf-structure-proposal-v1\",\"source_id\":\"$SRC_ID\",\"capture_id\":\"$CAP_ID\",\"status\":\"PROPOSED\",\"origin_class\":\"INFERENCE\",\"created_at\":\"2026-01-01T00:00:00Z\",\"producer\":{\"kind\":\"ci_fixture\"},\"diagnostics\":{\"completeness\":\"fixture\"},\"nodes\":[{\"structure_node_id\":\"STP-CI-DOC\",\"capture_id\":\"$CAP_ID\",\"parent_id\":null,\"node_type\":\"document\",\"ordinal\":0,\"label\":\"CI fixture\",\"page_from\":1,\"page_to\":1,\"confidence\":1,\"rule\":\"fixture\",\"metadata\":{\"proposal_only\":true}}]}"
+          echo
+
+          echo '[5/7] GET A2 structure proposal'
+          curl --fail --silent --show-error \
+            -H "x-trace-id: $TRACE_ID" \
+            "http://127.0.0.1:8080/api/v1/kf/structure?capture_id=$CAP_ID" \
+            | tee /tmp/kf-structure.json
+          echo
+          grep -q '"status":"PROPOSED"' /tmp/kf-structure.json
+
+          echo '[6/7] POST completion marker'
           curl --fail --silent --show-error \
             -X POST http://127.0.0.1:8080/api/v1/trace \
             -H 'content-type: application/json' \
@@ -107,7 +134,7 @@ jobs:
             --data "{\"stage\":\"CI\",\"action\":\"smoke.complete\",\"status\":\"ok\",\"test_id\":\"$TEST_ID\"}"
           echo
 
-          echo '[4/4] GET trace ledger for this test'
+          echo '[7/7] GET trace ledger for this test'
           curl --fail --silent --show-error \
             "http://127.0.0.1:8080/api/v1/trace?test_id=$TEST_ID&limit=100" \
             | tee /tmp/kf-trace.json
@@ -118,4 +145,4 @@ jobs:
           grep '\[TRACE\]' /tmp/kf-sidecar.log || true
           echo '[APP LOG]'
           tail -n 80 /tmp/dz17-server.log || true
-          echo 'DZ-17 production health + Knowledge Factory trace smoke passed.'
+          echo 'DZ-17 production health + Knowledge Factory A1/A2 trace smoke passed.'
