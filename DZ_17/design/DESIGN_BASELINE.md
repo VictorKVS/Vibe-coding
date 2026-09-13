@@ -1,6 +1,6 @@
 # ALINA Knowledge Factory — Design Baseline
 
-Version: `0.1`  
+Version: `0.2`  
 Status: `SELECTED / EVOLVING`  
 Date: `2026-09-13`
 
@@ -48,7 +48,38 @@ SOURCE
 
 Фиксированный размер текста не определяет границы знания. Runtime window/chunk допускается как технический контейнер, но semantic boundaries имеют приоритет.
 
-## 4. Evidence baseline
+## 4. Canonical data model baseline
+
+Каноническая модель данных: `CANONICAL_KNOWLEDGE_DATA_MODEL.md`.
+
+Четыре слоя:
+
+```text
+SOURCE PLANE
+Source → Capture → StructureNode → SourceSpan
+
+KNOWLEDGE PLANE
+Concept / Claim / Evidence / Method / Algorithm / Control / Metric
+
+VALIDATION PLANE
+ReviewDecision / BenchmarkRun / ScenarioRun / SecurityDecision
+
+DELIVERY PLANE
+EvidenceSynthesis / LocalizedText / DerivedIndex / RuntimeContext
+```
+
+Практическая P0-проекция:
+
+```text
+PostgreSQL + pgvector
++ typed identity/provenance/security columns
++ JSONB для ещё нестабильных type-specific полей
++ graph edges
+```
+
+Design DDL: `postgres/knowledge_factory_v0.sql`.
+
+## 5. Evidence baseline
 
 Каждый значимый Claim/Method/Algorithm должен иметь трассу до источника или до явно маркированного проектного происхождения.
 
@@ -60,13 +91,14 @@ CLAIM
 └─ refined_by → EVIDENCE
 
 EVIDENCE
+→ SOURCE SPAN
+→ CAPTURE
 → SOURCE
-→ exact locator
 ```
 
 Один источник и одно утверждение не копируются по агентам и языкам; используются canonical IDs и связи.
 
-## 5. RAG baseline
+## 6. RAG baseline
 
 Текущий принцип retrieval:
 
@@ -88,7 +120,7 @@ Claim / Method / Algorithm
 
 Mandatory policy/security controls не могут быть вытеснены обычным token-budget ranking.
 
-## 6. Algorithm baseline
+## 7. Algorithm baseline
 
 Algorithm является исполняемым знанием и имеет более строгий lifecycle, чем обычный knowledge record.
 
@@ -113,7 +145,9 @@ DRAFT
 - SecurityDecision;
 - version history.
 
-## 7. Security baseline
+Approved runtime parameters хранятся отдельно от RAG/data plane в versioned `AlgorithmRuntimeConfig`.
+
+## 8. Security baseline
 
 Data plane и Control plane разделяются.
 
@@ -139,7 +173,9 @@ Retrieved content всегда является data, а не authority.
 
 Канонический Security Process: `../processes/AI_SECURITY_PROCESS.md`.
 
-## 8. Language baseline
+Предметный `status` и `security_status` знания независимы: ИБ может hold/restrict объект, не переписывая его предметное содержание.
+
+## 9. Language baseline
 
 Canonical knowledge по возможности language-neutral:
 
@@ -158,7 +194,7 @@ explanation.en
 
 Перевод не создаёт отдельную копию знания.
 
-## 9. Memory/storage baseline
+## 10. Memory/storage baseline
 
 Логика:
 
@@ -179,7 +215,7 @@ L4 hot task context/cache
 - compact evidence synthesis for high-degree claims;
 - embeddings mainly for semantic objects and source spans, not every duplicate window.
 
-## 10. Architecture notation baseline
+## 11. Architecture notation baseline
 
 Используем разные нотации для разных вопросов:
 
@@ -193,7 +229,7 @@ State machines — lifecycle/status transitions
 
 IDEF0 остаётся верхней функциональной master-схемой.
 
-## 11. Current implementation posture
+## 12. Current implementation posture
 
 На текущем этапе допускается минимальная реализация. Полировка и переосмысление ожидаются.
 
@@ -208,11 +244,10 @@ THEN REVISE
 
 Не требуется сейчас доводить каждый блок до production completeness. Но ни один обязательный этап жизненного цикла не должен исчезать из проектной схемы.
 
-## 12. Known open areas
+## 13. Known open areas
 
 Требуют дальнейшего проектирования/сравнения вариантов:
 
-- canonical data model Claim/Evidence/Concept/Method/Algorithm;
 - PostgreSQL graph projection vs RDF/OWL/SHACL layer;
 - prior-art discovery and scientific-source ranking;
 - evidence strength model by domain;
@@ -220,8 +255,9 @@ THEN REVISE
 - polygon scenario generator;
 - invariant engine;
 - Algorithm Firewall runtime enforcement;
-- knowledge security status integration;
-- multilingual presentation/storage policy;
-- benchmark and quality metrics.
+- multilingual presentation/storage policy details;
+- benchmark and quality metrics;
+- final object taxonomy after real corpus runs;
+- embedding granularity and derived index policy.
 
 Все варианты по этим вопросам ведутся в `DESIGN_VARIANTS_REGISTER.md`.
