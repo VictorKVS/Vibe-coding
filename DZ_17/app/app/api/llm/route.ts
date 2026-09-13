@@ -1,3 +1,5 @@
+import {evaluateKbRefs,kbRefsForTask,modelPolicyDecision,promptIdForTask,promptPolicyDecision,readRuntimePolicy,type RuntimePolicyState} from '@/lib/runtime-policy';
+
 type Task='dialogue'|'synthesis'|'architecture'|'vision'|'kb_extract'|'kb_validate';
 type Message={role:'user'|'assistant';content:string};
 type ImageInput={dataUrl:string;name?:string};
@@ -159,6 +161,14 @@ function autoCandidates(task:Task,runtime:RuntimeCatalog){
  }
  return out;
 }
+function effectiveCatalog(runtime:RuntimeCatalog,policy:RuntimePolicyState){
+ return catalog(runtime).map(item=>{
+  if(item.id==='auto')return item;
+  const decision=modelPolicyDecision(policy,item.id);
+  return {...item,available:item.available&&decision.allowed,note:decision.allowed?item.note:`${item.note} · POLICY: ${decision.reason}`};
+ });
+}
+function effectiveAutoCandidates(task:Task,runtime:RuntimeCatalog,policy:RuntimePolicyState){return autoCandidates(task,runtime).filter(item=>modelPolicyDecision(policy,item.id).allowed);}
 function resolveManual(selection:string,task:Task,runtime:RuntimeCatalog){
  const item=catalog(runtime).find(x=>x.id===selection);
  if(!item)throw new Error('Неизвестная модель. Обновите список моделей.');
@@ -198,15 +208,23 @@ function demoReply(task:Task,messages:Message[],context:Record<string,unknown>|u
 async function call(item:ModelItem,task:Task,messages:Message[],context:Record<string,unknown>|undefined,images:ImageInput[]){if(item.provider==='llamacpp')return callLlama(item.model,task,messages,context,images);if(item.provider==='gigachat')return callGiga(item.model,task,messages,context,images);if(item.provider==='openai')return callOpenAI(item.model,task,messages,context,images);if(item.provider==='compatible')return callCompatible(item.model,task,messages,context,images);if(item.provider==='ollama')return callOllama(item.model,task,messages,context,images);return demoReply(task,messages,context);}
 
 export async function GET(){
- const runtime=await runtimeCatalog();const routes:Record<string,string[]>=Object.fromEntries(ALL_TASKS.map(task=>[task,autoCandidates(task,runtime).map(x=>x.id)]));
- return Response.json({models:catalog(runtime),providerOrder:providerOrder(),routes,native:{llamacpp:{online:runtime.llamaOnline,baseUrl:llamaBase(),models:runtime.llamaModels.length},gigachat:{online:runtime.gigaOnline,configured:Boolean(env('GIGACHAT_AUTH_KEY')),models:runtime.gigaModels.length}}});
+ const [runtime,policy]=await Promise.all([runtimeCatalog(),readRuntimePolicy()]);
+ const routes:Record<string,string[]>=Object.fromEntries(ALL_TASKS.map(task=>[task,effectiveAutoCandidates(task,runtime,policy).map(x=>x.id)]));
+ return Response.json({models:effectiveCatalog(runtime,policy),providerOrder:providerOrder(),routes,policyVersion:policy.version,native:{llamacpp:{online:runtime.llamaOnline,baseUrl:llamaBase(),models:runtime.llamaModels.length},gigachat:{online:runtime.gigaOnline,configured:Boolean(env('GIGACHAT_AUTH_KEY')),models:runtime.gigaModels.length}}});
 }
 export async function POST(request:Request){
  const started=Date.now();
  try{
   const body=(await request.json()) as RequestBody;const task=body.task||'dialogue';const messages=(body.messages||[]).filter(x=>x&&typeof x.content==='string').slice(-20);const images=validImages(body.images);if(!messages.length)return Response.json({error:'messages required'},{status:400});if(task==='vision'&&!images.length)return Response.json({error:'vision task requires image'},{status:400});
-  const runtime=await runtimeCatalog();const attempts:{model:string;error:string}[]=[];const candidates=body.selection&&body.selection!=='auto'?[resolveManual(body.selection,task,runtime)]:autoCandidates(task,runtime);if(!candidates.length)throw new Error(`Нет доступной модели для задачи ${task}. Проверьте LOCAL/GigaChat конфигурацию.`);
-  for(const item of candidates){try{const result=await call(item,task,messages,body.context,images);return Response.json({...result,selection:item.id,provider:item.provider,model:item.model,task,imagesReceived:images.length,latencyMs:Date.now()-started,attempts});}catch(error){attempts.push({model:item.id,error:error instanceof Error?error.message:'provider error'});if(body.selection&&body.selection!=='auto')throw error;}}
+  const [runtime,policy]=await Promise.all([runtimeCatalog(),readRuntimePolicy()]);
+  const promptId=promptIdForTask(task);const promptDecision=promptPolicyDecision(policy,promptId);if(!promptDecision.allowed)return Response.json({error:`Prompt policy denied ${promptId}: ${promptDecision.reason}`,code:'PROMPT_POLICY_DENY',policyVersion:policy.version},{status:403});
+  const kbRefs=kbRefsForTask(task,body.context);const kbDecision=evaluateKbRefs(policy,kbRefs);if(!kbDecision.allowed)return Response.json({error:`KB policy denied: ${kbDecision.reason}`,code:'KB_POLICY_DENY',kbRefs,policyVersion:policy.version},{status:403});
+  const attempts:{model:string;error:string}[]=[];let candidates:ModelItem[];
+  if(body.selection&&body.selection!=='auto'){
+   const item=resolveManual(body.selection,task,runtime);const modelDecision=modelPolicyDecision(policy,item.id);if(!modelDecision.allowed)return Response.json({error:`Model policy denied ${item.id}: ${modelDecision.reason}`,code:'MODEL_POLICY_DENY',policyVersion:policy.version},{status:403});candidates=[item];
+  }else candidates=effectiveAutoCandidates(task,runtime,policy);
+  if(!candidates.length)throw new Error(`Нет разрешённой и доступной модели для задачи ${task}. Проверьте provider configuration и Control Center policy.`);
+  for(const item of candidates){try{const result=await call(item,task,messages,body.context,images);return Response.json({...result,selection:item.id,provider:item.provider,model:item.model,task,imagesReceived:images.length,latencyMs:Date.now()-started,attempts,policyVersion:policy.version,promptId,kbRefs});}catch(error){attempts.push({model:item.id,error:error instanceof Error?error.message:'provider error'});if(body.selection&&body.selection!=='auto')throw error;}}
   throw new Error(`Все модели завершились ошибкой: ${attempts.map(x=>x.model).join(', ')}`);
  }catch(error){return Response.json({error:error instanceof Error?error.message:'LLM gateway error'},{status:500});}
 }
