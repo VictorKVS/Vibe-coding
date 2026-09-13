@@ -36,6 +36,23 @@ jobs:
           node --check scripts/run-quest-matrix.mjs
           node --check scripts/assess-zoo-maturity.mjs
       - name: Lint Zoo runtime
-        run: npx oxlint lib/alina-zoo.ts lib/zoo-rag.ts lib/alina-orchestrator.ts lib/quest-arena.ts app/api/zoo/route.ts app/api/zoo/experiments/route.ts app/api/zoo/quests/route.ts
+        run: npx oxlint lib/alina-zoo.ts lib/zoo-rag.ts lib/alina-orchestrator.ts lib/quest-arena.ts app/api/zoo/route.ts app/api/zoo/experiments/route.ts app/api/zoo/quests/route.ts app/api/health/route.ts
       - name: Build full WILD_IDEAS app
         run: npm run build
+      - name: Smoke production health endpoint
+        shell: bash
+        run: |
+          npm run start:prod >/tmp/alina-start.log 2>&1 &
+          pid=$!
+          trap 'kill "$pid" 2>/dev/null || true' EXIT
+          for i in $(seq 1 30); do
+            if curl -fsS http://127.0.0.1:8080/api/health; then
+              echo
+              echo "Production health check passed"
+              exit 0
+            fi
+            sleep 1
+          done
+          echo "Production server did not become healthy"
+          cat /tmp/alina-start.log
+          exit 1
