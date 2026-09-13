@@ -35,6 +35,7 @@ yarn-error.log*
 /runtime/llama/
 /runtime/config/
 /runtime/audit/
+/runtime/benchmarks/
 *.gguf
 
 # deployment and generated files
