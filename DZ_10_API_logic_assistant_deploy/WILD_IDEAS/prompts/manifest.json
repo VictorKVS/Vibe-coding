@@ -4,6 +4,10 @@
   "environment": "development",
   "prompts": [
     {"id":"alina.orchestrator","version":"1.0.0","agentId":"alina_orchestrator","status":"active_mvp","evalDataset":"ALINA-ZOO-ROUTING-EVAL-0001"},
+    {"id":"alina.product-manager","version":"1.0.0","agentId":"product_manager","status":"active_mvp","evalDataset":"ALINA-ZOO-ROUTING-EVAL-0001"},
+    {"id":"alina.security-engineer","version":"1.0.0","agentId":"security_engineer","status":"active_mvp","evalDataset":"ALINA-ZOO-ROUTING-EVAL-0001"},
+    {"id":"alina.system-engineer","version":"1.0.0","agentId":"system_engineer","status":"active_mvp","evalDataset":"ALINA-ZOO-ROUTING-EVAL-0001"},
+    {"id":"alina.solution-architect","version":"1.0.0","agentId":"solution_architect","status":"active_mvp","evalDataset":"ALINA-ZOO-ROUTING-EVAL-0001"},
     {"id":"alina.research","version":"1.0.0","agentId":"research_analyst","status":"active_mvp","evalDataset":"ALINA-ZOO-ROUTING-EVAL-0001"},
     {"id":"alina.knowledge-growth","version":"1.0.0","agentId":"knowledge_growth_analyst","status":"active_mvp","evalDataset":"ALINA-ZOO-ROUTING-EVAL-0001"},
     {"id":"alina.prompt-engineer","version":"1.0.0","agentId":"prompt_engineer","status":"active_mvp","evalDataset":"ALINA-ZOO-ROUTING-EVAL-0001","source":"prompts/prompt-engineer.system.md"},
