@@ -75,7 +75,7 @@ $definitions = @(
   [pscustomobject]@{
     Id='local-general-qwen14b'
     File='Qwen2.5-14B-Instruct-1M-Q4_K_M.gguf'
-    Role='general synthesis / long context'
+    Role='general synthesis / long context / translation candidate'
     Experimental=$false
     Mmproj=$null
   },
@@ -190,6 +190,7 @@ $envValues = [ordered]@{
   LLAMA_DIALOGUE_MODEL=$fast
   LLAMA_SYNTHESIS_MODEL=$general
   LLAMA_ARCHITECTURE_MODEL=$deep
+  LLAMA_TRANSLATION_MODEL=$general
   LLAMA_KB_MODEL=$general
   LLAMA_KB_VALIDATE_MODEL=$deep
 }
@@ -224,4 +225,5 @@ if ($WriteEnv) {
 Write-Host ""
 Write-Host "[ALINA] No model weights were copied or downloaded." -ForegroundColor Green
 Write-Host "[ALINA] llama.cpp will load models on demand and keep at most one heavy model loaded." -ForegroundColor Green
+Write-Host "[ALINA] Translation initially routes to local-general-qwen14b; benchmark results may change this assignment." -ForegroundColor Green
 Write-Host "[ALINA] Start/restart with: npm run dev:models" -ForegroundColor Green
