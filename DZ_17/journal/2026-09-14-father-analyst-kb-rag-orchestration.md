@@ -40,27 +40,13 @@ Analyst knowledge foundation
 
 `DZ_17/knowledge_base/FATHER_ANALYST_FOUNDATION.md`
 
-Определены:
-- наследование Universal → Analyst → Role → Domain → Task;
-- полный маршрут документа;
-- IdeaCandidate / IdeaChunk semantics;
-- AlgorithmCandidate;
-- positive/negative/degraded/adversarial scenarios;
-- realization conditions;
-- 5-stream baseline;
-- Definition of Done.
+Определены наследование Universal → Analyst → Role → Domain → Task, полный маршрут документа, IdeaCandidate / IdeaChunk semantics, AlgorithmCandidate, positive/negative/degraded/adversarial scenarios, realization conditions, 5-stream baseline и Definition of Done.
 
 ### Analyst role profile
 
 `DZ_17/profiles/analyst.v1.json`
 
-Создан `ROLE-ANALYST-FATHER` с:
-- prompt pack;
-- RAG profile;
-- orchestration profile;
-- zoo roles;
-- routing rules;
-- no-auto-approve policy.
+Создан `ROLE-ANALYST-FATHER` с prompt pack, RAG profile, orchestration profile, zoo roles, routing rules и no-auto-approve policy.
 
 ### Prompt zoo
 
@@ -143,18 +129,19 @@ K13 review/publish
 npm run kf:father -- --source-id <SRC-ID>
 ```
 
-Текущий executable pass честно делает только то, что реально реализовано:
+Текущий executable pass:
 
 ```text
 verify Source/Capture/SourceSpan
 → language/translation decision
 → ensure A2 StructureProposal
 → run five-stream readiness analytics
+→ execute K5/K6 idea-boundary proposal pass
 → persist FATHER run report
-→ stop at K5 with DESIGNED_NOT_IMPLEMENTED for downstream runtime
+→ stop at K7 until semantic KnowledgeCandidate runtime is implemented
 ```
 
-Никакие фиктивные Idea/Algorithm результаты не генерируются.
+Никакие фиктивные Claim/Method/Algorithm результаты не генерируются.
 
 Runtime output:
 
@@ -162,12 +149,47 @@ Runtime output:
 runtime/knowledge-factory/father-runs/FATHER-RUN-*.json
 ```
 
+### K5 / K6 executable runtime
+
+`DZ_17/app/scripts/detect-idea-boundaries.mjs`
+
+Команда:
+
+```text
+npm run kf:ideas -- --source-id <SRC-ID>
+```
+
+Алгоритм v1:
+
+```text
+SourceSpan + StructureProposal
+→ ordered structure regions
+→ paragraph/line normalization
+→ strong heading / discourse transition candidates
+→ OPEN / EXTEND / CLOSE idea
+→ IdeaCandidate
+→ IdeaChunk refs
+```
+
+Важно: это только deterministic boundary seed. Он хранит `status=PROPOSED`, `origin_class=INFERENCE`, `summary_status=PENDING_SEMANTIC_MODEL`. Он не притворяется полноценным семантическим анализом.
+
+Safety split при очень большом открытом блоке помечается `forced_context_safety_limit` и не считается смысловой границей.
+
+Физический runtime output:
+
+```text
+runtime/knowledge-factory/idea-proposals/<CAP-ID>.json
+```
+
+Канонический исходный текст не копируется: IdeaChunk хранит `span_refs`, fragment refs и hashes; `canonical_text_duplicated=false`.
+
 ### CI
 
 `.github/workflows/dz17-father-orchestration-check.yml`
 
 Проверяет:
-- syntax executable orchestrator;
+- syntax FATHER orchestrator;
+- syntax K5/K6 idea-boundary runtime;
 - JSON parse profile/RAG/orchestration;
 - invariant `five streams`;
 - invariant `canonical_auto_publish=false`;
@@ -179,7 +201,11 @@ Architecture/profile/RAG/prompt/orchestration rules:
 
 `PROJECT_DECISION`
 
-Автоматически извлекаемые знания:
+K5/K6 deterministic idea boundaries:
+
+`INFERENCE / PROPOSED`
+
+Автоматически извлекаемые знания далее:
 
 `SOURCE_DERIVED | INFERENCE | HYPOTHESIS` согласно конкретному объекту.
 
@@ -199,20 +225,21 @@ canonical publish requires authorized gate
 ## STATUS
 
 ```text
-K0–K4: executable path exists in current Knowledge Factory
+K0–K4: executable path exists
 PAR5: executable
-K5–K13: designed contracts exist; runtime implementation pending
+K5: executable deterministic proposal seed
+K6: executable derived IdeaChunk proposal
+K7–K13: designed contracts exist; runtime implementation pending
 ```
 
 ## NEXT IMPLEMENTATION INCREMENT
 
-1. K5 Idea Detection runtime.
-2. K6 semantic boundary / IdeaChunk persistence.
-3. K7 Candidate Knowledge API/storage.
-4. K8 Method/Algorithm candidate engine.
-5. K9/K10 Scenario + Realization Conditions concurrent workers.
-6. K11 validator/security/Socrates gates.
-7. K12 ReviewPackage/ChangeSet.
-8. K13 authorized promotion workflow.
+1. K7 semantic classification of IdeaCandidate into Concept/Claim/Principle/Method/Evidence with provenance.
+2. Add semantic-model second pass to refine K5/K6 boundaries rather than trusting deterministic seeds.
+3. K8 Method/Algorithm candidate engine.
+4. K9/K10 Scenario + Realization Conditions concurrent workers.
+5. K11 validator/security/Socrates gates.
+6. K12 ReviewPackage/ChangeSet.
+7. K13 authorized promotion workflow.
 
-После появления K5/K6 выполнить реальный прогон на `Getting to Yes`, измерить качество границ идей и только затем переходить к массовому A3/K7 extraction.
+Перед массовым K7 extraction выполнить реальный K5/K6 прогон на `Getting to Yes`, проверить candidate boundaries и измерить false-positive / false-negative defects.
