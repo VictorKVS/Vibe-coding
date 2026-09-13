@@ -25,14 +25,43 @@ function timestampForFile() {
 
 const baseUrl = arg('base', 'http://127.0.0.1:3000').replace(/\/$/, '');
 const questId = arg('quest', 'Q-KB-001');
+const maturityId = arg('maturity', '');
+
+let maturity = null;
+if (maturityId) {
+  const maturityPath = path.resolve('knowledge', 'zoo', 'maturity-levels.json');
+  const maturityDoc = JSON.parse(await fs.readFile(maturityPath, 'utf8'));
+  maturity = maturityDoc.levels?.find((item) => item.id === maturityId) || null;
+  if (!maturity) throw new Error(`Unknown maturity level: ${maturityId}`);
+}
+
 const modelList = arg('models', 'demo').split(',').map((item) => item.trim()).filter(Boolean);
-const compositionList = arg('compositions', 'single,relay_critic,parallel_synthesis,specialist_pipeline').split(',').map((item) => item.trim()).filter(Boolean);
-const maxRuns = Math.max(1, Math.min(Number(arg('max-runs', '16')) || 16, 100));
-const repeat = Math.max(1, Math.min(Number(arg('repeat', '1')) || 1, 10));
+const defaultCompositions = maturity
+  ? maturity.compositions.join(',')
+  : 'single,relay_critic,parallel_synthesis,specialist_pipeline';
+const compositionList = arg('compositions', defaultCompositions).split(',').map((item) => item.trim()).filter(Boolean);
+const defaultMaxRuns = maturity ? String(maturity.defaultMaxRuns) : '16';
+const defaultRepeat = maturity ? String(maturity.defaultRepeat) : '1';
+const maxRuns = Math.max(1, Math.min(Number(arg('max-runs', defaultMaxRuns)) || Number(defaultMaxRuns), 100));
+const repeat = Math.max(1, Math.min(Number(arg('repeat', defaultRepeat)) || Number(defaultRepeat), 10));
 const shouldCommit = hasFlag('commit') || hasFlag('push');
 const shouldPush = hasFlag('push');
 
 if (!modelList.length) throw new Error('At least one model is required.');
+
+if (maturity) {
+  const distinctModels = new Set(modelList).size;
+  if (!maturity.demoAllowed && modelList.includes('demo')) {
+    throw new Error(`${maturity.id} does not accept DEMO as maturity evidence. Configure real models.`);
+  }
+  if (distinctModels < maturity.minimumDistinctModels) {
+    throw new Error(`${maturity.id} requires at least ${maturity.minimumDistinctModels} distinct model(s); got ${distinctModels}.`);
+  }
+  const forbidden = compositionList.filter((id) => !maturity.compositions.includes(id));
+  if (forbidden.length) {
+    throw new Error(`${maturity.id} does not allow compositions: ${forbidden.join(', ')}`);
+  }
+}
 
 const catalogResponse = await fetch(`${baseUrl}/api/zoo/quests`);
 if (!catalogResponse.ok) throw new Error(`Quest API unavailable: HTTP ${catalogResponse.status}`);
@@ -80,7 +109,10 @@ for (const composition of compositions) {
 if (!planned.length) throw new Error('Experiment matrix is empty.');
 
 console.log(`Quest: ${questId} · ${quest.title}`);
+if (maturity) console.log(`Maturity: ${maturity.id} · ${maturity.name}`);
 console.log(`Models: ${modelList.join(', ')}`);
+console.log(`Compositions: ${compositionList.join(', ')}`);
+console.log(`Repeat: ${repeat}`);
 console.log(`Planned runs: ${planned.length}/${maxRuns}`);
 console.log('');
 
@@ -106,6 +138,15 @@ for (let index = 0; index < planned.length; index += 1) {
     const record = await response.json();
     if (!response.ok) throw new Error(record?.error || `HTTP ${response.status}`);
 
+    record.maturityAssessment = maturity
+      ? {
+          level: maturity.id,
+          levelName: maturity.name,
+          promotionGate: maturity.promotionGate,
+          state: 'PENDING_STRICT_REVIEW',
+        }
+      : null;
+
     const filename = record.artifactFilename || `${timestampForFile()}__${safePart(questId)}__${safePart(item.composition.id)}.json`;
     const target = path.join(runRoot, filename);
     await fs.writeFile(target, `${JSON.stringify(record, null, 2)}\n`, 'utf8');
@@ -114,6 +155,7 @@ for (let index = 0; index < planned.length; index += 1) {
     rows.push({
       status: 'COMPLETED',
       questId,
+      maturityLevel: maturity?.id || null,
       compositionId: item.composition.id,
       repeatIndex: item.repeatIndex,
       combinationLabel: record.combinationLabel,
@@ -129,6 +171,7 @@ for (let index = 0; index < planned.length; index += 1) {
     rows.push({
       status: 'FAILED',
       questId,
+      maturityLevel: maturity?.id || null,
       compositionId: item.composition.id,
       repeatIndex: item.repeatIndex,
       combinationLabel: Object.entries(item.models).map(([slot, model]) => `${slot}=${model}`).join('__'),
@@ -147,11 +190,20 @@ const matrixId = `MX-${Date.now().toString(36).toUpperCase()}`;
 const successful = rows.filter((row) => row.status === 'COMPLETED');
 const byAutoScore = [...successful].sort((a, b) => (b.autoScore ?? -1) - (a.autoScore ?? -1) || a.wallMs - b.wallMs);
 const summary = {
-  schemaVersion: 1,
+  schemaVersion: 2,
   matrixId,
   createdAt: new Date().toISOString(),
   quest: { id: quest.id, title: quest.title, profession: quest.profession, level: quest.level },
-  protocolRule: 'Automatic score is structural signal only. Final ranking requires strict independent review of the durable run files.',
+  maturity: maturity
+    ? {
+        id: maturity.id,
+        name: maturity.name,
+        goal: maturity.goal,
+        requiredEvidence: maturity.requiredEvidence,
+        promotionGate: maturity.promotionGate,
+      }
+    : null,
+  protocolRule: 'Automatic score is structural signal only. Final ranking and maturity promotion require strict independent review of durable run files.',
   requested: { models: modelList, compositions: compositionList, maxRuns, repeat },
   stats: {
     planned: planned.length,
@@ -161,9 +213,11 @@ const summary = {
   automaticLeaderboard: byAutoScore.map((row, rank) => ({ rank: rank + 1, ...row })),
   runs: rows,
   strictReviewState: 'PENDING',
+  maturityPromotionState: maturity ? 'NOT_ASSESSED' : null,
 };
 
-const stem = `${timestampForFile()}__${safePart(questId)}__${matrixId}`;
+const maturityPart = maturity ? `__${maturity.id}` : '';
+const stem = `${timestampForFile()}__${safePart(questId)}${maturityPart}__${matrixId}`;
 const summaryJson = path.join(matrixRoot, `${stem}.json`);
 const summaryMd = path.join(matrixRoot, `${stem}.md`);
 await fs.writeFile(summaryJson, `${JSON.stringify(summary, null, 2)}\n`, 'utf8');
@@ -172,10 +226,11 @@ const md = [
   `# Quest Matrix ${matrixId}`,
   '',
   `Quest: **${quest.id} — ${quest.title}**`,
+  maturity ? `Maturity target: **${maturity.id} — ${maturity.name}**` : 'Maturity target: not specified',
   '',
   `Models: \`${modelList.join('`, `')}\``,
   '',
-  '> Automatic score is a structural signal only. Strict independent review decides the final result.',
+  '> Automatic score is a structural signal only. Strict independent review decides the final result and maturity promotion.',
   '',
   '| Auto rank | Composition | Combination | Auto score | Wall ms | Status | Strict review |',
   '|---:|---|---|---:|---:|---|---|',
@@ -183,7 +238,9 @@ const md = [
   '',
   `Completed: ${successful.length}/${rows.length}.`,
   '',
-  '## Next gate',
+  maturity ? `## ${maturity.id} promotion gate` : '## Next gate',
+  '',
+  maturity ? maturity.promotionGate : 'Perform the common strict-review rubric and decide the next maturity target.',
   '',
   'Open every referenced run JSON, perform the common strict-review rubric, then replace the provisional auto ordering with a human/domain-reviewed ranking.',
   '',
@@ -196,10 +253,11 @@ console.log(`Matrix saved: ${summaryMd}`);
 console.log(`Completed: ${successful.length}/${rows.length}`);
 if (byAutoScore[0]) console.log(`Provisional auto leader: ${byAutoScore[0].compositionId} · ${byAutoScore[0].combinationLabel} · ${byAutoScore[0].autoScore}%`);
 console.log('Strict verdict: PENDING');
+if (maturity) console.log(`Maturity promotion: ${maturity.id} NOT_ASSESSED`);
 
 if (shouldCommit) {
   await exec('git', ['add', '--', ...writtenFiles], { cwd: process.cwd() });
-  const message = `eval(alina): matrix ${questId} ${matrixId}`;
+  const message = `eval(alina): matrix ${questId} ${maturity?.id || 'unscoped'} ${matrixId}`;
   await exec('git', ['commit', '-m', message, '--', ...writtenFiles], { cwd: process.cwd() });
   console.log(`Committed: ${message}`);
 }
