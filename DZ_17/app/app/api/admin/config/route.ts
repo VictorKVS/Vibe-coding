@@ -10,10 +10,12 @@ type ControlState={
  modelPolicies:Record<string,{enabled:boolean;security:'approved'|'review'|'blocked'}>;
  promptPolicies:Record<string,{active:boolean;review:'approved'|'pending'|'blocked';version:number}>;
  kbPolicies:Record<string,{enabled:boolean;securityHold:boolean}>;
+ routeOverrides:Record<string,string>;
  database:{vectorIndexEnabled:boolean;backupEnabled:boolean;objectStorageEnabled:boolean};
 };
 type Mutation={role?:Role;action?:string;target?:string;value?:unknown;reason?:string};
 
+const ROUTABLE_TASKS=['dialogue','synthesis','architecture','kb_extract','kb_validate'];
 const prompts:PromptDescriptor[]=[
  {id:'PROMPT-BASE-ALINA',task:'dialogue/synthesis/architecture/vision',source:'app/api/llm/route.ts',status:'active',editable:false,version:1,reviewStatus:'approved'},
  {id:'PROMPT-KB-EXTRACT',task:'kb_extract',source:'app/api/llm/route.ts',status:'active',editable:false,version:1,reviewStatus:'approved'},
@@ -41,6 +43,7 @@ const defaultState:ControlState={
  modelPolicies:{},
  promptPolicies:Object.fromEntries(prompts.map(p=>[p.id,{active:p.status==='active',review:p.reviewStatus,version:p.version}])),
  kbPolicies:Object.fromEntries(kbConnections.map(k=>[k.id,{enabled:k.status==='configured',securityHold:false}])),
+ routeOverrides:{},
  database:{vectorIndexEnabled:false,backupEnabled:false,objectStorageEnabled:false},
 };
 
@@ -48,7 +51,7 @@ async function ensureDirs(){await Promise.all([mkdir(configDir,{recursive:true})
 async function readState():Promise<ControlState>{
  try{
   const raw=JSON.parse(await readFile(stateFile,'utf8')) as Partial<ControlState>;
-  return {...defaultState,...raw,modelPolicies:raw.modelPolicies||{},promptPolicies:{...defaultState.promptPolicies,...(raw.promptPolicies||{})},kbPolicies:{...defaultState.kbPolicies,...(raw.kbPolicies||{})},database:{...defaultState.database,...(raw.database||{})}};
+  return {...defaultState,...raw,modelPolicies:raw.modelPolicies||{},promptPolicies:{...defaultState.promptPolicies,...(raw.promptPolicies||{})},kbPolicies:{...defaultState.kbPolicies,...(raw.kbPolicies||{})},routeOverrides:raw.routeOverrides||{},database:{...defaultState.database,...(raw.database||{})}};
  }catch{return structuredClone(defaultState);}
 }
 async function saveState(state:ControlState){await ensureDirs();await writeFile(stateFile,JSON.stringify(state,null,2)+'\n','utf8');}
@@ -75,6 +78,7 @@ export async function GET(){
   mode:adminConfigured||securityConfigured?'controlled_writes':'read_only_preview',
   warning:adminConfigured||securityConfigured?'Privileged writes require a role token and are written to the local audit ledger. Secret values are never returned.':'ALINA_ADMIN_TOKEN / ALINA_SECURITY_TOKEN are not configured; control center stays read-only.',
   roles:['ADMINISTRATOR','IB_AI_SECURITY'],
+  routableTasks:ROUTABLE_TASKS,
   auth:{adminConfigured,securityConfigured,tokenValuesExposed:false},
   prompts,
   knowledgeBases:kbConnections,
@@ -100,6 +104,9 @@ export async function POST(request:Request){
    const current=state.modelPolicies[target]||{enabled:true,security:'review' as const};state.modelPolicies[target]={...current,enabled:body.value};
   }else if(role==='security'&&action==='model.set_security'&&isSecurityState(body.value)){
    const current=state.modelPolicies[target]||{enabled:true,security:'review' as const};state.modelPolicies[target]={...current,security:body.value};
+  }else if(role==='admin'&&action==='route.set_override'&&ROUTABLE_TASKS.includes(target)&&typeof body.value==='string'){
+   const modelId=body.value.trim();if(modelId&&!modelId.startsWith('gigachat:'))throw new Error('В этом selector разрешены только online-модели GigaChat.');
+   if(modelId)state.routeOverrides[target]=modelId;else delete state.routeOverrides[target];
   }else if(role==='admin'&&action==='prompt.set_active'&&isBool(body.value)){
    const current=state.promptPolicies[target]||{active:false,review:'pending' as const,version:1};state.promptPolicies[target]={...current,active:body.value,version:current.version+1};
   }else if(role==='security'&&action==='prompt.set_review'&&isReviewState(body.value)){
