@@ -14,17 +14,17 @@ function median(values) {
   return sorted.length % 2 ? sorted[middle] : (sorted[middle - 1] + sorted[middle]) / 2;
 }
 
-async function readJsonFiles(root) {
+async function readJsonFiles(root, sourceState) {
   try {
     const entries = await fs.readdir(root, { withFileTypes: true });
     const out = [];
     for (const entry of entries) {
       const full = path.join(root, entry.name);
-      if (entry.isDirectory()) out.push(...await readJsonFiles(full));
+      if (entry.isDirectory()) out.push(...await readJsonFiles(full, sourceState));
       else if (entry.isFile() && entry.name.endsWith('.json')) {
         try {
           const parsed = JSON.parse(await fs.readFile(full, 'utf8'));
-          if (parsed?.experimentId && parsed?.quest && parsed?.composition) out.push({ file: full, record: parsed });
+          if (parsed?.experimentId && parsed?.quest && parsed?.composition) out.push({ file: full, record: parsed, sourceState });
         } catch {}
       }
     }
@@ -52,14 +52,23 @@ function modelId(record) {
 const level = arg('level', 'ZM0').toUpperCase();
 const questFilter = arg('quest', '');
 if (!['ZM0', 'ZM1'].includes(level)) throw new Error('This assessor currently supports ZM0 and ZM1 only.');
+if (level === 'ZM1' && !questFilter) throw new Error('ZM1 assessment requires --quest=<questId> so all model candidates are compared on the same professional quest.');
 
-const roots = [path.resolve('quest-runs', 'pending'), path.resolve('quest-runs', 'reviewed')];
-const all = [];
-for (const root of roots) all.push(...await readJsonFiles(root));
+const sources = [
+  { root: path.resolve('quest-runs', 'pending'), sourceState: 'pending' },
+  { root: path.resolve('quest-runs', 'reviewed'), sourceState: 'reviewed' },
+];
 
-let runs = all
-  .map((item) => ({ ...item, record: item.record }))
-  .filter(({ record }) => record.status === 'COMPLETED');
+const byExperimentId = new Map();
+for (const source of sources) {
+  const items = await readJsonFiles(source.root, source.sourceState);
+  for (const item of items) {
+    const existing = byExperimentId.get(item.record.experimentId);
+    if (!existing || item.sourceState === 'reviewed') byExperimentId.set(item.record.experimentId, item);
+  }
+}
+
+let runs = [...byExperimentId.values()].filter(({ record }) => record.status === 'COMPLETED');
 if (questFilter) runs = runs.filter(({ record }) => record.quest?.id === questFilter);
 
 const report = {
@@ -123,12 +132,13 @@ if (level === 'ZM1') {
 
   const qualifiedModels = candidates.filter((item) => item.qualified);
   report.evidence = {
+    questId: questFilter,
     distinctRealModels: candidates.length,
     qualifiedModels: qualifiedModels.map((item) => item.model),
     candidates,
   };
 
-  if (candidates.length < 2) report.reasons.push('Need at least two distinct real models on the same professional quest.');
+  if (candidates.length < 2) report.reasons.push('Need at least two distinct real models on this exact professional quest.');
   for (const candidate of candidates) {
     if (candidate.qualificationRuns < 3) report.reasons.push(`${candidate.model}: need 3 repeated runs.`);
     else if (candidate.reviewedRuns < 3) report.reasons.push(`${candidate.model}: all three qualification runs require strict review.`);
@@ -138,7 +148,7 @@ if (level === 'ZM1') {
 
   if (qualifiedModels.length >= 2) {
     report.decision = 'PASS';
-    report.reasons = ['At least two real models satisfy the repeated-run strict-review qualification rule.'];
+    report.reasons = ['At least two real models satisfy the repeated-run strict-review qualification rule on the same quest.'];
   } else if (candidates.length >= 2 && candidates.every((item) => item.qualificationRuns >= 3)) {
     report.decision = 'READY_FOR_STRICT_REVIEW';
   }
