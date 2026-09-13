@@ -1,0 +1,55 @@
+{
+  "schemaVersion": 1,
+  "inheritanceId": "ALINA-FATHER-INHERITANCE-0001",
+  "constitutionId": "FATHER-CONSTITUTION-0001",
+  "canonicalSource": {
+    "repository": "VictorKVS/KNOWLEDGE_CORE",
+    "path": "father/governance/FATHER_INVARIANTS.yaml",
+    "constitutionPath": "father/governance/FATHER_CONSTITUTION.md"
+  },
+  "status": "INHERITED_CONSTITUTION",
+  "localMayStrengthen": true,
+  "localMayWeaken": false,
+  "silentOverrideAllowed": false,
+  "requiredInvariantIds": [
+    "FTH-001",
+    "FTH-002",
+    "FTH-003",
+    "FTH-004",
+    "FTH-005",
+    "FTH-006",
+    "FTH-007",
+    "FTH-008",
+    "FTH-009",
+    "FTH-010",
+    "FTH-011",
+    "FTH-012"
+  ],
+  "requiredEngineeringOrder": [
+    "PRODUCT_READY",
+    "SECURITY_INTAKE_READY",
+    "SYSTEM_MODEL_READY",
+    "THREAT_MODEL_V0_READY",
+    "ARCHITECTURE_OPTIONS_ALLOWED",
+    "SECURITY_REVIEW_COMPLETE",
+    "INDEPENDENT_REVIEW_COMPLETE",
+    "ARCHITECTURE_DECISION_ALLOWED"
+  ],
+  "roleBinding": {
+    "PRODUCT_READY": "product_manager",
+    "SECURITY_INTAKE_READY": "security_engineer",
+    "SYSTEM_MODEL_READY": "system_engineer",
+    "THREAT_MODEL_V0_READY": "security_engineer",
+    "ARCHITECTURE_OPTIONS_ALLOWED": "solution_architect",
+    "SECURITY_REVIEW_COMPLETE": "security_engineer",
+    "INDEPENDENT_REVIEW_COMPLETE": "skeptical_reviewer"
+  },
+  "hardRules": [
+    "security_engineer_enters_immediately_after_product",
+    "security_remains_active_through_system_architecture_implementation_operation",
+    "solution_architect_must_not_start_before_product_security_system_threat_gates",
+    "architecture_producer_cannot_self_approve",
+    "residual_risk_acceptance_requires_owner",
+    "unknown_is_valid_and_must_not_be_silently_closed"
+  ]
+}

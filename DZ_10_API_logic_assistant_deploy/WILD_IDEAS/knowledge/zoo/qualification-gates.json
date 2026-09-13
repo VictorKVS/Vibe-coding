@@ -1,0 +1,48 @@
+{
+  "schemaVersion": 1,
+  "gateModelId": "ALINA-ZOO-QUALIFICATION-0001",
+  "principle": "Automation verifies evidence presence and repeatability; it does not replace strict professional review.",
+  "gates": {
+    "ZM0": {
+      "name": "Smoke / Reproducible Harness",
+      "requirements": {
+        "minimumCompletedRuns": 1,
+        "allowedCompositions": ["single"],
+        "demoAllowed": true,
+        "traceRequired": ["agentId", "promptId", "promptVersion", "knowledgeRefs"],
+        "ciEvidence": "external"
+      },
+      "passRule": "At least one completed durable run has complete trace; CI must be green separately."
+    },
+    "ZM1": {
+      "name": "Single-Model Professional Baseline",
+      "requirements": {
+        "allowedCompositions": ["single"],
+        "minimumDistinctRealModels": 2,
+        "minimumRunsPerModel": 3,
+        "demoAllowed": false,
+        "allQualificationRunsStrictReviewed": true,
+        "minimumPassingReviewsPerModel": 2,
+        "passingVerdicts": ["PASS", "STRONG_PASS"],
+        "disqualifyOnAnyHardFail": true
+      },
+      "modelQualificationRule": "A model needs at least three reviewed repeated runs on the same quest, no hard fail, and at least two PASS/STRONG_PASS verdicts.",
+      "levelPassRule": "At least two distinct real models meet the model qualification rule on the same professional quest."
+    },
+    "ZM2": {
+      "name": "Critic Pair",
+      "requirements": {
+        "allowedCompositions": ["single", "relay_critic"],
+        "minimumReviewedRelayRunsPerPair": 2,
+        "minimumReviewedQualityDeltaPoints": 5,
+        "baselineModelIsRelayM1": true,
+        "allQualificationRelayRunsStrictReviewed": true,
+        "dissentPreservedRequired": true,
+        "disqualifyOnAnyHardFail": true,
+        "operationalDeltaRequired": ["calls", "wallMs", "usageWhenAvailable"]
+      },
+      "pairQualificationRule": "For one exact quest, compare each reviewed Draft→Critic→Revision pair against reviewed single runs of its M1 draft/revision model. A pair qualifies when at least two reviewed relay runs have no hard fail, reviewer confirms dissentPreserved=true, and median strict score improves by at least 5 points over the M1 single baseline. Calls and latency/usage deltas must remain visible.",
+      "levelPassRule": "At least one critic pair demonstrates a reviewed professional quality gain over a qualified single-model baseline without hiding reviewer objections. This proves the critic pattern can add value for the bounded quest; it does not make the pair universally optimal."
+    }
+  }
+}
