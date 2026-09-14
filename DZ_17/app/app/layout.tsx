@@ -9,6 +9,7 @@ import './model-switcher.css';
 import './multimodal.css';
 import './kb-analyst.css';
 import './admin-security-console.css';
+import './admin-prompt-editor.css';
 export const metadata: Metadata = {
   title: 'ALINA Multimodal + KB Analyst — ДЗ-17 · Дикие идеи → в деньги',
   description: 'Мультимодальный AI-продюсер и аналитик: текст + изображение → анализ, а идея → структурированный черновик базы знаний.',
