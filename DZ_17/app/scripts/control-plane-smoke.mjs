@@ -26,14 +26,16 @@ async function expectDenied(task,code,context){
 }
 
 async function cleanup(){
- const jobs=[
-  mutate('admin',adminToken,'model.set_enabled','demo',true),
-  mutate('security',securityToken,'model.set_security','demo','review'),
-  mutate('security',securityToken,'prompt.set_review','PROMPT-BASE-ALINA','approved'),
-  mutate('security',securityToken,'kb.set_hold','KB-FOUNDATION',false),
-  mutate('admin',adminToken,'route.set_override','dialogue',''),
+ const steps=[
+  ['admin',adminToken,'model.set_enabled','demo',true],
+  ['security',securityToken,'model.set_security','demo','review'],
+  ['security',securityToken,'prompt.set_review','PROMPT-BASE-ALINA','approved'],
+  ['security',securityToken,'kb.set_hold','KB-FOUNDATION',false],
+  ['admin',adminToken,'route.set_override','dialogue',''],
  ];
- await Promise.allSettled(jobs);
+ for(const [role,token,action,target,value] of steps){
+  try{await mutate(role,token,action,target,value)}catch(error){console.warn('[CONTROL-PLANE] cleanup warning:',error instanceof Error?error.message:error)}
+ }
 }
 
 async function main(){
