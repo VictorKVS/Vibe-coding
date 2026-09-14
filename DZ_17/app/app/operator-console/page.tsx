@@ -3,7 +3,6 @@
 import { useMemo, useState } from 'react';
 import {
   Activity,
-  AlertTriangle,
   ArrowLeft,
   ArrowRight,
   BarChart3,
@@ -15,7 +14,6 @@ import {
   Clock3,
   Database,
   Eye,
-  FileWarning,
   FlaskConical,
   Gauge,
   GitCompareArrows,
@@ -29,7 +27,6 @@ import {
   ShieldAlert,
   ShieldCheck,
   Siren,
-  Sparkles,
   TimerReset,
   TriangleAlert,
   XCircle,
@@ -83,132 +80,145 @@ const alerts: AlertItem[] = [
   {
     id: 'ALT-LEGAL-0042',
     severity: 'critical',
-    domain: 'LEGAL / PDN',
-    kind: 'NEW VERSION',
+    domain: 'ЗАКОНОДАТЕЛЬСТВО / ПДн',
+    kind: 'НОВАЯ РЕДАКЦИЯ',
     title: '152-ФЗ: обнаружена новая редакция',
-    short: 'Изменение затрагивает требования, связанные с защитой персональных данных. Требуется impact review до использования новой редакции в юридически значимых выводах.',
+    short: 'Изменение затрагивает требования по защите персональных данных. До юридически значимого использования новой редакции нужно проверить влияние изменений.',
     detected: '14.09.2026 09:18',
     verified: '14.09.2026 09:31',
     freshness: '99%',
-    affected: ['12 требований', '7 контролей', '3 политики', '2 алгоритма', '17 шаблонов документов'],
-    recommendation: 'Сравнить редакции и запустить impact analysis. Не продвигать изменения в canonical без review.',
-    reason: 'Изменился нормативный источник с высокой юридической силой. У 12 зависимых узлов есть активные связи APPLIES_TO / REQUIRES.',
+    affected: ['12 требований', '7 мер защиты', '3 политики', '2 алгоритма', '17 шаблонов документов'],
+    recommendation: 'Сравнить редакции, оценить влияние и назначить юридическую проверку. Автоматическое принятие изменений заблокировать.',
+    reason: 'Изменился нормативный источник высокой юридической силы. С ним связаны 12 действующих требований и зависимые меры защиты.',
     baselineLabel: '152-ФЗ / предыдущая проверенная редакция',
     candidateLabel: '152-ФЗ / новая обнаруженная редакция',
     metrics: [
-      { label: 'Юридическая актуальность', oldValue: 'VERIFIED', newValue: 'NEEDS REVIEW', delta: 'изменение', direction: 'bad' },
+      { label: 'Юридическая актуальность', oldValue: 'ПОДТВЕРЖДЕНА', newValue: 'НУЖНА ПРОВЕРКА', delta: 'изменение', direction: 'bad' },
       { label: 'Затронутые требования', oldValue: '0', newValue: '12', delta: '+12', direction: 'bad' },
-      { label: 'Источник', oldValue: 'A0', newValue: 'A0', delta: 'без изменений', direction: 'neutral' },
-      { label: 'Freshness', oldValue: '0.71', newValue: '0.99', delta: '+0.28', direction: 'good' },
+      { label: 'Уровень источника', oldValue: 'A0', newValue: 'A0', delta: 'без изменений', direction: 'neutral' },
+      { label: 'Свежесть проверки', oldValue: '0.71', newValue: '0.99', delta: '+0.28', direction: 'good' },
     ],
     evidence: [
-      { title: 'Карточка текущей редакции', source: 'Official source / capture SHA-256', observed: '14.09.2026 09:18', trust: 'A0', state: 'verified' },
-      { title: 'Diff структуры требований', source: 'FATHER Legal Temporal Engine', observed: '14.09.2026 09:24', trust: 'SYSTEM', state: 'candidate' },
-      { title: 'Последняя acceptance-проверка зависимых controls', source: 'Review batch LEGAL-PDN-031', observed: '28.08.2026', trust: 'HUMAN', state: 'stale' },
+      { title: 'Карточка действующей редакции', source: 'Официальный источник / контрольная сумма SHA-256', observed: '14.09.2026 09:18', trust: 'A0', state: 'verified' },
+      { title: 'Сравнение структуры требований', source: 'Модуль контроля редакций FATHER', observed: '14.09.2026 09:24', trust: 'СИСТЕМА', state: 'candidate' },
+      { title: 'Последняя проверка зависимых мер защиты', source: 'Пакет проверки LEGAL-PDN-031', observed: '28.08.2026', trust: 'ЭКСПЕРТ', state: 'stale' },
     ],
-    actions: ['Запустить impact analysis', 'Назначить юридический review', 'Заморозить auto-publish зависимых узлов'],
-    rollback: 'Предыдущая редакция остаётся доступной как verified historical state.',
+    actions: ['Запустить оценку влияния', 'Назначить юридическую проверку', 'Заморозить автоматическую публикацию зависимых узлов'],
+    rollback: 'Предыдущая редакция остаётся доступной как подтверждённое историческое состояние.',
     confidence: '0.96',
   },
   {
     id: 'ALT-EXP-0117',
     severity: 'high',
-    domain: 'RAG / PLATFORM',
-    kind: 'CHALLENGER WON',
-    title: 'Graph+Vector RAG обошёл текущий retrieval-v2',
-    short: 'Shadow-тест показал улучшение качества, скорости и стоимости. Production не переключён.',
+    domain: 'ПОИСК ЗНАНИЙ / ПЛАТФОРМА',
+    kind: 'НОВЫЙ ВАРИАНТ ЛУЧШЕ',
+    title: 'Графовый и векторный поиск обошёл текущий вариант',
+    short: 'Теневой тест показал улучшение качества, скорости и стоимости. Рабочая система пока не переключена.',
     detected: '14.09.2026 08:42',
     verified: '14.09.2026 09:02',
     freshness: '100%',
-    affected: ['RAG pipeline', 'ALINA retrieval', 'Security KB', 'Book KB'],
-    recommendation: 'Перевести challenger в canary на 10% нагрузки и собрать фактический rollback-safe telemetry.',
-    reason: 'EXP-0117 завершён на 500 задачах. Challenger выиграл по composite score без провала security/traceability gates.',
-    baselineLabel: 'retrieval-v2 / CHAMPION',
-    candidateLabel: 'graph-vector-v3 / CHALLENGER',
+    affected: ['Контур поиска знаний', 'Поиск Алины', 'База знаний ИБ', 'Книжная база знаний'],
+    recommendation: 'Включить новый вариант на 10% нагрузки, собрать фактическую телеметрию и сохранить возможность быстрого возврата.',
+    reason: 'Эксперимент EXP-0117 завершён на 500 задачах. Новый вариант лучше по сводной оценке и не провалил проверки безопасности и трассируемости.',
+    baselineLabel: 'Текущий рабочий вариант / основной',
+    candidateLabel: 'Графовый + векторный поиск / новый вариант',
     metrics: [
-      { label: 'Quality', oldValue: '0.88', newValue: '0.91', delta: '+3.4%', direction: 'good' },
-      { label: 'Latency', oldValue: '12.4 s', newValue: '7.1 s', delta: '-43%', direction: 'good' },
-      { label: 'Cost / task', oldValue: '1.00', newValue: '0.72', delta: '-28%', direction: 'good' },
-      { label: 'Failure rate', oldValue: '8.0%', newValue: '4.2%', delta: '-47%', direction: 'good' },
-      { label: 'Trace completeness', oldValue: '0.94', newValue: '0.96', delta: '+2.1%', direction: 'good' },
+      { label: 'Качество', oldValue: '0.88', newValue: '0.91', delta: '+3.4%', direction: 'good' },
+      { label: 'Задержка', oldValue: '12.4 с', newValue: '7.1 с', delta: '-43%', direction: 'good' },
+      { label: 'Стоимость задачи', oldValue: '1.00', newValue: '0.72', delta: '-28%', direction: 'good' },
+      { label: 'Доля ошибок', oldValue: '8.0%', newValue: '4.2%', delta: '-47%', direction: 'good' },
+      { label: 'Полнота трассировки', oldValue: '0.94', newValue: '0.96', delta: '+2.1%', direction: 'good' },
     ],
     evidence: [
-      { title: 'EXP-0117 shadow benchmark', source: 'FATHER Experiment Engine', observed: '14.09.2026 08:42', trust: 'SYSTEM', state: 'verified' },
-      { title: 'Security gate result', source: 'S4 Security Reviewer', observed: '14.09.2026 08:55', trust: 'ROLE', state: 'verified' },
-      { title: 'Cost projection', source: 'Telemetry / 500-run sample', observed: '14.09.2026 08:59', trust: 'SYSTEM', state: 'candidate' },
+      { title: 'Теневой тест EXP-0117', source: 'Контур экспериментов FATHER', observed: '14.09.2026 08:42', trust: 'СИСТЕМА', state: 'verified' },
+      { title: 'Результат проверки безопасности', source: 'Роль S4 — проверка безопасности', observed: '14.09.2026 08:55', trust: 'РОЛЬ', state: 'verified' },
+      { title: 'Расчёт стоимости', source: 'Телеметрия по 500 запускам', observed: '14.09.2026 08:59', trust: 'СИСТЕМА', state: 'candidate' },
     ],
-    actions: ['Запустить canary 10%', 'Зафиксировать champion baseline', 'Подготовить migration proposal'],
-    rollback: 'Canary отключается одной операцией; champion retrieval-v2 остаётся неизменённым.',
+    actions: ['Запустить ограниченное внедрение на 10%', 'Зафиксировать текущий вариант как точку возврата', 'Подготовить план перехода'],
+    rollback: 'Ограниченное внедрение отключается одной операцией; текущий рабочий вариант остаётся неизменным.',
     confidence: '0.91',
   },
   {
     id: 'ALT-KNOW-0088',
     severity: 'review',
-    domain: 'SECURITY / STANDARD',
-    kind: 'STALE VERIFICATION',
+    domain: 'ИНФОРМАЦИОННАЯ БЕЗОПАСНОСТЬ / СТАНДАРТ',
+    kind: 'ПРОВЕРКА УСТАРЕЛА',
     title: 'Узел знания давно не перепроверялся',
-    short: 'Знание может оставаться истинным, но его актуальность недостаточно свежая для high-impact решения.',
+    short: 'Знание может оставаться истинным, но подтверждение его актуальности уже недостаточно свежее для важного решения.',
     detected: '14.09.2026 07:30',
     verified: '02.03.2026 16:11',
     freshness: '42%',
-    affected: ['4 метода', '1 алгоритм', '9 RAG-пакетов'],
-    recommendation: 'Перепроверить первичные источники и только после этого использовать узел в high-impact recommendation.',
-    reason: 'Freshness упал ниже policy threshold 0.50. Истина не отозвана; статус остаётся “last known verified”.',
-    baselineLabel: 'Последнее verified knowledge state',
-    candidateLabel: 'Текущее состояние / requires revalidation',
+    affected: ['4 метода', '1 алгоритм', '9 пакетов поиска знаний'],
+    recommendation: 'Перепроверить первичные источники и только после этого использовать узел для решения с высокими последствиями.',
+    reason: 'Свежесть проверки упала ниже порога 0.50. Истинность знания не отменена: это последнее известное подтверждённое состояние.',
+    baselineLabel: 'Последнее подтверждённое состояние знания',
+    candidateLabel: 'Текущее состояние / требуется повторная проверка',
     metrics: [
-      { label: 'Truth confidence', oldValue: '0.94', newValue: '0.94', delta: 'не менялось', direction: 'neutral' },
-      { label: 'Freshness', oldValue: '0.86', newValue: '0.42', delta: '-0.44', direction: 'bad' },
-      { label: 'Primary source checks', oldValue: '3', newValue: '0 recent', delta: 'stale', direction: 'bad' },
+      { label: 'Уверенность в истинности', oldValue: '0.94', newValue: '0.94', delta: 'не менялась', direction: 'neutral' },
+      { label: 'Свежесть проверки', oldValue: '0.86', newValue: '0.42', delta: '-0.44', direction: 'bad' },
+      { label: 'Недавние проверки первичных источников', oldValue: '3', newValue: '0', delta: 'устарело', direction: 'bad' },
     ],
     evidence: [
-      { title: 'Previous verification packet', source: 'KB review 2026-03-02', observed: '02.03.2026', trust: 'HUMAN', state: 'verified' },
-      { title: 'Freshness policy evaluation', source: 'Knowledge Watch', observed: '14.09.2026 07:30', trust: 'SYSTEM', state: 'verified' },
+      { title: 'Предыдущий пакет проверки', source: 'Проверка базы знаний от 02.03.2026', observed: '02.03.2026', trust: 'ЭКСПЕРТ', state: 'verified' },
+      { title: 'Оценка свежести', source: 'Контроль актуальности знаний', observed: '14.09.2026 07:30', trust: 'СИСТЕМА', state: 'verified' },
     ],
-    actions: ['Перепроверить источники', 'Ограничить использование high-impact', 'Назначить владельца знания'],
-    rollback: 'Не требуется: canonical knowledge не изменяется до revalidation.',
+    actions: ['Перепроверить первичные источники', 'Ограничить использование для критичных решений', 'Назначить владельца знания'],
+    rollback: 'Не требуется: основное знание не меняется до повторной проверки.',
     confidence: '1.00',
   },
   {
     id: 'ALT-INFO-0231',
     severity: 'info',
-    domain: 'KNOWLEDGE CORE',
-    kind: 'NEW EVIDENCE',
+    domain: 'ЯДРО ЗНАНИЙ',
+    kind: 'НОВОЕ ПОДТВЕРЖДЕНИЕ',
     title: 'Добавлены новые подтверждающие данные',
-    short: 'Новые evidence повышают confidence, но не меняют рекомендуемое действие.',
+    short: 'Новый источник повышает уверенность в знании, но не меняет рекомендуемое действие.',
     detected: '14.09.2026 06:12',
     verified: '14.09.2026 06:18',
     freshness: '100%',
-    affected: ['1 claim', '2 graph edges'],
-    recommendation: 'Принять evidence в history; изменение production-поведения не требуется.',
-    reason: 'Новый источник подтверждает существующую связь, уже имевшую approved status.',
-    baselineLabel: 'Claim confidence v3',
-    candidateLabel: 'Claim confidence v4',
+    affected: ['1 утверждение', '2 связи графа'],
+    recommendation: 'Добавить подтверждение в историю. Изменение рабочего поведения не требуется.',
+    reason: 'Новый независимый источник подтверждает существующую связь, которая уже была одобрена.',
+    baselineLabel: 'Уверенность в утверждении / версия 3',
+    candidateLabel: 'Уверенность в утверждении / версия 4',
     metrics: [
-      { label: 'Confidence', oldValue: '0.81', newValue: '0.88', delta: '+0.07', direction: 'good' },
-      { label: 'Evidence count', oldValue: '3', newValue: '4', delta: '+1', direction: 'good' },
+      { label: 'Уверенность', oldValue: '0.81', newValue: '0.88', delta: '+0.07', direction: 'good' },
+      { label: 'Количество подтверждений', oldValue: '3', newValue: '4', delta: '+1', direction: 'good' },
     ],
     evidence: [
-      { title: 'Independent supporting source', source: 'Source A1', observed: '14.09.2026 06:12', trust: 'A1', state: 'verified' },
+      { title: 'Независимый подтверждающий источник', source: 'Источник уровня A1', observed: '14.09.2026 06:12', trust: 'A1', state: 'verified' },
     ],
-    actions: ['Принять evidence', 'Оставить текущую рекомендацию'],
-    rollback: 'Новая evidence-version может быть отклонена без изменения старых версий.',
+    actions: ['Принять новое подтверждение', 'Оставить текущую рекомендацию'],
+    rollback: 'Новую версию подтверждения можно отклонить без изменения прежних версий.',
     confidence: '0.88',
   },
 ];
 
 const severityMeta: Record<Severity, { label: string; icon: typeof ShieldAlert }> = {
-  critical: { label: 'CRITICAL', icon: Siren },
-  high: { label: 'HIGH', icon: ShieldAlert },
-  review: { label: 'REVIEW', icon: TriangleAlert },
-  info: { label: 'INFO', icon: Info },
+  critical: { label: 'КРИТИЧНО', icon: Siren },
+  high: { label: 'ВЫСОКИЙ', icon: ShieldAlert },
+  review: { label: 'ПРОВЕРИТЬ', icon: TriangleAlert },
+  info: { label: 'ИНФОРМАЦИЯ', icon: Info },
 };
 
 const modes: { id: Mode; label: string; description: string }[] = [
-  { id: 'normal', label: 'NORMAL', description: 'Полный аналитический контекст' },
-  { id: 'load', label: 'LOAD', description: 'Скрыть второстепенные детали' },
-  { id: 'stress', label: 'STRESS', description: 'Только критичное и следующее действие' },
+  { id: 'normal', label: 'ОБЫЧНЫЙ', description: 'Полный аналитический контекст' },
+  { id: 'load', label: 'НАГРУЗКА', description: 'Скрыты второстепенные детали' },
+  { id: 'stress', label: 'СТРЕСС', description: 'Только критичное и следующее безопасное действие' },
 ];
+
+const decisionLabels: Record<DecisionState, string> = {
+  open: 'ОТКРЫТО',
+  accepted: 'ПРИНЯТО',
+  deferred: 'ОТЛОЖЕНО',
+  rejected: 'ОТКЛОНЕНО',
+};
+
+const evidenceLabels: Record<Evidence['state'], string> = {
+  verified: 'ПОДТВЕРЖДЕНО',
+  candidate: 'ТРЕБУЕТ ПРОВЕРКИ',
+  stale: 'УСТАРЕЛО',
+};
 
 export default function OperatorConsolePage() {
   const [mode, setMode] = useState<Mode>('normal');
@@ -250,20 +260,20 @@ export default function OperatorConsolePage() {
         <div className={styles.brandBlock}>
           <a href="/" className={styles.backLink}><ArrowLeft size={16}/> DZ-17</a>
           <div>
-            <span className={styles.kicker}>FATHER KNOWLEDGE WATCH</span>
-            <h1>Operator Decision Console</h1>
+            <span className={styles.kicker}>FATHER — КОНТРОЛЬ ЗНАНИЙ</span>
+            <h1>Пульт решений оператора</h1>
           </div>
         </div>
         <div className={styles.statusStrip}>
-          <span><Database size={15}/> FATHER DB <b>CONNECTED</b></span>
-          <span><Activity size={15}/> Watch <b>ACTIVE</b></span>
-          <span><Clock3 size={15}/> Last sync <b>16:26</b></span>
+          <span><Database size={15}/> База FATHER <b>ПОДКЛЮЧЕНА</b></span>
+          <span><Activity size={15}/> Контроль изменений <b>АКТИВЕН</b></span>
+          <span><Clock3 size={15}/> Последняя синхронизация <b>16:26</b></span>
         </div>
       </header>
 
       <section className={styles.modeBar} aria-label="Режим нагрузки оператора">
         <div>
-          <span className={styles.sectionLabel}>OPERATOR LOAD MODE</span>
+          <span className={styles.sectionLabel}>РЕЖИМ РАБОТЫ ОПЕРАТОРА</span>
           <p>{modes.find((m) => m.id === mode)?.description}</p>
         </div>
         <div className={styles.modeButtons}>
@@ -283,16 +293,16 @@ export default function OperatorConsolePage() {
 
       <section className={styles.healthRow}>
         <button onClick={() => setSeverityFilter(severityFilter === 'critical' ? 'all' : 'critical')} className={`${styles.healthCard} ${styles.criticalCard}`}>
-          <Siren/><div><strong>{criticalCount}</strong><span>Critical</span></div><small>действовать сейчас</small>
+          <Siren/><div><strong>{criticalCount}</strong><span>Критично</span></div><small>действовать сейчас</small>
         </button>
         <button onClick={() => setSeverityFilter(severityFilter === 'high' ? 'all' : 'high')} className={`${styles.healthCard} ${styles.highCard}`}>
-          <ShieldAlert/><div><strong>{highCount}</strong><span>High</span></div><small>решение требуется</small>
+          <ShieldAlert/><div><strong>{highCount}</strong><span>Высокий</span></div><small>нужно решение</small>
         </button>
         <button onClick={() => setSeverityFilter(severityFilter === 'review' ? 'all' : 'review')} className={`${styles.healthCard} ${styles.reviewCard}`}>
-          <TriangleAlert/><div><strong>{reviewCount}</strong><span>Review</span></div><small>проверить</small>
+          <TriangleAlert/><div><strong>{reviewCount}</strong><span>Проверить</span></div><small>требует внимания</small>
         </button>
         <div className={`${styles.healthCard} ${styles.systemCard}`}>
-          <ShieldCheck/><div><strong>98.7%</strong><span>Knowledge health</span></div><small>validated graph</small>
+          <ShieldCheck/><div><strong>98.7%</strong><span>Состояние знаний</span></div><small>проверенный граф</small>
         </div>
       </section>
 
@@ -300,7 +310,7 @@ export default function OperatorConsolePage() {
         <aside className={styles.queuePane}>
           <div className={styles.paneHeader}>
             <div>
-              <span className={styles.sectionLabel}>MY ACTION QUEUE</span>
+              <span className={styles.sectionLabel}>МОЯ ОЧЕРЕДЬ РЕШЕНИЙ</span>
               <h2>{visibleQueue.length} событий</h2>
             </div>
             <BellRing size={20}/>
@@ -309,7 +319,7 @@ export default function OperatorConsolePage() {
           {mode !== 'stress' && (
             <div className={styles.searchBox}>
               <Search size={16}/>
-              <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Поиск по алертам…"/>
+              <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Поиск по событиям…"/>
             </div>
           )}
 
@@ -327,7 +337,7 @@ export default function OperatorConsolePage() {
                   <div className={styles.alertTopline}>
                     <span className={styles.alertRank}>{String(index + 1).padStart(2, '0')}</span>
                     <span className={styles.severity}><Icon size={14}/>{meta.label}</span>
-                    {state !== 'open' && <span className={styles.decisionMini}>{state.toUpperCase()}</span>}
+                    {state !== 'open' && <span className={styles.decisionMini}>{decisionLabels[state]}</span>}
                   </div>
                   <strong>{item.title}</strong>
                   {mode !== 'stress' && <p>{item.short}</p>}
@@ -354,9 +364,9 @@ export default function OperatorConsolePage() {
               <p>{selected.short}</p>
             </div>
             <div className={styles.confidenceBox}>
-              <span>CONFIDENCE</span>
+              <span>УВЕРЕННОСТЬ</span>
               <strong>{selected.confidence}</strong>
-              <small>freshness {selected.freshness}</small>
+              <small>актуальность {selected.freshness}</small>
             </div>
           </div>
 
@@ -376,13 +386,13 @@ export default function OperatorConsolePage() {
           {panel === 'summary' && (
             <div className={styles.panelGrid}>
               <section className={styles.focusCard}>
-                <span className={styles.sectionLabel}>NEXT SAFE ACTION</span>
+                <span className={styles.sectionLabel}>СЛЕДУЮЩЕЕ БЕЗОПАСНОЕ ДЕЙСТВИЕ</span>
                 <h3>{selected.recommendation}</h3>
                 <button className={styles.primaryAction} onClick={() => setPanel('action')}>Перейти к решению <ArrowRight size={17}/></button>
               </section>
 
               <section className={styles.infoCard}>
-                <span className={styles.sectionLabel}>IMPACT</span>
+                <span className={styles.sectionLabel}>ВЛИЯНИЕ</span>
                 <h3>Что затронуто</h3>
                 <div className={styles.chipList}>{selected.affected.map((item) => <span key={item}>{item}</span>)}</div>
               </section>
@@ -390,15 +400,15 @@ export default function OperatorConsolePage() {
               {mode !== 'stress' && (
                 <>
                   <section className={styles.infoCard}>
-                    <span className={styles.sectionLabel}>TIMELINE</span>
+                    <span className={styles.sectionLabel}>ХРОНОЛОГИЯ</span>
                     <dl className={styles.definitionList}>
                       <div><dt>Обнаружено</dt><dd>{selected.detected}</dd></div>
                       <div><dt>Проверено</dt><dd>{selected.verified}</dd></div>
-                      <div><dt>Freshness</dt><dd>{selected.freshness}</dd></div>
+                      <div><dt>Актуальность</dt><dd>{selected.freshness}</dd></div>
                     </dl>
                   </section>
                   <section className={styles.infoCard}>
-                    <button className={styles.whyToggle} onClick={() => setShowWhy((v) => !v)}><CircleHelp size={17}/>Почему система подняла алерт?</button>
+                    <button className={styles.whyToggle} onClick={() => setShowWhy((v) => !v)}><CircleHelp size={17}/>Почему система подняла предупреждение?</button>
                     {showWhy && <p className={styles.whyText}>{selected.reason}</p>}
                   </section>
                 </>
@@ -409,9 +419,9 @@ export default function OperatorConsolePage() {
           {panel === 'compare' && (
             <div className={styles.comparePanel}>
               <div className={styles.compareHeaders}>
-                <div><span>BASELINE</span><strong>{selected.baselineLabel}</strong></div>
+                <div><span>БЫЛО</span><strong>{selected.baselineLabel}</strong></div>
                 <ArrowRight/>
-                <div><span>CANDIDATE / NEW STATE</span><strong>{selected.candidateLabel}</strong></div>
+                <div><span>СТАЛО / НОВОЕ СОСТОЯНИЕ</span><strong>{selected.candidateLabel}</strong></div>
               </div>
               <div className={styles.metricTable}>
                 {selected.metrics.map((metric) => (
@@ -426,7 +436,7 @@ export default function OperatorConsolePage() {
               </div>
               <div className={styles.impactBanner}>
                 <BarChart3 size={22}/>
-                <div><span className={styles.sectionLabel}>DECISION SIGNAL</span><strong>{selected.recommendation}</strong></div>
+                <div><span className={styles.sectionLabel}>СИГНАЛ ДЛЯ РЕШЕНИЯ</span><strong>{selected.recommendation}</strong></div>
               </div>
             </div>
           )}
@@ -435,19 +445,19 @@ export default function OperatorConsolePage() {
             <div className={styles.evidencePanel}>
               <div className={styles.evidenceIntro}>
                 <BookOpenCheck/>
-                <div><span className={styles.sectionLabel}>EVIDENCE CHAIN</span><h3>От решения до источника</h3><p>{selected.reason}</p></div>
+                <div><span className={styles.sectionLabel}>ЦЕПОЧКА ДОКАЗАТЕЛЬСТВ</span><h3>От решения до первичного источника</h3><p>{selected.reason}</p></div>
               </div>
               <div className={styles.evidenceList}>
                 {selected.evidence.map((item, i) => (
                   <article key={`${item.title}-${i}`}>
-                    <span className={`${styles.evidenceState} ${styles[item.state]}`}>{item.state.toUpperCase()}</span>
+                    <span className={`${styles.evidenceState} ${styles[item.state]}`}>{evidenceLabels[item.state]}</span>
                     <div><strong>{item.title}</strong><p>{item.source}</p></div>
-                    <dl><dt>Observed</dt><dd>{item.observed}</dd><dt>Trust</dt><dd>{item.trust}</dd></dl>
+                    <dl><dt>Зафиксировано</dt><dd>{item.observed}</dd><dt>Доверие</dt><dd>{item.trust}</dd></dl>
                   </article>
                 ))}
               </div>
               <div className={styles.graphTrace}>
-                <Network size={18}/><span>SOURCE</span><ChevronRight/><span>CAPTURE</span><ChevronRight/><span>SPAN</span><ChevronRight/><span>KNOWLEDGE</span><ChevronRight/><span>NODE / EDGE</span><ChevronRight/><span>ALERT</span>
+                <Network size={18}/><span>ИСТОЧНИК</span><ChevronRight/><span>КОПИЯ</span><ChevronRight/><span>ФРАГМЕНТ</span><ChevronRight/><span>ЗНАНИЕ</span><ChevronRight/><span>УЗЕЛ / СВЯЗЬ</span><ChevronRight/><span>ПРЕДУПРЕЖДЕНИЕ</span>
               </div>
             </div>
           )}
@@ -455,9 +465,9 @@ export default function OperatorConsolePage() {
           {panel === 'action' && (
             <div className={styles.actionPanel}>
               <section className={styles.actionHero}>
-                <span className={styles.sectionLabel}>RECOMMENDED ACTION</span>
+                <span className={styles.sectionLabel}>РЕКОМЕНДУЕМОЕ ДЕЙСТВИЕ</span>
                 <h3>{selected.recommendation}</h3>
-                <p>Ни одно действие прототипа не изменяет production автоматически. Здесь проверяется операторский workflow и понятность решения.</p>
+                <p>Ни одно действие прототипа не меняет рабочую систему автоматически. Здесь проверяется понятность операторского решения.</p>
               </section>
 
               <div className={styles.actionChecklist}>
@@ -465,11 +475,11 @@ export default function OperatorConsolePage() {
               </div>
 
               <div className={styles.rollbackCard}>
-                <RotateCcw size={19}/><div><strong>Rollback / безопасный возврат</strong><p>{selected.rollback}</p></div>
+                <RotateCcw size={19}/><div><strong>Безопасный возврат</strong><p>{selected.rollback}</p></div>
               </div>
 
               <div className={styles.decisionBox}>
-                <span className={styles.sectionLabel}>OPERATOR DECISION</span>
+                <span className={styles.sectionLabel}>РЕШЕНИЕ ОПЕРАТОРА</span>
                 <div className={styles.decisionButtons}>
                   <button className={styles.acceptButton} onClick={() => decide('accepted')}><CheckCircle2/>Принять следующий шаг</button>
                   <button className={styles.deferButton} onClick={() => decide('deferred')}><PauseCircle/>Отложить</button>
@@ -478,7 +488,7 @@ export default function OperatorConsolePage() {
                 {selectedDecision !== 'open' && (
                   <div className={`${styles.decisionResult} ${styles[selectedDecision]}`}>
                     <ShieldCheck size={18}/>
-                    <span>Решение оператора: <strong>{selectedDecision.toUpperCase()}</strong>. В production ничего не применено; событие готово к журналированию.</span>
+                    <span>Решение оператора: <strong>{decisionLabels[selectedDecision]}</strong>. В рабочую систему ничего не применено; событие готово к журналированию.</span>
                   </div>
                 )}
               </div>
@@ -488,10 +498,10 @@ export default function OperatorConsolePage() {
       </section>
 
       <footer className={styles.footerBar}>
-        <span><ShieldCheck size={15}/> Safe prototype: no production writes</span>
-        <span><History size={15}/> Every decision → audit event</span>
-        <span><FlaskConical size={15}/> Ready for operator A/B usability tests</span>
-        <span><TimerReset size={15}/> Target: 3s detect · 10s understand · 30s act</span>
+        <span><ShieldCheck size={15}/> Безопасный прототип: запись в рабочую систему отключена</span>
+        <span><History size={15}/> Каждое решение → запись в журнал</span>
+        <span><FlaskConical size={15}/> Готово к сравнительным тестам интерфейса</span>
+        <span><TimerReset size={15}/> Цель: 3 с заметить · 10 с понять · 30 с решить</span>
       </footer>
     </main>
   );
