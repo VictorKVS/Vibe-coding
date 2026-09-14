@@ -11,8 +11,10 @@
 | `API_CONTRACTS.md` | API и контракты передачи данных между компонентами |
 | `SYSTEM_PROMPT_ALINA.md` | Базовый системный контракт ALINA |
 | `METHODOLOGY_AND_STANDARDS.md` | Мастер-перечень стандартов, методик и литературы |
+| `DATABASE_STORAGE_AND_GIT_SNAPSHOT_POLICY.md` | Где и как хранится operational KB в PostgreSQL, защита БД, versioned nodes/edges/weights, безопасный Git snapshot и backup policy |
 | `DEVELOPMENT_JOURNAL.md` | Журнал разработки: что изменено/придумано, источник, физические пути, review и результат |
 | `CONTROL_PLANE_ACCEPTANCE.md` | Acceptance-досье живого Admin/ИБ Control Plane: права, физические пути, runtime enforcement, commits и CI evidence |
+| `LEGAL_IB_INTAKE_ACCEPTANCE.md` | Acceptance-досье one-by-one legal/IB document intake |
 
 ## 2. Формальный комплект проектирования
 
@@ -47,6 +49,7 @@ CURRENT BASELINE != FINAL TRUTH
 | `processes/AI_SECURITY_PROCESS.md` | Процессы защиты AI, моделей, KB и данных |
 | `processes/KB_AND_MODEL_LIFECYCLE.md` | Lifecycle KB / Domain Profile / Models / Routing |
 | `processes/RACI_AND_KPI.md` | RACI / KPI / SLA/SLO / производственная статистика |
+| `processes/LEGAL_DOCUMENT_INTAKE.md` | One-by-one intake юридических/ИБ документов, identity, routing, dedup и fail-safe |
 
 ## 4. Схемы и машинные контракты
 
@@ -56,6 +59,8 @@ CURRENT BASELINE != FINAL TRUTH
 | `schemas/domain-profile.schema.json` | Общий контракт Domain Profile |
 | `profiles/narrative.v1.json` | Первый Domain Profile |
 | `openapi/analyst-core.v1.yaml` | OpenAPI Analyst Core |
+| `postgres/knowledge_factory_v0.sql` | Не-деструктивный PostgreSQL baseline: Source/Capture/knowledge/graph/nodes/edges/versioned weights/audit/git_export |
+| `postgres/security_hardening_v0.sql` | PostgreSQL group roles, grants/revokes и backup-role boundary без паролей в Git |
 
 ## 5. Universal / Analyst Meta Knowledge Base
 
@@ -72,6 +77,7 @@ CURRENT BASELINE != FINAL TRUTH
 | `knowledge_base/open_access_library.v1.json` | Реестр открытых легальных материалов |
 | `knowledge_base/algorithm_decision_card.schema.json` | Схема карточки алгоритмического решения |
 | `knowledge_base/materials/README.md` | Зарезервированное физическое место originals/extracts/indexes |
+| `knowledge_base/domains/legal_ib/document_registry.v1.json` | Git-реестр identity юридических/нормативных документов ИБ до DB cutover; затем reviewed projection из PostgreSQL |
 
 Общее знание хранится один раз и наследуется профилями:
 
@@ -98,7 +104,37 @@ DOMAIN KB
 facts / claims / entities / relations / events / hypotheses
 ```
 
-## 6. Связь уровней документации
+## 6. PostgreSQL и Git snapshot
+
+Operational storage после controlled cutover:
+
+```text
+PostgreSQL
+├── kf          Source/Capture/Span/Knowledge/Graph/Weights
+├── audit       append-only events + snapshot manifests
+└── git_export  только PUBLIC + git_export_allowed projection
+```
+
+Git хранит не полный DB dump, а:
+
+```text
+postgres/*.sql
+DATABASE_STORAGE_AND_GIT_SNAPSHOT_POLICY.md
+database_snapshots/current/*
+database_snapshots/SNAPSHOT_HISTORY.jsonl
+```
+
+Full dump остаётся LOCAL_ONLY / protected и не коммитится в публичный Git.
+
+Команды из `DZ_17/app`:
+
+```powershell
+npm run db:inventory
+npm run db:snapshot -- -Reason "описание законченного изменения"
+npm run db:snapshot -- -Reason "описание законченного изменения" -Commit
+```
+
+## 7. Связь уровней документации
 
 ```text
 IDEA / PRODUCT GOAL
@@ -110,6 +146,8 @@ ANALYST_CORE_TZ
 IDEF0 / BPMN
         ↓
 KNOWLEDGE / DATA MODEL
+        ↓
+POSTGRES DDL / SECURITY / SNAPSHOT POLICY
         ↓
 C4_ARCHITECTURE
         ↓
@@ -127,19 +165,19 @@ P0 IMPLEMENTATION
         ↓
 CODE / TESTS / TELEMETRY
         ↓
-CONTROL_PLANE_ACCEPTANCE / OTHER ACCEPTANCE RECORDS
+ACCEPTANCE RECORDS
         ↓
 DEVELOPMENT_JOURNAL
 ```
 
-## 7. Правило актуальности
+## 8. Правило актуальности
 
 Изменение бизнес-процесса, аналитического метода или KB считается завершённым только если синхронно обновлены, где применимо:
 
 1. `DESIGN_BASELINE.md` / `DESIGN_VARIANTS_REGISTER.md` / DDR, если затронуто проектное решение;
 2. процессная карта/IDEF0/BPMN;
 3. API contract;
-4. JSON Schema;
+4. JSON Schema / PostgreSQL migration;
 5. Domain Profile;
 6. Method Card / Meta-KB;
 7. `source_registry.v1.json`, если появился новый внешний источник;
@@ -150,10 +188,11 @@ DEVELOPMENT_JOURNAL
 12. telemetry/event model;
 13. security controls;
 14. acceptance evidence для исполняемого контура;
-15. changelog/version;
-16. `DEVELOPMENT_JOURNAL.md` с причиной, origin class, путями и review status.
+15. DB snapshot manifest / Git-safe projection для законченного DB batch;
+16. changelog/version;
+17. `DEVELOPMENT_JOURNAL.md` с причиной, origin class, путями и review status.
 
-## 8. Правило происхождения данных
+## 9. Правило происхождения данных
 
 Нельзя писать «взято из ГОСТа/ISO/книги», пока не зафиксированы:
 
@@ -170,25 +209,19 @@ review_status
 
 Если точный locator не проверен, запись остаётся `draft / pending_verification`.
 
-## 9. Следующий этап реализации
-
-Следующий слой после design/documentation governance:
+## 10. Следующий этап реализации
 
 ```text
-Canonical Knowledge/Data Model
-→ Claim/Evidence/Source contracts
-→ Method/Algorithm lifecycle contracts
-→ Polygon contracts
-→ Security knowledge gates
-→ Meta/Universal KB Loader
-→ Source/Method Registry API
-→ Analyst Planner
-→ KB Query / Evidence Retrieval
-→ Trace Event API
-→ Senior Review Package
-→ Experience Store
-→ Live Analyst Trace in UI
-→ Provenance + Dedup Validator
+Safe inventory existing PostgreSQL
+→ mapping existing schemas/tables → kf.*
+→ backup
+→ apply isolated kf/audit/git_export schemas
+→ migrate/reconcile current JSON registries
+→ acceptance counts + hashes
+→ operational DB cutover
+→ document/legal structure extraction
+→ nodes/edges/weights with append-only version history
+→ Git-safe snapshots after completed batches
 ```
 
 UI должен визуализировать фактические действия backend и показывать проверяемое обоснование каждого вывода, а не декоративный прогресс и не скрытую внутреннюю цепочку рассуждений модели.
