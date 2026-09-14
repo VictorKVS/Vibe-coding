@@ -12,13 +12,31 @@ function Write-Utf8NoBom([string]$Path, [string[]]$Lines) {
   $enc = New-Object System.Text.UTF8Encoding($false)
   [System.IO.File]::WriteAllLines($Path, $Lines, $enc)
 }
+function Import-DotEnv([string]$Path) {
+  if (-not (Test-Path $Path)) { return }
+  foreach ($raw in Get-Content $Path) {
+    $line = $raw.Trim()
+    if (-not $line -or $line.StartsWith('#') -or -not $line.Contains('=')) { continue }
+    $parts = $line.Split('=',2)
+    $key = $parts[0].Trim()
+    $value = $parts[1].Trim()
+    if (($value.StartsWith('"') -and $value.EndsWith('"')) -or ($value.StartsWith("'") -and $value.EndsWith("'"))) {
+      $value = $value.Substring(1,$value.Length-2)
+    }
+    if ($key -and -not [Environment]::GetEnvironmentVariable($key,'Process')) {
+      [Environment]::SetEnvironmentVariable($key,$value,'Process')
+    }
+  }
+}
 
 Require-Command 'psql'
 Require-Command 'pg_dump'
 Require-Command 'git'
 
+$appRoot = (Resolve-Path (Join-Path $PSScriptRoot '..')).Path
+Import-DotEnv (Join-Path $appRoot '.env.local')
 $connection = if ($env:DATABASE_URL) { $env:DATABASE_URL } else { $env:POSTGRES_URL }
-if (-not $connection) { throw 'DATABASE_URL or POSTGRES_URL is required. Keep it in .env.local / process environment, never Git.' }
+if (-not $connection) { throw 'DATABASE_URL or POSTGRES_URL is required in .env.local or process environment. Never commit the real value.' }
 
 $oldPgDatabase = $env:PGDATABASE
 $env:PGDATABASE = $connection
