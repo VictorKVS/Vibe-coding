@@ -323,6 +323,179 @@ ALINA CONTROL CENTER
 
 ---
 
+### 2026-09-14 — Live Control Plane / RBAC / audited writes
+
+**COMMITS**
+
+```text
+a55d2e9b9a3b7b569d0e2f5d253fdd94145e0598  temporary versioned-prompt registry spike
+1afa06bba7fa857299a2c77cf87ccbbbd390aeee  removed unwired prompt spike before production use
+ade0402d496f4c22566123615c327ec08a2773b0  live Admin/IB controls + RBAC status panel
+55e7e9f96f1c875a751d37d9b7ee1c9760713a97  route overrides generalized to all runtime providers
+```
+
+**TASK**
+
+Перевести `ALINA CONTROL CENTER` из read-only P0 в реально действующий, но ограниченный и аудируемый control plane для Администратора и ИБ.
+
+**WHAT CHANGED**
+
+Реальные privileged writes включены только при наличии server-side role token. Панель теперь умеет управлять:
+
+```text
+ADMINISTRATOR
+├── enable / disable model
+├── pin model first in AUTO route by task
+├── activate / deactivate prompt policy
+├── connect / disconnect KB
+├── pgvector policy flag
+├── backup policy flag
+└── object-storage policy flag
+
+IB / AI SECURITY
+├── model APPROVED / REVIEW / BLOCKED
+├── prompt APPROVED / PENDING / BLOCKED
+└── KB SECURITY HOLD / RELEASE
+```
+
+Добавлен отдельный раздел `Доступ / RBAC`, который показывает состояние двух независимых привилегированных ролей и separation of duties. Token вводится в браузере только в память текущей страницы и передаётся в `Authorization: Bearer ...`; API его не возвращает и audit log его не сохраняет.
+
+Runtime-состояние записывается локально в:
+
+```text
+DZ_17/app/runtime/config/admin-control.v1.json
+```
+
+Audit ledger записывается локально в:
+
+```text
+DZ_17/app/runtime/audit/admin-events.jsonl
+```
+
+Оба каталога уже исключены из Git. `/api/llm` читает `admin-control.v1.json` через `lib/runtime-policy.ts`: disabled/blocked model, blocked/inactive prompt или KB hold учитываются сервером до вызова модели. Route override теперь может ссылаться на любую runtime-модель (`llamacpp`, `gigachat`, `openai`, `compatible`, `ollama`, `demo`); если override недоступен или заблокирован, `/api/llm` безопасно продолжает разрешённый fallback-chain.
+
+**WHY**
+
+Нужно было избежать декоративной админки: изменение модели, маршрута или KB должно реально влиять на runtime, при этом Admin не должен иметь полномочия незаметно снять security block, а ИБ не должен переписывать предметные знания или эксплуатационные настройки.
+
+**ORIGIN_CLASS**
+
+```text
+HUMAN_DECISION   — пользователь: «ну вперед» после согласования живого Admin/ИБ Control Center;
+PROJECT_DECISION — role-token P0 RBAC, separation of duties, local versioned policy-state, mandatory reason, append-only audit event;
+```
+
+**SOURCE / DECISION**
+
+Использованы только существующие проектные спецификации и код:
+
+```text
+DZ_17/processes/ROLE_PANELS_AND_RBAC.md
+DZ_17/app/app/api/admin/config/route.ts
+DZ_17/app/lib/runtime-policy.ts
+DZ_17/app/app/api/llm/route.ts
+DZ_17/app/.env.example
+DZ_17/app/.gitignore
+```
+
+Внешние ГОСТы/книги на этом шаге не использовались как источник новых требований; это `PROJECT_DECISION`, а не `SOURCE_DERIVED`.
+
+**SOURCE LOCATOR**
+
+```text
+ROLE_PANELS_AND_RBAC.md → Admin panel / IB panel / RBAC matrix / Separation of duties
+runtime-policy.ts       → modelPolicyDecision / promptPolicyDecision / kbPolicyDecision / routeOverrideForTask
+api/llm/route.ts        → effectiveCatalog / effectiveAutoCandidates / policy checks before provider call
+```
+
+**PHYSICAL PATHS**
+
+Обновлены:
+
+```text
+DZ_17/app/app/admin-security-console.tsx
+DZ_17/app/app/api/admin/config/route.ts
+DZ_17/DEVELOPMENT_JOURNAL.md
+```
+
+Runtime-only generated paths:
+
+```text
+DZ_17/app/runtime/config/admin-control.v1.json
+DZ_17/app/runtime/audit/admin-events.jsonl
+```
+
+**CANONICAL OBJECT IDS**
+
+Новые предметные KB-объекты не создавались. Control plane оперирует уже существующими model IDs, prompt IDs и KB IDs. Состояние является runtime policy, а не копией самой KB.
+
+**DEPENDENCIES**
+
+```text
+ALINA_ADMIN_TOKEN
+ALINA_SECURITY_TOKEN
+/api/admin/config
+/api/llm
+lib/runtime-policy.ts
+```
+
+**VALIDATION / TEST**
+
+GitHub Actions:
+
+```text
+workflow: DZ-17 ALINA Multimodal Check
+run:      34809336362
+commit:   55e7e9f96f1c875a751d37d9b7ee1c9760713a97
+result:   SUCCESS
+```
+
+Проверяемые ограничения:
+
+```text
+- без server-side token privileged write отклоняется;
+- неверный Bearer token → 401;
+- action + target + reason обязательны;
+- Admin и IB имеют разные разрешённые actions;
+- secret values / connection strings не возвращаются;
+- каждое успешное изменение повышает control state version;
+- каждое успешное изменение добавляет audit event;
+- runtime policy читается непосредственно LLM Gateway;
+- route override не отменяет безопасный fallback при недоступной/blocked модели.
+```
+
+Временный `prompt-registry.ts` spike был удалён до подключения к runtime, потому что создавал бы второй source-of-truth рядом с системными промтами в `api/llm/route.ts`. Это сознательно отклонённый вариант, а не завершённая функция.
+
+**REVIEW STATUS**
+
+```text
+implementation: CI green
+local privileged-write acceptance: pending user runtime with ALINA_ADMIN_TOKEN / ALINA_SECURITY_TOKEN
+```
+
+**RESULT**
+
+```text
+SYS GEAR
+  ↓
+CONTROL CENTER
+  ├── ADMIN token → operations/routing/connectivity
+  ├── SECURITY token → approval/block/hold
+  ├── runtime policy state
+  ├── audit ledger
+  └── /api/llm enforcement
+```
+
+**NEXT STEP**
+
+1. Сделать настоящие individual identities: users/groups + session/OIDC вместо shared role tokens.
+2. Реализовать versioned prompt-body workflow без второго source-of-truth: draft → IB review → approved → activate → rollback.
+3. Подключить реальный PostgreSQL + pgvector persistence и health check, затем перенести audit ledger в отдельную БД/таблицу с append-only policy.
+4. Добавить hash/source/trust metadata для локальных моделей и security quarantine.
+5. Добавить UI acceptance для Admin/IB сценариев в CI.
+
+---
+
 ## 4. Шаблон следующей записи
 
 ```markdown
