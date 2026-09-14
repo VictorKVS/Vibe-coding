@@ -70,6 +70,7 @@ function authorized(request:Request,role:Role){
 function isBool(x:unknown):x is boolean{return typeof x==='boolean';}
 function isSecurityState(x:unknown):x is 'approved'|'review'|'blocked'{return x==='approved'||x==='review'||x==='blocked';}
 function isReviewState(x:unknown):x is 'approved'|'pending'|'blocked'{return x==='approved'||x==='pending'||x==='blocked';}
+function isModelRouteId(value:string){return value==='demo'||/^(llamacpp|gigachat|openai|compatible|ollama):.+$/.test(value);}
 
 export async function GET(){
  const databaseConfigured=Boolean(process.env.DATABASE_URL||process.env.POSTGRES_URL);
@@ -77,11 +78,12 @@ export async function GET(){
  const state=await readState();
  const adminConfigured=Boolean(tokenFor('admin')),securityConfigured=Boolean(tokenFor('security'));
  return Response.json({
-  schemaVersion:'alina-admin-config-v2',
+  schemaVersion:'alina-admin-config-v3',
   mode:adminConfigured||securityConfigured?'controlled_writes':'read_only_preview',
   warning:adminConfigured||securityConfigured?'Privileged writes require a role token and are written to the local audit ledger. Secret values are never returned.':'ALINA_ADMIN_TOKEN / ALINA_SECURITY_TOKEN are not configured; control center stays read-only.',
   roles:['ADMINISTRATOR','IB_AI_SECURITY'],
   routableTasks:ROUTABLE_TASKS,
+  routeOverridePolicy:'any runtime model id; unavailable or blocked overrides fall back safely in /api/llm',
   auth:{adminConfigured,securityConfigured,tokenValuesExposed:false},
   prompts,
   knowledgeBases:kbConnections,
@@ -108,7 +110,7 @@ export async function POST(request:Request){
   }else if(role==='security'&&action==='model.set_security'&&isSecurityState(body.value)){
    const current=state.modelPolicies[target]||{enabled:true,security:'review' as const};state.modelPolicies[target]={...current,security:body.value};
   }else if(role==='admin'&&action==='route.set_override'&&ROUTABLE_TASKS.includes(target)&&typeof body.value==='string'){
-   const modelId=body.value.trim();if(modelId&&!modelId.startsWith('gigachat:'))throw new Error('В этом selector разрешены только online-модели GigaChat.');
+   const modelId=body.value.trim();if(modelId.length>240)throw new Error('Model id слишком длинный.');if(modelId&&!isModelRouteId(modelId))throw new Error('Некорректный model id для route override.');
    if(modelId)state.routeOverrides[target]=modelId;else delete state.routeOverrides[target];
   }else if(role==='admin'&&action==='prompt.set_active'&&isBool(body.value)){
    const current=state.promptPolicies[target]||{active:false,review:'pending' as const,version:1};state.promptPolicies[target]={...current,active:body.value,version:current.version+1};
