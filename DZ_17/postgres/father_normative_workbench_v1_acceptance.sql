@@ -3,15 +3,33 @@
 
 \pset pager off
 
+-- Count the eight required primary tables by exact schema + table name.
+-- This intentionally avoids double-counting pre-existing tables with the same
+-- name in another schema (for example normative.tags + workbench.tags).
+WITH required(schema_name, table_name) AS (
+  VALUES
+    ('normative','document_versions'),
+    ('normative','document_fragments'),
+    ('normative','document_change_events'),
+    ('normative','fragment_changes'),
+    ('workbench','annotations'),
+    ('workbench','tags'),
+    ('workbench','annotation_tags'),
+    ('workbench','fragment_links')
+), found AS (
+  SELECT r.schema_name, r.table_name,
+         EXISTS (
+           SELECT 1
+           FROM information_schema.tables t
+           WHERE t.table_schema=r.schema_name
+             AND t.table_name=r.table_name
+         ) AS ok
+  FROM required r
+)
 SELECT 'required_tables' AS check_name,
-       count(*) AS found,
-       8 AS expected
-FROM information_schema.tables
-WHERE table_schema IN ('normative','workbench')
-  AND table_name IN (
-    'document_versions','document_fragments','document_change_events','fragment_changes',
-    'annotations','tags','annotation_tags','fragment_links'
-  );
+       count(*) FILTER (WHERE ok) AS found,
+       count(*) AS expected
+FROM found;
 
 SELECT 'workbench_events' AS check_name,
        to_regclass('workbench.events') IS NOT NULL AS ok;
