@@ -6,6 +6,7 @@ const base=value('--base','http://127.0.0.1:3000').replace(/\/$/,'');
 const adminToken=process.env.ALINA_ADMIN_TOKEN||'';
 const securityToken=process.env.ALINA_SECURITY_TOKEN||'';
 const reason='CI control-plane smoke';
+let originalPromptVersion=1;
 
 function assert(condition,message){if(!condition)throw new Error(message)}
 async function request(path,options={}){
@@ -32,6 +33,7 @@ async function cleanup(){
   ['security',securityToken,'prompt.set_review','PROMPT-BASE-ALINA','approved'],
   ['security',securityToken,'kb.set_hold','KB-FOUNDATION',false],
   ['admin',adminToken,'route.set_override','dialogue',''],
+  ['admin',adminToken,'prompt.activate_version','PROMPT-BASE-ALINA',originalPromptVersion],
  ];
  for(const [role,token,action,target,value] of steps){
   try{await mutate(role,token,action,target,value)}catch(error){console.warn('[CONTROL-PLANE] cleanup warning:',error instanceof Error?error.message:error)}
@@ -48,6 +50,14 @@ async function main(){
   assert(initial.data?.auth?.adminConfigured===true,'admin role must be configured');
   assert(initial.data?.auth?.securityConfigured===true,'security role must be configured');
   assert(initial.data?.auth?.tokenValuesExposed===false,'token values must never be exposed');
+
+  const deniedBodies=await request('/api/admin/config?include_prompt_bodies=1&role=admin');
+  assert(deniedBodies.response.status===401,'prompt bodies must require authorization');
+  const secured=await request('/api/admin/config?include_prompt_bodies=1&role=admin',{headers:{authorization:`Bearer ${adminToken}`}});
+  assert(secured.response.ok,'authorized prompt registry read failed');
+  const basePrompt=secured.data?.promptRegistry?.find?.(x=>x.id==='PROMPT-BASE-ALINA');
+  assert(basePrompt&&typeof basePrompt.activeBody==='string','authorized prompt body missing');
+  originalPromptVersion=basePrompt.activeVersion||1;
 
   await mutate('admin',adminToken,'model.set_enabled','demo',false);
   let llm=await request('/api/llm');
@@ -70,17 +80,33 @@ async function main(){
   await expectDenied('dialogue','PROMPT_POLICY_DENY');
   await mutate('security',securityToken,'prompt.set_review','PROMPT-BASE-ALINA','approved');
 
+  const marker=`CI_PROMPT_VERSION_${Date.now()}`;
+  const created=await mutate('admin',adminToken,'prompt.create_draft','PROMPT-BASE-ALINA',{body:`${basePrompt.activeBody}\n\n${marker}: сохраняй проверяемое происхождение решений.`});
+  const draftVersion=created.data?.result?.version||created.result?.version;
+  assert(Number.isInteger(draftVersion)&&draftVersion>originalPromptVersion,'prompt draft version was not created');
+  const afterDraft=await request('/api/admin/config?include_prompt_bodies=1&role=security',{headers:{authorization:`Bearer ${securityToken}`}});
+  const reviewedPrompt=afterDraft.data?.promptRegistry?.find?.(x=>x.id==='PROMPT-BASE-ALINA');
+  const draft=reviewedPrompt?.versions?.find?.(x=>x.version===draftVersion);
+  assert(draft?.review==='pending'&&draft?.body?.includes(marker),'Security reviewer must see pending draft body');
+  await mutate('security',securityToken,'prompt.review_version','PROMPT-BASE-ALINA',{version:draftVersion,review:'approved'});
+  await mutate('admin',adminToken,'prompt.activate_version','PROMPT-BASE-ALINA',draftVersion);
+  const promptProbe=await request('/api/llm',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({selection:'demo',task:'dialogue',messages:[{role:'user',content:'CI active prompt version probe'}]})});
+  assert(promptProbe.response.ok,'LLM prompt version probe failed');
+  assert(promptProbe.data?.promptVersion===draftVersion,`LLM did not use activated prompt version v${draftVersion}`);
+  await mutate('admin',adminToken,'prompt.activate_version','PROMPT-BASE-ALINA',originalPromptVersion);
+
   await mutate('security',securityToken,'kb.set_hold','KB-FOUNDATION',true);
   await expectDenied('kb_extract','KB_POLICY_DENY',{workflow:'idea_to_knowledge_base'});
   await mutate('security',securityToken,'kb.set_hold','KB-FOUNDATION',false);
 
   const final=await request('/api/admin/config');
   assert(final.response.ok,'final GET /api/admin/config failed');
-  assert(Array.isArray(final.data?.audit)&&final.data.audit.length>=8,'audit ledger must contain privileged events');
+  assert(Array.isArray(final.data?.audit)&&final.data.audit.length>=12,'audit ledger must contain privileged events');
   const serialized=JSON.stringify(final.data);
   assert(!serialized.includes(adminToken),'admin token leaked in API response');
   assert(!serialized.includes(securityToken),'security token leaked in API response');
-  console.log(`[CONTROL-PLANE] PASS · state v${final.data?.control?.version||'?'} · audit ${final.data.audit.length}`);
+  assert(!serialized.includes(marker),'prompt body leaked in unprivileged API response');
+  console.log(`[CONTROL-PLANE] PASS · state v${final.data?.control?.version||'?'} · audit ${final.data.audit.length} · prompt v${draftVersion} reviewed/activated/rolled back`);
  }catch(error){failed=true;console.error('[CONTROL-PLANE] FAIL',error);}
  finally{await cleanup();}
  if(failed)process.exit(1);
