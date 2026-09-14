@@ -40,8 +40,16 @@ yarn-error.log*
 /runtime/knowledge-factory/
 /runtime/knowledge-factory-import/
 /runtime/legal-intake/
+/runtime/database-backups/
 /runtime/trace/
 *.gguf
+
+# database backups must never be committed to the public repository
+*.dump
+*.backup
+*.pgdump
+*.sql.gz
+.pgpass
 
 # deployment and generated files
 .vercel
