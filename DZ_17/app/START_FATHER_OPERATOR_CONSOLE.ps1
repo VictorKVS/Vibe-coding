@@ -1,35 +1,41 @@
 $ErrorActionPreference = 'Stop'
+Set-Location -LiteralPath $PSScriptRoot
 
 Write-Host '============================================================'
-Write-Host 'FATHER - Пульт решений оператора'
+Write-Host 'FATHER Operator Console launcher'
 Write-Host '============================================================'
 
 $nodeVersion = (& node --version).Trim()
-Write-Host "Версия Node: $nodeVersion"
+Write-Host "Node: $nodeVersion"
 
 $major = 0
-if ($nodeVersion -match '^v(\d+)\.') { $major = [int]$Matches[1] }
+if ($nodeVersion -match '^v(\d+)\.') {
+    $major = [int]$Matches[1]
+}
+
 if ($major -ne 22) {
-  Write-Warning "Базовая версия проекта в CI - Node 22.13.1; сейчас используется $nodeVersion. Для прототипа продолжаем запуск, но при ошибке переключимся на Node 22.13.1."
+    Write-Warning "Project CI baseline is Node 22.13.1; current runtime is $nodeVersion. Prototype startup will continue."
 }
 
 $missing = @()
 if (-not (Test-Path '.\node_modules\@openai\sites-vite-plugin')) {
-  $missing += '@openai/sites-vite-plugin@0.2.0'
+    $missing += '@openai/sites-vite-plugin@0.2.0'
 }
 if (-not (Test-Path '.\node_modules\@tailwindcss\postcss')) {
-  $missing += '@tailwindcss/postcss@4.2.1'
+    $missing += '@tailwindcss/postcss@4.2.1'
 }
 
 if ($missing.Count -gt 0) {
-  Write-Host '[ПОДГОТОВКА] Устанавливаю локальные зависимости для сборки без изменения package.json...'
-  & npm install --no-save @openai/sites-vite-plugin@0.2.0 @tailwindcss/postcss@4.2.1
-  if ($LASTEXITCODE -ne 0) { throw 'Не удалось установить зависимости, необходимые для локального запуска.' }
+    Write-Host '[SETUP] Installing local build-only dependencies (no-save)...'
+    & npm install --no-save @openai/sites-vite-plugin@0.2.0 @tailwindcss/postcss@4.2.1
+    if ($LASTEXITCODE -ne 0) {
+        throw 'Build-only dependency installation failed.'
+    }
 } else {
-  Write-Host '[ПОДГОТОВКА] Зависимости для сборки уже установлены.'
+    Write-Host '[SETUP] Build-only dependencies are already installed.'
 }
 
-Write-Host '[ЗАПУСК] Запускаю сервер разработки Vinext...'
-Write-Host '[ОТКРЫТЬ] Добавьте /operator-console к адресу, который будет показан ниже.'
+Write-Host '[START] Starting Vinext development server...'
+Write-Host '[OPEN] Open /operator-console on the URL printed below.'
 & npm run dev
 exit $LASTEXITCODE
