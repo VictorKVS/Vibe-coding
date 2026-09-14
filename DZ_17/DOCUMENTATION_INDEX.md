@@ -12,6 +12,7 @@
 | `SYSTEM_PROMPT_ALINA.md` | Базовый системный контракт ALINA |
 | `METHODOLOGY_AND_STANDARDS.md` | Мастер-перечень стандартов, методик и литературы |
 | `DEVELOPMENT_JOURNAL.md` | Журнал разработки: что изменено/придумано, источник, физические пути, review и результат |
+| `CONTROL_PLANE_ACCEPTANCE.md` | Acceptance-досье живого Admin/ИБ Control Plane: права, физические пути, runtime enforcement, commits и CI evidence |
 
 ## 2. Формальный комплект проектирования
 
@@ -126,6 +127,8 @@ P0 IMPLEMENTATION
         ↓
 CODE / TESTS / TELEMETRY
         ↓
+CONTROL_PLANE_ACCEPTANCE / OTHER ACCEPTANCE RECORDS
+        ↓
 DEVELOPMENT_JOURNAL
 ```
 
@@ -146,8 +149,9 @@ DEVELOPMENT_JOURNAL
 11. tests;
 12. telemetry/event model;
 13. security controls;
-14. changelog/version;
-15. `DEVELOPMENT_JOURNAL.md` с причиной, origin class, путями и review status.
+14. acceptance evidence для исполняемого контура;
+15. changelog/version;
+16. `DEVELOPMENT_JOURNAL.md` с причиной, origin class, путями и review status.
 
 ## 8. Правило происхождения данных
 
