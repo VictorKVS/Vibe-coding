@@ -14,6 +14,8 @@
     "translate:pdf": "node scripts/translate-pdf-book.mjs",
     "kf:sidecar": "node scripts/knowledge-factory-sidecar.mjs",
     "kf:ingest-pdf": "node scripts/ingest-pdf-kf.mjs",
+    "kf:intake-downloads": "node scripts/intake-downloads-one-by-one.mjs",
+    "kf:intake-selftest": "node scripts/document-intake-selftest.mjs",
     "kf:structure-book": "node scripts/reconstruct-book-structure.mjs",
     "kf:ideas": "node scripts/detect-idea-boundaries.mjs",
     "kf:parallel5": "node scripts/run-kf-5-streams.mjs",
