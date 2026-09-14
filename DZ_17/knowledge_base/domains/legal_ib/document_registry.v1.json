@@ -1,12 +1,14 @@
 {
   "schema_version": "alina-legal-ib-document-registry-v1",
-  "purpose": "Канонический реестр юридических и нормативно-методических документов по информационной безопасности. Один документ хранится один раз и переиспользуется агентами по canonical ID.",
+  "purpose": "Канонический реестр юридических и нормативно-методических документов по информационной безопасности. Один юридический документ хранится один раз; разные скачанные файлы/редакции фиксируются как Capture одного Source.",
   "rules": {
     "filename_is_not_title": true,
     "full_title_requires_document_evidence": true,
     "official_status_requires_external_verification": true,
     "auto_publish_verified": false,
-    "duplicate_key_priority": ["sha256", "document_type+document_number+document_date_iso", "normalized_full_title"]
+    "document_identity_key_priority": ["source_id", "document_type+document_number+document_date_iso", "normalized_full_title"],
+    "capture_dedup_key": "sha256",
+    "same_document_new_file_action": "append_capture_not_duplicate_document"
   },
   "documents": []
 }
