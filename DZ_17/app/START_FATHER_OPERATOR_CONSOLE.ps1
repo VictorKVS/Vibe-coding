@@ -1,16 +1,16 @@
 $ErrorActionPreference = 'Stop'
 
 Write-Host '============================================================'
-Write-Host 'FATHER Knowledge Watch - Operator Console launcher'
+Write-Host 'FATHER - Пульт решений оператора'
 Write-Host '============================================================'
 
 $nodeVersion = (& node --version).Trim()
-Write-Host "Node: $nodeVersion"
+Write-Host "Версия Node: $nodeVersion"
 
 $major = 0
 if ($nodeVersion -match '^v(\d+)\.') { $major = [int]$Matches[1] }
 if ($major -ne 22) {
-  Write-Warning "Project CI baseline is Node 22.13.1; current runtime is $nodeVersion. Continuing for prototype smoke only."
+  Write-Warning "Базовая версия проекта в CI - Node 22.13.1; сейчас используется $nodeVersion. Для прототипа продолжаем запуск, но при ошибке переключимся на Node 22.13.1."
 }
 
 $missing = @()
@@ -22,14 +22,14 @@ if (-not (Test-Path '.\node_modules\@tailwindcss\postcss')) {
 }
 
 if ($missing.Count -gt 0) {
-  Write-Host '[SETUP] Installing build-only local dependencies (no-save)...'
+  Write-Host '[ПОДГОТОВКА] Устанавливаю локальные зависимости для сборки без изменения package.json...'
   & npm install --no-save @openai/sites-vite-plugin@0.2.0 @tailwindcss/postcss@4.2.1
-  if ($LASTEXITCODE -ne 0) { throw 'npm install for build-only dependencies failed' }
+  if ($LASTEXITCODE -ne 0) { throw 'Не удалось установить зависимости, необходимые для локального запуска.' }
 } else {
-  Write-Host '[SETUP] Build-only dependencies already present.'
+  Write-Host '[ПОДГОТОВКА] Зависимости для сборки уже установлены.'
 }
 
-Write-Host '[START] Opening Vinext development server...'
-Write-Host '[OPEN] Use /operator-console on the URL printed below.'
+Write-Host '[ЗАПУСК] Запускаю сервер разработки Vinext...'
+Write-Host '[ОТКРЫТЬ] Добавьте /operator-console к адресу, который будет показан ниже.'
 & npm run dev
 exit $LASTEXITCODE
