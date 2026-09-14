@@ -34,22 +34,25 @@ jobs:
       - name: Ensure build-only dev packages
         run: npm install --no-save @openai/sites-vite-plugin@0.2.0 @tailwindcss/postcss@4.2.1
 
-      - name: Check Knowledge Factory scripts
+      - name: Check Knowledge Factory and control-plane scripts
         run: |
           node --check scripts/knowledge-factory-sidecar.mjs
           node --check scripts/reconstruct-book-structure.mjs
           node --check scripts/run-kf-5-streams.mjs
+          node --check scripts/control-plane-smoke.mjs
 
       - name: Build
         run: npm run build
 
-      - name: Smoke test production health, trace, A2 and five-stream analytics
+      - name: Smoke test production health, control plane, trace, A2 and five-stream analytics
         env:
           PORT: '8080'
           HOST: '0.0.0.0'
           KF_SIDECAR_HOST: '127.0.0.1'
           KF_SIDECAR_PORT: '8791'
           KF_SIDECAR_BASE_URL: 'http://127.0.0.1:8791'
+          ALINA_ADMIN_TOKEN: 'ci-admin-role-token'
+          ALINA_SECURITY_TOKEN: 'ci-security-role-token'
         run: |
           set -euo pipefail
           npm run kf:sidecar > /tmp/kf-sidecar.log 2>&1 &
@@ -86,6 +89,10 @@ jobs:
             exit 1
           fi
           cat /tmp/health.json
+          echo
+
+          echo '[CONTROL] Admin / IB RBAC and runtime-policy smoke'
+          npm run test:control -- --base http://127.0.0.1:8080
           echo
 
           TRACE_ID="CI-TRACE-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
@@ -153,4 +160,4 @@ jobs:
           grep '\[TRACE\]' /tmp/kf-sidecar.log || true
           echo '[APP LOG]'
           tail -n 80 /tmp/dz17-server.log || true
-          echo 'DZ-17 production health + Knowledge Factory A1/A2 + five-stream analytics smoke passed.'
+          echo 'DZ-17 production health + Admin/IB control plane + Knowledge Factory A1/A2 + five-stream analytics smoke passed.'
