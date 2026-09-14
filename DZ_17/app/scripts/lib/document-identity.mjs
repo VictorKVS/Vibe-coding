@@ -10,14 +10,14 @@ function pageLines(extracted,maxPages=6){const out=[];for(const page of (extract
 function detectKind(lines){
  const joined=lines.map(x=>x.upper).join('\n');
  if(/ФЕДЕРАЛЬНЫЙ ЗАКОН/.test(joined))return 'federal_law';
- if(/\bУКАЗ\b/.test(joined)&&/ПРЕЗИДЕНТ(?:А)? РОССИЙСКОЙ ФЕДЕРАЦИИ/.test(joined))return 'presidential_decree';
- if(/\bПОСТАНОВЛЕНИЕ\b/.test(joined)&&/ПРАВИТЕЛЬСТВО РОССИЙСКОЙ ФЕДЕРАЦИИ/.test(joined))return 'government_resolution';
- if(/\bГОСТ(?:\s+Р)?(?:\s+ИСО\/МЭК|\s+ИСО|\s+IEC|\s+ISO)?\s+[A-ZА-Я0-9]/.test(joined))return 'gost';
- if(/\bПРИКАЗ\b/.test(joined))return 'order';
+ if(/УКАЗ/.test(joined)&&/ПРЕЗИДЕНТ(?:А)? РОССИЙСКОЙ ФЕДЕРАЦИИ/.test(joined))return 'presidential_decree';
+ if(/ПОСТАНОВЛЕНИЕ/.test(joined)&&/ПРАВИТЕЛЬСТВО РОССИЙСКОЙ ФЕДЕРАЦИИ/.test(joined))return 'government_resolution';
+ if(/ГОСТ(?:\s+Р)?(?:\s+ИСО\/МЭК|\s+ИСО|\s+IEC|\s+ISO)?\s+[A-ZА-Я0-9]/.test(joined))return 'gost';
+ if(/ПРИКАЗ/.test(joined))return 'order';
  if(/МЕТОДИЧЕСК(?:ИЕ|ИХ) РЕКОМЕНДАЦ/.test(joined))return 'methodical_recommendations';
- if(/\bТРЕБОВАНИЯ\b/.test(joined))return 'requirements';
- if(/\bПОЛОЖЕНИЕ\b/.test(joined))return 'regulation';
- if(/\bПИСЬМО\b/.test(joined))return 'letter';
+ if(/ТРЕБОВАНИЯ/.test(joined))return 'requirements';
+ if(/ПОЛОЖЕНИЕ/.test(joined))return 'regulation';
+ if(/ПИСЬМО/.test(joined))return 'letter';
  return 'unknown';
 }
 
@@ -41,7 +41,7 @@ function detectNumberDate(lines){
 
 function detectGost(lines){
  for(let i=0;i<lines.length;i++){
-  const m=lines[i].text.match(/\b(ГОСТ(?:\s+Р)?(?:\s+ИСО\/МЭК|\s+ИСО|\s+ISO\/IEC|\s+ISO|\s+IEC)?\s+[A-ZА-Я0-9][A-ZА-Я0-9.\-–/:]*(?:-\d{4})?)/i);if(!m)continue;
+  const m=lines[i].text.match(/(ГОСТ(?:\s+Р)?(?:\s+ИСО\/МЭК|\s+ИСО|\s+ISO\/IEC|\s+ISO|\s+IEC)?\s+[A-ZА-Я0-9][A-ZА-Я0-9.\-–/:]*(?:-\d{4})?)/i);if(!m)continue;
   const parts=[];for(let j=i+1;j<Math.min(i+6,lines.length);j++){const t=lines[j].text;if(/^(Москва|Стандартинформ|Предисловие|Содержание)$/i.test(t))break;if(t.length>=5&&t.length<=220)parts.push(t);if(parts.join(' ').length>260)break;}
   const subject=clean(parts.join(' '));return {number:clean(m[1]),subject:subject||null,evidence:evidence(lines[i].page,'standard_id',lines[i].text),subjectEvidence:subject?evidence(lines[i+1]?.page||lines[i].page,'subject',subject):null};
  }
@@ -49,7 +49,7 @@ function detectGost(lines){
 }
 
 function detectSubject(lines,kind){
- const starts={federal_law:/ФЕДЕРАЛЬНЫЙ ЗАКОН/,government_resolution:/ПОСТАНОВЛЕНИЕ/,presidential_decree:/\bУКАЗ\b/,order:/\bПРИКАЗ\b/};
+ const starts={federal_law:/ФЕДЕРАЛЬНЫЙ ЗАКОН/,government_resolution:/ПОСТАНОВЛЕНИЕ/,presidential_decree:/УКАЗ/,order:/ПРИКАЗ/};
  const marker=starts[kind];const found=marker?lines.findIndex(x=>marker.test(x.upper)):0;const startIndex=Math.max(0,found);
  for(let i=startIndex;i<Math.min(lines.length,startIndex+40);i++){
   if(/^(О|ОБ)\s+[А-ЯЁ]/i.test(lines[i].text)&&lines[i].text.length<300){
@@ -63,9 +63,9 @@ function detectSubject(lines,kind){
 
 function detectSecurityDomain(text){
  const t=upper(text);const terms=[
-  ['personal_data',/ПЕРСОНАЛЬН(?:ЫХ|ЫЕ|ЫМИ) ДАНН/],['kii',/(КРИТИЧЕСКОЙ ИНФОРМАЦИОННОЙ ИНФРАСТРУКТУР|\bКИИ\b)/],
+  ['personal_data',/ПЕРСОНАЛЬН(?:ЫХ|ЫЕ|ЫМИ) ДАНН/],['kii',/(КРИТИЧЕСКОЙ ИНФОРМАЦИОННОЙ ИНФРАСТРУКТУР|КИИ)/],
   ['information_security',/(ИНФОРМАЦИОННОЙ БЕЗОПАСНОСТ|ЗАЩИТ[АЕЫ] ИНФОРМАЦИ|БЕЗОПАСНОСТИ ИНФОРМАЦИИ)/],['state_secret',/ГОСУДАРСТВЕНН(?:ОЙ|АЯ) ТАЙН/],
-  ['cryptography',/(КРИПТОГРАФ|ШИФРОВАЛ|СКЗИ)/],['fstec',/ФСТЭК/],['fsb',/ФСБ РОССИИ/],['gis_security',/(ГОСУДАРСТВЕНН(?:ОЙ|ЫЕ) ИНФОРМАЦИОНН(?:ОЙ|ЫЕ) СИСТЕМ|\bГИС\b)/],
+  ['cryptography',/(КРИПТОГРАФ|ШИФРОВАЛ|СКЗИ)/],['fstec',/ФСТЭК/],['fsb',/ФСБ РОССИИ/],['gis_security',/(ГОСУДАРСТВЕНН(?:ОЙ|ЫЕ) ИНФОРМАЦИОНН(?:ОЙ|ЫЕ) СИСТЕМ|ГИС)/],
  ];return terms.filter(([,re])=>re.test(t)).map(([tag])=>tag);
 }
 function chooseMetadataTitle(metadata){for(const [key,value] of Object.entries(metadata||{})){if(/title/i.test(key)&&!isJunkTitle(value))return clean(value);}return null;}
