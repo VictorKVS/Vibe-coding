@@ -84,9 +84,10 @@ DZ_17/profiles/
 | Статус | Путь | Назначение |
 |---|---|---|
 | EXISTS | `DZ_17/app/app/kb-analyst.tsx` | UI/logic текущего KB Analyst MVP |
-| EXISTS | `DZ_17/app/app/api/llm/route.ts` | LLM provider/router layer + task `translation` |
+| EXISTS | `DZ_17/app/app/api/llm/route.ts` | LLM provider/router layer + task `translation`; получает active prompt из canonical Prompt Registry |
 | EXISTS | `DZ_17/app/lib/translator-rag.ts` | deterministic terminology retrieval + exact Translation Memory retrieval |
 | EXISTS | `DZ_17/app/lib/runtime-policy.ts` | prompt/KB/model policy enforcement для runtime |
+| EXISTS | `DZ_17/app/lib/prompt-registry.ts` | **единственный builtin source of truth системных prompt bodies + versioned runtime Prompt Store API** |
 | EXISTS | `DZ_17/app/app/use-llm.ts` | клиентский LLM hook |
 | EXISTS | `DZ_17/app/app/model-switcher.tsx` | UI выбора модели |
 | EXISTS | `DZ_17/app/app/research-lab.tsx` | research UI |
@@ -95,12 +96,14 @@ DZ_17/profiles/
 | EXISTS | `DZ_17/app/scripts/run-kf-5-streams.mjs` | фактический 5-поточный аналитический baseline и телеметрия |
 | EXISTS | `DZ_17/app/scripts/run-father-orchestration.mjs` | исполнимый верхний orchestration pass: verify Source/Capture → translation gate → A2 ensure → PAR5 → честный stop на K5, пока runtime K5 не реализован |
 | EXISTS | `DZ_17/app/scripts/configure-existing-model-zoo.ps1` | регистрация существующего FATHER_MODELS без копирования весов и назначение specialist routes |
-| EXISTS | `DZ_17/app/app/admin-security-console.tsx` | единый side-panel Control Center для Admin и ИБ/AI Security |
+| EXISTS | `DZ_17/app/app/admin-security-console.tsx` | единый side-panel Control Center для Admin и ИБ/AI Security; модели, prompt workflow, KB, DB flags, RBAC, audit |
 | EXISTS | `DZ_17/app/app/admin-security-console.css` | стили боковой шестерёнки и Control Center |
-| EXISTS | `DZ_17/app/app/api/admin/config/route.ts` | безопасные метаданные моделей/промтов/KB/DB/security + route override |
+| EXISTS | `DZ_17/app/app/admin-prompt-editor.css` | стили защищённого versioned Prompt Editor |
+| EXISTS | `DZ_17/app/app/api/admin/config/route.ts` | RBAC API: model/route/prompt/KB/DB mutations, privileged prompt read, audit events |
+| EXISTS | `DZ_17/app/scripts/control-plane-smoke.mjs` | integration acceptance Admin/ИБ, runtime policies и prompt draft → review → activate → rollback |
 | EXISTS | `DZ_17/app/app/neural-hud.tsx` | HUD + физическая точка монтирования кнопки `SYS` |
 
-Код не является местом хранения канонического нормативного знания. Он должен получать правила из KB/профилей/контрактов.
+Код не является местом хранения канонического нормативного знания. Он должен получать правила из KB/профилей/контрактов. Исключение: `lib/prompt-registry.ts` является каноническим **runtime-конфигурационным источником** builtin prompt bodies, а не нормативной KB.
 
 ---
 
@@ -118,6 +121,7 @@ DZ_17/profiles/
 | EXISTS | `DZ_17/processes/AI_SECURITY_PROCESS.md` | AI security process |
 | EXISTS | `DZ_17/processes/ROLE_PANELS_AND_RBAC.md` | роли Admin/ИБ/Reviewer/User и матрица полномочий |
 | EXISTS | `DZ_17/DEVELOPMENT_JOURNAL.md` | журнал архитектурных и KB-изменений |
+| EXISTS | `DZ_17/CONTROL_PLANE_ACCEPTANCE.md` | проверяемое досье Control Plane: физические пути, права, prompt workflow, CI evidence |
 
 ---
 
@@ -171,6 +175,21 @@ DZ_17/app/runtime/knowledge-factory/             # LOCAL_ONLY / ignored
 ```
 
 `father-runs/` содержит отчёты верхнего orchestration pass и не является канонической KB.
+
+### Runtime Control Plane и Prompt Store
+
+Отдельно от Knowledge Factory находятся изменяемые эксплуатационные состояния:
+
+```text
+DZ_17/app/runtime/                               # LOCAL_ONLY / ignored
+├── config/
+│   ├── admin-control.v1.json                    # model/prompt/KB/route/DB policy-state
+│   └── prompt-store.v1.json                     # runtime prompt versions + active version
+└── audit/
+    └── admin-events.jsonl                       # append-only privileged-action ledger P0
+```
+
+Эти файлы **не являются второй KB** и не содержат копий ГОСТов/книг. Это runtime state. Builtin baseline prompt bodies хранятся в Git один раз в `DZ_17/app/lib/prompt-registry.ts`, а runtime `prompt-store.v1.json` содержит только версии/изменения относительно управляемого Prompt Registry.
 
 ---
 
@@ -245,6 +264,16 @@ profiles/<domain>.v1.json references METHOD-PLAN-001
 ```
 
 Если один из шагов невозможен, запись нельзя считать полностью `verified`.
+
+Для runtime-настройки дополнительно:
+
+```text
+1. Открыть CONTROL_PLANE_ACCEPTANCE.md.
+2. Найти action/роль/physical path.
+3. Проверить runtime/config/admin-control.v1.json или prompt-store.v1.json локально.
+4. Проверить runtime/audit/admin-events.jsonl.
+5. Проверить соответствующий CI acceptance run.
+```
 
 ---
 
