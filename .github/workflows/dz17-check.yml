@@ -38,11 +38,32 @@ jobs:
         env:
           PORT: '8080'
           HOST: '0.0.0.0'
+          KF_SIDECAR_HOST: '127.0.0.1'
+          KF_SIDECAR_PORT: '8791'
+          KF_SIDECAR_BASE_URL: 'http://127.0.0.1:8791'
         run: |
           set -euo pipefail
+          npm run kf:sidecar > /tmp/kf-sidecar.log 2>&1 &
+          KF_PID=$!
           npm start > /tmp/dz17-server.log 2>&1 &
           SERVER_PID=$!
-          trap 'kill $SERVER_PID || true' EXIT
+          trap 'kill $SERVER_PID $KF_PID || true' EXIT
+
+          echo '[TEST] waiting for Knowledge Factory sidecar'
+          KF_READY=0
+          for i in $(seq 1 30); do
+            if curl --fail --silent --show-error http://127.0.0.1:8791/health >/tmp/kf-health.json; then
+              KF_READY=1
+              break
+            fi
+            sleep 1
+          done
+          if [ "$KF_READY" != '1' ]; then
+            cat /tmp/kf-sidecar.log
+            exit 1
+          fi
+          cat /tmp/kf-health.json
+          echo
 
           echo '[TEST] waiting for /api/health'
           READY=0
@@ -93,6 +114,8 @@ jobs:
           echo
           grep -q "$TEST_ID" /tmp/kf-trace.json
 
-          echo '[SERVER TRACE]'
-          grep '\[TRACE\]' /tmp/dz17-server.log || true
+          echo '[SIDECAR TRACE]'
+          grep '\[TRACE\]' /tmp/kf-sidecar.log || true
+          echo '[APP LOG]'
+          tail -n 80 /tmp/dz17-server.log || true
           echo 'DZ-17 production health + Knowledge Factory trace smoke passed.'
