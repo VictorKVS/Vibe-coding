@@ -2,9 +2,15 @@
 -- READ ONLY. Does not modify osint_kb.
 -- Goal: inspect the existing canonical normative.documents rows without
 -- assuming column names, then identify the exact 152-FZ record safely.
+--
+-- Force UTF-8 for query results. Some existing document rows contain U+FEFF
+-- (BOM / zero-width no-break space), which cannot be represented in WIN1251.
 
+\encoding UTF8
 \pset pager off
 \x on
+
+SELECT 'client_encoding' AS check_name, current_setting('client_encoding') AS value;
 
 SELECT 'documents_total' AS check_name, count(*) AS rows
 FROM normative.documents;
