@@ -1,38 +1,86 @@
 # ALINA / FATHER PostgreSQL
 
-Порядок безопасного подключения существующей рабочей БД:
+## Current architecture decision
+
+The existing `osint_kb` database is the preferred operational foundation for FATHER Knowledge Core.
+
+Do **not** create a second independent document/knowledge truth store when an existing canonical table can be extended safely.
+
+Current canonical domain tables include, among others:
+
+```text
+normative.documents
+normative.requirements
+normative.document_relations
+normative.requirement_relations
+osint.sources
+osint.claims
+osint.nodes
+osint.edges
+```
+
+## Safe deployment order
 
 ```text
 0. BACKUP EXISTING DB
 1. npm run db:inventory
-2. review database_snapshots/inventory/*
-3. map existing tables to ALINA objects
-4. apply knowledge_factory_v0.sql
-5. apply security_hardening_v0.sql
-6. reconcile counts / hashes
-7. migrate current Git registries only through reviewed migration
-8. run first db:snapshot
-9. acceptance
-10. operational cutover
+2. review database_snapshots/inventory-osint_kb/*
+3. compare current inventory with the accepted baseline
+4. map existing tables to FATHER canonical objects
+5. review the additive migration to be applied
+6. apply only the migration required for the current feature
+7. run its read-only acceptance SQL
+8. reconcile counts / hashes / referential integrity
+9. run db:snapshot
+10. connect application read path
+11. enable controlled writes only after operator acceptance
 ```
 
-`knowledge_factory_v0.sql` не удаляет и не переименовывает существующие пользовательские таблицы. Он создаёт отдельные schemas:
+## Normative Workbench v1
+
+For the legal/normative navigator use:
 
 ```text
-kf
-audit
-git_export
+father_normative_workbench_v1.sql
+father_normative_workbench_v1_acceptance.sql
 ```
 
-`security_hardening_v0.sql` создаёт только NOLOGIN group roles и grants/revokes; пароли, LOGIN roles и connection strings в Git не хранятся.
-
-Ключевой принцип для графа:
+This migration reuses `normative.documents` and adds:
 
 ```text
-node/edge = canonical object projection
+normative.document_versions
+normative.document_fragments
+normative.document_change_events
+normative.fragment_changes
+
+workbench.annotations
+workbench.tags
+workbench.annotation_tags
+workbench.fragment_links
+workbench.events
+```
+
+It is additive only: no existing table is dropped, renamed or truncated.
+
+## knowledge_factory_v0.sql
+
+`knowledge_factory_v0.sql` remains a design/baseline artifact for the original isolated `kf/audit/git_export` concept.
+
+**Do not apply it blindly to `osint_kb`.** It includes a parallel Knowledge Factory model and requires the `vector` extension. Any concepts reused from it (provenance, versioned weights, audit, Git-safe projections) must be reconciled with the current `osint_kb` canonical model before deployment.
+
+## Security hardening
+
+`security_hardening_v0.sql` creates NOLOGIN group roles and grants/revokes. Review it against the actual deployed schemas before applying it. Passwords, LOGIN roles and connection strings are never stored in Git.
+
+## Graph invariant
+
+```text
+node/edge = projection of canonical objects
 weight = append-only version history
 ```
 
-Старый вес не перезаписывается. Новая версия обязана иметь reason, method/factors/source_refs и supersedes_version.
+The graph is not a second source of truth. A link without evidence/review remains a proposal or hypothesis.
 
-Git snapshot не является полным backup. В Git попадает только `git_export.*`, то есть `public + git_export_allowed`. Full dump остаётся local/protected outside Git.
+## Backup invariant
+
+Git snapshot is not a full backup. Git contains only reviewed, sanitized projections/manifests. Full database backups and protected originals stay outside the public repository.
