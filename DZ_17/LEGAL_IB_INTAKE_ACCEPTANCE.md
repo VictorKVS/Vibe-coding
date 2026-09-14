@@ -52,6 +52,7 @@ Filename сохраняется только в local runtime candidate как a
 
 ```text
 DZ_17/app/scripts/lib/document-identity.mjs
+DZ_17/app/scripts/lib/legal-registry.mjs
 DZ_17/app/scripts/intake-downloads-one-by-one.mjs
 DZ_17/app/scripts/ingest-pdf-kf.mjs
 DZ_17/app/scripts/extract-pdf-text.py
@@ -80,6 +81,7 @@ DZ_17/app/runtime/knowledge-factory/
 ```text
 DZ_17/knowledge_base/domains/legal_ib/README.md
 DZ_17/knowledge_base/domains/legal_ib/document_registry.v1.json
+DZ_17/knowledge_base/PHYSICAL_MAP.md
 ```
 
 ### Процесс
@@ -89,14 +91,26 @@ DZ_17/processes/LEGAL_DOCUMENT_INTAKE.md
 DZ_17/processes/FATHER_DOCUMENT_KNOWLEDGE_PIPELINE.md
 ```
 
-## Dedup
+## Dedup: один юридический документ, много Capture
 
 ```text
 Capture key = SHA-256 file
-Source key for sufficiently identified legal act = hash(type + issuer + number + date)
+Stable Source = hash(type + issuer + number + date), когда реквизитов достаточно
+Canonical Document = stable Source / legal identity
 ```
 
-Это позволяет разным скачанным файлам/редакциям одного юридического акта ссылаться на стабильный Source, сохраняя отдельные Capture. Если юридическая идентичность недостаточна, временно используется hash-based Source и запись получает review.
+Две загрузки одного и того же файла не создают второй Capture. Другой файл/редакция того же юридического акта добавляется в `captures[]` существующего канонического документа. Если наблюдаемое полное название в новой Capture отличается, каноническое название не переписывается молча: добавляется `observed_titles`, выставляется `identity_conflict=true`, `review_status=pending`.
+
+Это обеспечивает модель:
+
+```text
+ONE LEGAL ACT
+   ↓
+ONE CANONICAL DOCUMENT / SOURCE
+   ├── Capture A · SHA-A
+   ├── Capture B · SHA-B
+   └── Capture C · SHA-C
+```
 
 ## Domain routing
 
@@ -140,6 +154,26 @@ npm run kf:intake-downloads -- --input-dir "D:\Documents"
 npm run kf:intake-downloads -- --input-dir "D:\Documents" --all 1
 ```
 
+## Автоматическая проверка
+
+Dedicated CI:
+
+```text
+workflow: DZ-17 Document Intake Check
+run_id:   34811554013
+commit:   b8916c2742789aa85473f69119332f26f4512c09
+result:   SUCCESS
+```
+
+Selftest проверяет идентификацию 152-ФЗ, ПП РФ №1119, приказа ФСТЭК №17 и ГОСТ Р 57580.1-2017, а также контракт:
+
+```text
+first capture → document_created
+second different SHA, same legal Source → capture_appended
+same SHA again → sha256 duplicate
+registry document count remains 1
+```
+
 ## Связанные commits
 
 ```text
@@ -155,6 +189,12 @@ ab3694a4db8f1e47dacb26e08f1cc87e4ea62c22  npm commands
 5ea31414358bdae04545ec6a40e581f8748739aa  documented intake algorithm
 11cdba8dcb4e8ab2724eddefb20dade99aa787ef  split legal-heading recognition fix
 65333723d9a0d2b9f0743c44f2fcb97cfe4c95d0  Cyrillic marker boundary fix
+1b1cd1cf3c34504748f36f77c185882fb2fb3e93  Source/Capture canonical registry rules
+44296283233b8422808f9ad0d62da6b2ac6dba91  canonical legal registry merge algorithm
+d319b2983e34161457dc923ed75aba1730863327  intake uses capture append and strict SHA dedup
+4d0a85b3d35adb0a6cd38cc30a3190f6bd8c519f  one-document/many-captures selftest
+b8916c2742789aa85473f69119332f26f4512c09  CI validates registry merge contract
+691ce55cfdb1dce855604016cd7dd312be716a02  physical map updated
 ```
 
 ## Не считать завершённым
