@@ -6,6 +6,7 @@ on:
     paths:
       - 'DZ_17/app/scripts/intake-downloads-one-by-one.mjs'
       - 'DZ_17/app/scripts/lib/document-identity.mjs'
+      - 'DZ_17/app/scripts/lib/legal-registry.mjs'
       - 'DZ_17/app/scripts/document-intake-selftest.mjs'
       - 'DZ_17/app/scripts/ingest-pdf-kf.mjs'
       - 'DZ_17/knowledge_base/domains/legal_ib/**'
@@ -14,6 +15,7 @@ on:
     paths:
       - 'DZ_17/app/scripts/intake-downloads-one-by-one.mjs'
       - 'DZ_17/app/scripts/lib/document-identity.mjs'
+      - 'DZ_17/app/scripts/lib/legal-registry.mjs'
       - 'DZ_17/app/scripts/document-intake-selftest.mjs'
       - 'DZ_17/app/scripts/ingest-pdf-kf.mjs'
       - 'DZ_17/knowledge_base/domains/legal_ib/**'
@@ -32,8 +34,9 @@ jobs:
       - name: Syntax check
         run: |
           node --check scripts/lib/document-identity.mjs
+          node --check scripts/lib/legal-registry.mjs
           node --check scripts/intake-downloads-one-by-one.mjs
           node --check scripts/document-intake-selftest.mjs
           node --check scripts/ingest-pdf-kf.mjs
-      - name: Identity fixtures
+      - name: Identity and dedup fixtures
         run: node scripts/document-intake-selftest.mjs
