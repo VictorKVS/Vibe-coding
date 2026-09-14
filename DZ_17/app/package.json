@@ -20,6 +20,7 @@
     "kf:ideas": "node scripts/detect-idea-boundaries.mjs",
     "kf:parallel5": "node scripts/run-kf-5-streams.mjs",
     "kf:father": "node scripts/run-father-orchestration.mjs",
+    "db:inventory": "powershell -ExecutionPolicy Bypass -File scripts/inventory-postgres.ps1",
     "db:snapshot": "powershell -ExecutionPolicy Bypass -File scripts/snapshot-postgres-to-git.ps1",
     "test:control": "node scripts/control-plane-smoke.mjs",
     "lint": "oxlint",
