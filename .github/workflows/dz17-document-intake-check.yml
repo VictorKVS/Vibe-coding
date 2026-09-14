@@ -1,0 +1,39 @@
+name: DZ-17 Document Intake Check
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'DZ_17/app/scripts/intake-downloads-one-by-one.mjs'
+      - 'DZ_17/app/scripts/lib/document-identity.mjs'
+      - 'DZ_17/app/scripts/document-intake-selftest.mjs'
+      - 'DZ_17/app/scripts/ingest-pdf-kf.mjs'
+      - 'DZ_17/knowledge_base/domains/legal_ib/**'
+      - '.github/workflows/dz17-document-intake-check.yml'
+  pull_request:
+    paths:
+      - 'DZ_17/app/scripts/intake-downloads-one-by-one.mjs'
+      - 'DZ_17/app/scripts/lib/document-identity.mjs'
+      - 'DZ_17/app/scripts/document-intake-selftest.mjs'
+      - 'DZ_17/app/scripts/ingest-pdf-kf.mjs'
+      - 'DZ_17/knowledge_base/domains/legal_ib/**'
+
+jobs:
+  intake-contract:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: DZ_17/app
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22.13.1'
+      - name: Syntax check
+        run: |
+          node --check scripts/lib/document-identity.mjs
+          node --check scripts/intake-downloads-one-by-one.mjs
+          node --check scripts/document-intake-selftest.mjs
+          node --check scripts/ingest-pdf-kf.mjs
+      - name: Identity fixtures
+        run: node scripts/document-intake-selftest.mjs
