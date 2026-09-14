@@ -11,6 +11,7 @@ const root=resolve(process.cwd(),'runtime','knowledge-factory');
 const sourcesDir=resolve(root,'sources');
 const capturesDir=resolve(root,'captures');
 const structureDir=resolve(root,'structure');
+const structureProposalsDir=resolve(root,'structure-proposals');
 const spansDir=resolve(root,'spans');
 const indexesDir=resolve(root,'indexes');
 const eventsFile=resolve(root,'events.jsonl');
@@ -21,7 +22,7 @@ const traceFile=resolve(traceDir,'events.jsonl');
 async function ensureDirs(){
  await Promise.all([
   mkdir(sourcesDir,{recursive:true}),mkdir(capturesDir,{recursive:true}),mkdir(structureDir,{recursive:true}),
-  mkdir(spansDir,{recursive:true}),mkdir(indexesDir,{recursive:true}),mkdir(traceDir,{recursive:true}),
+  mkdir(structureProposalsDir,{recursive:true}),mkdir(spansDir,{recursive:true}),mkdir(indexesDir,{recursive:true}),mkdir(traceDir,{recursive:true}),
  ]);
 }
 async function atomicJson(path,value){
@@ -89,6 +90,25 @@ function validateBundle(bundle){
  }
  return {sourceId,captureId};
 }
+function validateStructureProposal(proposal){
+ if(!proposal||proposal.schema_version!=='alina-kf-structure-proposal-v1')throw new Error('Unsupported structure proposal schema_version');
+ const sourceId=requireId(proposal.source_id,'source_id');
+ const captureId=requireId(proposal.capture_id,'capture_id');
+ if(proposal.status!=='PROPOSED')throw new Error('A2 structure proposal status must be PROPOSED');
+ if(!Array.isArray(proposal.nodes)||proposal.nodes.length<1)throw new Error('Structure proposal needs nodes');
+ const nodeIds=new Set();
+ for(const node of proposal.nodes){
+  requireId(node.structure_node_id,'structure_node_id');
+  if(node.capture_id!==captureId)throw new Error(`Structure node ${node.structure_node_id} points to another capture`);
+  if(nodeIds.has(node.structure_node_id))throw new Error(`Duplicate structure_node_id ${node.structure_node_id}`);
+  nodeIds.add(node.structure_node_id);
+ }
+ for(const node of proposal.nodes){
+  if(node.parent_id&&!nodeIds.has(node.parent_id))throw new Error(`Unknown parent_id ${node.parent_id}`);
+  if(Number(node.page_from||0)<1||Number(node.page_to||0)<Number(node.page_from||0))throw new Error(`Invalid page range for ${node.structure_node_id}`);
+ }
+ return {sourceId,captureId};
+}
 async function persistIngestBundle(bundle){
  const {sourceId,captureId}=validateBundle(bundle);
  await ensureDirs();
@@ -116,6 +136,22 @@ async function persistIngestBundle(bundle){
  await appendFile(eventsFile,JSON.stringify({event_id:eventId,event_type:'KF_INGEST_STORED',source_id:sourceId,capture_id:captureId,structure_nodes:bundle.structure_nodes.length,source_spans:bundle.source_spans.length,security_status:capture.security_status,trace:bundle.trace||{},created_at:now})+'\n','utf8');
  return {schema_version:'alina-kf-ingest-result-v1',source_id:sourceId,capture_id:captureId,structure_nodes:bundle.structure_nodes.length,source_spans:bundle.source_spans.length,duplicate_capture:false,event_id:eventId,stored_at:now};
 }
+async function persistStructureProposal(proposal){
+ const {sourceId,captureId}=validateStructureProposal(proposal);
+ await ensureDirs();
+ const capture=await readJson(resolve(capturesDir,`${captureId}.json`));
+ if(!capture)throw new Error(`Capture not found: ${captureId}`);
+ if(capture.source_id!==sourceId)throw new Error('Structure proposal source_id does not match capture source_id');
+ const stored={...proposal,status:'PROPOSED',stored_at:new Date().toISOString()};
+ await atomicJson(resolve(structureProposalsDir,`${captureId}.json`),stored);
+ const eventId=randomUUID();
+ await appendFile(eventsFile,JSON.stringify({event_id:eventId,event_type:'KF_STRUCTURE_PROPOSAL_STORED',source_id:sourceId,capture_id:captureId,status:'PROPOSED',nodes:proposal.nodes.length,created_at:stored.stored_at})+'\n','utf8');
+ return {schema_version:'alina-kf-structure-proposal-result-v1',source_id:sourceId,capture_id:captureId,status:'PROPOSED',nodes:proposal.nodes.length,event_id:eventId,stored_at:stored.stored_at};
+}
+async function getStructureProposal(captureIdRaw){
+ const captureId=requireId(captureIdRaw,'capture_id');
+ return readJson(resolve(structureProposalsDir,`${captureId}.json`));
+}
 async function listSources(limit=50){
  await ensureDirs();
  const names=(await readdir(sourcesDir)).filter(x=>x.endsWith('.json')).sort().reverse().slice(0,Math.max(1,Math.min(Number(limit)||50,200)));
@@ -133,7 +169,8 @@ async function getSourceTrace(sourceIdRaw){
   if(!capture||capture.source_id!==sourceId)continue;
   const structure_nodes=(await readJson(resolve(structureDir,`${capture.capture_id}.json`)))||[];
   const source_spans=(await readJson(resolve(spansDir,`${capture.capture_id}.json`)))||[];
-  captures.push({capture,structure_nodes,source_spans});
+  const structure_proposal=await readJson(resolve(structureProposalsDir,`${capture.capture_id}.json`));
+  captures.push({capture,structure_nodes,source_spans,structure_proposal});
  }
  return {source,captures};
 }
@@ -177,6 +214,24 @@ const server=createServer(async(req,res)=>{
    const result=await persistIngestBundle(body);
    await recordTrace({trace_id:traceId,source:'http',stage:'A1',action:'kf.ingest',status:'ok',route:'/api/v1/kf/ingest',method:'POST',duration_ms:Date.now()-started,details:{source_id:result.source_id,capture_id:result.capture_id,source_spans:result.source_spans,duplicate_capture:result.duplicate_capture}});
    return send(res,result.duplicate_capture?200:201,{ok:true,data:result,trace:{trace_id:traceId,service:'knowledge-factory-ingest',schema_version:'v1',created_at:new Date().toISOString()}},traceId);
+  }
+  if(req.method==='POST'&&url.pathname==='/structure-proposal'){
+   const traceId=traceIdFrom(req,'KF-A2');
+   await recordTrace({trace_id:traceId,source:'http',stage:'A2',action:'structure.proposal.store',status:'start',route:'/api/v1/kf/structure',method:'POST'});
+   let body;try{body=JSON.parse(await readBody(req));}catch(error){return send(res,400,{ok:false,error:{code:'INVALID_JSON',message:error instanceof Error?error.message:'Некорректный JSON.'},trace:{trace_id:traceId}},traceId);}
+   const result=await persistStructureProposal(body);
+   await recordTrace({trace_id:traceId,source:'http',stage:'A2',action:'structure.proposal.store',status:'ok',route:'/api/v1/kf/structure',method:'POST',duration_ms:Date.now()-started,details:{capture_id:result.capture_id,nodes:result.nodes,status:result.status}});
+   return send(res,201,{ok:true,data:result,trace:{trace_id:traceId,service:'knowledge-factory-structure',schema_version:'v1',created_at:new Date().toISOString()}},traceId);
+  }
+  if(req.method==='GET'&&url.pathname==='/structure-proposal'){
+   const traceId=traceIdFrom(req,'KF-A2-READ');
+   const captureId=String(url.searchParams.get('capture_id')||'').trim();
+   await recordTrace({trace_id:traceId,source:'http',stage:'A2',action:'structure.proposal.read',status:'start',route:'/api/v1/kf/structure',method:'GET',details:{capture_id:captureId||null}});
+   if(!captureId)return send(res,400,{ok:false,error:{code:'CAPTURE_ID_REQUIRED',message:'capture_id обязателен.'},trace:{trace_id:traceId}},traceId);
+   const proposal=await getStructureProposal(captureId);
+   if(!proposal)return send(res,404,{ok:false,error:{code:'STRUCTURE_PROPOSAL_NOT_FOUND',message:'Structure proposal не найден.'},trace:{trace_id:traceId}},traceId);
+   await recordTrace({trace_id:traceId,source:'http',stage:'A2',action:'structure.proposal.read',status:'ok',route:'/api/v1/kf/structure',method:'GET',duration_ms:Date.now()-started,details:{capture_id:captureId,nodes:proposal.nodes?.length||0,status:proposal.status}});
+   return send(res,200,{ok:true,data:proposal,trace:{trace_id:traceId,service:'knowledge-factory-structure',schema_version:'v1',created_at:new Date().toISOString()}},traceId);
   }
   if(req.method==='GET'&&url.pathname==='/trace'){
    const traceId=traceIdFrom(req,'TRACE-READ');

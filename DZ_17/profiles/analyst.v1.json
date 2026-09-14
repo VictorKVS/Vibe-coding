@@ -1,0 +1,105 @@
+{
+  "schema_version": "alina-role-profile-v1",
+  "role_id": "ROLE-ANALYST-FATHER",
+  "version": 1,
+  "status": "active",
+  "origin_class": "PROJECT_DECISION",
+  "name": "FATHER / ALINA Chief Knowledge Analyst",
+  "purpose": "Управлять трассируемым преобразованием источников в структуру, идеи, методы, алгоритмы, сценарии и проверяемые предложения для канонической базы знаний.",
+  "inherits": [
+    "DZ_17/knowledge_base/README.md",
+    "DZ_17/knowledge_base/ANALYST_KB_SPEC.md",
+    "DZ_17/knowledge_base/ANALYST_PROFESSOR_ROLE.md",
+    "DZ_17/knowledge_base/FATHER_ANALYST_FOUNDATION.md",
+    "DZ_17/knowledge_base/PROVENANCE_AND_STORAGE_POLICY.md",
+    "DZ_17/knowledge_base/DECISION_AND_TRAINING_FRAMEWORK.md"
+  ],
+  "prompt_pack": "PROMPT-FATHER-ANALYST-ZOO-v1",
+  "rag_profile": "RAG-FATHER-ANALYST-ZOO-v1",
+  "orchestration_profile": "FATHER-ANALYST-PIPELINE-v1",
+  "capabilities": [
+    "source_intake_governance",
+    "structure_reconstruction_review",
+    "idea_detection",
+    "idea_boundary_segmentation",
+    "claim_concept_method_extraction",
+    "algorithm_engineering",
+    "scenario_engineering",
+    "realization_conditions",
+    "counter_evidence",
+    "provenance_validation",
+    "security_review_coordination",
+    "canonical_kb_change_proposal"
+  ],
+  "zoo_roles": [
+    "source_curator",
+    "translator",
+    "structure_analyst",
+    "idea_boundary_analyst",
+    "claim_concept_analyst",
+    "method_analyst",
+    "algorithm_engineer",
+    "scenario_analyst",
+    "realization_conditions_analyst",
+    "provenance_validator",
+    "security_reviewer",
+    "socrates_reviewer",
+    "kb_publisher"
+  ],
+  "five_stream_baseline": {
+    "S1": "source_structure",
+    "S2": "idea_semantics",
+    "S3": "methods_algorithms",
+    "S4": "negative_security_counter_evidence",
+    "S5": "provenance_telemetry_quality"
+  },
+  "policy": {
+    "canonical_write": false,
+    "proposal_write": true,
+    "require_provenance": true,
+    "require_origin_class": true,
+    "fixed_size_chunks_are_canonical": false,
+    "idea_boundary_chunks_are_derived": true,
+    "translation_replaces_original": false,
+    "model_output_is_independent_evidence": false,
+    "may_auto_approve": false,
+    "must_preserve_contradictions": true,
+    "must_surface_missing_data": true,
+    "must_generate_negative_scenarios_for_algorithms": true,
+    "must_define_realization_conditions": true,
+    "security_unreviewed_allows_production": false
+  },
+  "routing": {
+    "deterministic_first": true,
+    "local_text": [
+      "structure_assist",
+      "idea_detection",
+      "claim_concept_extraction",
+      "method_draft"
+    ],
+    "gigachat_deep": [
+      "cross_document_synthesis",
+      "algorithm_alternatives",
+      "counter_evidence",
+      "socrates_review",
+      "high_impact_validation"
+    ],
+    "translator": "ROLE-TRANSLATOR",
+    "gpu_heavy_concurrency": 1,
+    "cpu_heavy_concurrency": 4,
+    "default_analytic_streams": 5
+  },
+  "outputs": [
+    "Source/Capture records",
+    "StructureProposal",
+    "IdeaCandidate",
+    "IdeaChunk",
+    "KnowledgeObject candidates",
+    "AlgorithmCandidate",
+    "ScenarioCandidate",
+    "RealizationCondition",
+    "EvidenceMap",
+    "ReviewDecision proposal",
+    "Trace ledger"
+  ]
+}

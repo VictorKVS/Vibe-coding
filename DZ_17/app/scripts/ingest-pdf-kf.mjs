@@ -10,6 +10,7 @@ function arg(name,fallback=''){
  const i=process.argv.indexOf(`--${name}`);
  return i>=0&&process.argv[i+1]?process.argv[i+1]:fallback;
 }
+function safeId(value,label){const v=String(value||'').trim();if(!v)return '';if(!/^[A-Za-z0-9._:-]+$/.test(v))throw new Error(`${label} contains unsupported characters: ${v}`);return v;}
 async function sha256File(path){
  const hash=createHash('sha256');
  await new Promise((resolvePromise,reject)=>{
@@ -34,6 +35,8 @@ const sourceType=arg('source-type','book');
 const title=arg('title',basename(input));
 const traceId=arg('trace-id',`KF-CLI-${randomUUID()}`);
 const testId=arg('test-id','');
+const requestedSourceId=safeId(arg('source-id'),'source-id');
+const requestedCaptureId=safeId(arg('capture-id'),'capture-id');
 const scriptDir=dirname(fileURLToPath(import.meta.url));
 const extractor=resolve(scriptDir,'extract-pdf-text.py');
 
@@ -50,13 +53,13 @@ async function traceMark(stage,action,status='info',details={}){
  }
 }
 
-await traceMark('CLIENT','pdf.ingest.start','start',{file:basename(input),source_type:sourceType,language});
+await traceMark('CLIENT','pdf.ingest.start','start',{file:basename(input),source_type:sourceType,language,requested_source_id:requestedSourceId||null});
 await traceMark('CLIENT','pdf.hash.start','start');
 const hash=await sha256File(input);
 await traceMark('CLIENT','pdf.hash.complete','ok',{sha256_prefix:hash.slice(0,16)});
 const key=hash.slice(0,16).toUpperCase();
-const sourceId=`SRC-${key}`;
-const captureId=`CAP-${key}`;
+const sourceId=requestedSourceId||`SRC-${key}`;
+const captureId=requestedCaptureId||`CAP-${key}`;
 const documentNodeId=`STN-${key}-DOC`;
 const workDir=resolve('runtime','knowledge-factory-import');
 const extractPath=resolve(workDir,`${key}.extract.json`);
@@ -146,6 +149,7 @@ const bundle={
   test_id:testId||null,
   importer:'scripts/ingest-pdf-kf.mjs',
   input_sha256:hash,
+  requested_source_id:requestedSourceId||null,
   note:'P0 stores page-addressable source spans. Chapter/section semantics are reconstructed in A2, not guessed here.',
  },
 };

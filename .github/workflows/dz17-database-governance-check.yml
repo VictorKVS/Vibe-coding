@@ -1,0 +1,76 @@
+name: DZ-17 Database Governance Check
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'DZ_17/postgres/**'
+      - 'DZ_17/database_snapshots/**'
+      - 'DZ_17/DATABASE_STORAGE_AND_GIT_SNAPSHOT_POLICY.md'
+      - 'DZ_17/app/scripts/inventory-postgres.ps1'
+      - 'DZ_17/app/scripts/snapshot-postgres-to-git.ps1'
+      - 'DZ_17/app/package.json'
+      - 'DZ_17/app/.gitignore'
+      - '.github/workflows/dz17-database-governance-check.yml'
+  pull_request:
+    paths:
+      - 'DZ_17/postgres/**'
+      - 'DZ_17/database_snapshots/**'
+      - 'DZ_17/DATABASE_STORAGE_AND_GIT_SNAPSHOT_POLICY.md'
+      - 'DZ_17/app/scripts/inventory-postgres.ps1'
+      - 'DZ_17/app/scripts/snapshot-postgres-to-git.ps1'
+      - 'DZ_17/app/package.json'
+      - 'DZ_17/app/.gitignore'
+
+jobs:
+  governance-contract:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Parse PowerShell scripts
+        shell: powershell
+        run: |
+          $files = @(
+            'DZ_17/app/scripts/inventory-postgres.ps1',
+            'DZ_17/app/scripts/snapshot-postgres-to-git.ps1'
+          )
+          foreach ($file in $files) {
+            $tokens = $null
+            $errors = $null
+            [System.Management.Automation.Language.Parser]::ParseFile((Resolve-Path $file), [ref]$tokens, [ref]$errors) | Out-Null
+            if ($errors.Count -gt 0) {
+              $errors | Format-List | Out-String | Write-Error
+              exit 1
+            }
+            Write-Host "PASS PowerShell parse: $file"
+          }
+      - name: Verify database contract markers
+        shell: powershell
+        run: |
+          $ddl = Get-Content 'DZ_17/postgres/knowledge_factory_v0.sql' -Raw
+          $sec = Get-Content 'DZ_17/postgres/security_hardening_v0.sql' -Raw
+          $pkg = Get-Content 'DZ_17/app/package.json' -Raw | ConvertFrom-Json
+          $ignore = Get-Content 'DZ_17/app/.gitignore' -Raw
+          $required = @(
+            'CREATE SCHEMA IF NOT EXISTS kf',
+            'CREATE SCHEMA IF NOT EXISTS audit',
+            'CREATE SCHEMA IF NOT EXISTS git_export',
+            'CREATE TABLE IF NOT EXISTS kf.graph_node',
+            'CREATE TABLE IF NOT EXISTS kf.graph_edge',
+            'CREATE TABLE IF NOT EXISTS kf.node_weight_version',
+            'CREATE TABLE IF NOT EXISTS kf.edge_weight_version',
+            'CREATE TABLE IF NOT EXISTS audit.event',
+            'CREATE TABLE IF NOT EXISTS audit.snapshot_manifest',
+            'CREATE OR REPLACE VIEW git_export.node_weights',
+            'CREATE OR REPLACE VIEW git_export.edge_weights'
+          )
+          foreach ($needle in $required) {
+            if (-not $ddl.Contains($needle)) { throw "Missing DDL marker: $needle" }
+          }
+          if (-not $sec.Contains('alina_backup_ro')) { throw 'backup role missing' }
+          if (-not $sec.Contains('REVOKE ALL ON SCHEMA kf FROM PUBLIC')) { throw 'PUBLIC revoke missing' }
+          if (-not $pkg.scripts.'db:inventory') { throw 'db:inventory npm command missing' }
+          if (-not $pkg.scripts.'db:snapshot') { throw 'db:snapshot npm command missing' }
+          if (-not $ignore.Contains('/runtime/database-backups/')) { throw 'database backup ignore missing' }
+          if (-not $ignore.Contains('*.dump')) { throw 'dump ignore missing' }
+          Write-Host 'PASS database governance contract markers'
