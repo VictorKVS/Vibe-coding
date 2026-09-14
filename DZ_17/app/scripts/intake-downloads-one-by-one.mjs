@@ -7,6 +7,7 @@ import {basename,dirname,extname,resolve} from 'node:path';
 import {fileURLToPath} from 'node:url';
 import process from 'node:process';
 import {identifyDocument,identitySummary} from './lib/document-identity.mjs';
+import {mergeLegalCandidate} from './lib/legal-registry.mjs';
 
 function arg(name,fallback=''){const i=process.argv.indexOf(`--${name}`);return i>=0&&process.argv[i+1]?process.argv[i+1]:fallback;}
 function flag(name,fallback=false){const v=arg(name,fallback?'1':'0');return ['1','true','yes','on'].includes(String(v).toLowerCase());}
@@ -60,40 +61,16 @@ async function promoteCandidate(candidate){
  if(!['legal_ib','standards_ib'].includes(candidate.identity.collection))return {written:false,reason:'outside legal_ib domain'};
  if(candidate.identity.needs_review||candidate.identity.title_confidence<0.9)return {written:false,reason:'identity requires review'};
  const registry=await jsonRead(registryPath,null);if(!registry||!Array.isArray(registry.documents))throw new Error(`Invalid legal registry: ${registryPath}`);
- const duplicate=registry.documents.find(d=>d.sha256===candidate.sha256);
- if(duplicate)return {written:false,reason:'sha256 duplicate',document_id:duplicate.document_id};
- const sameIdentity=registry.documents.filter(d=>d.document_type===candidate.identity.document_type&&candidate.identity.document_number&&d.document_number===candidate.identity.document_number);
- const document={
-  document_id:`DOC-${candidate.sha256.slice(0,16).toUpperCase()}`,
-  source_id:candidate.source_id,
-  capture_id:candidate.capture_id,
-  sha256:candidate.sha256,
-  full_title:candidate.identity.full_title,
-  document_type:candidate.identity.document_type,
-  issuer:candidate.identity.issuer,
-  document_number:candidate.identity.document_number,
-  document_date_raw:candidate.identity.document_date_raw,
-  document_date_iso:candidate.identity.document_date_iso,
-  subject:candidate.identity.subject,
-  language:candidate.identity.language,
-  security_tags:candidate.identity.security_tags,
-  collection:candidate.identity.collection,
-  origin_class:'SOURCE_DERIVED',
-  source_locators:candidate.identity.evidence,
-  status:'proposed',
-  review_status:'pending',
-  legal_status:'pending_official_verification',
-  possible_same_document_ids:sameIdentity.map(d=>d.document_id),
-  created_at:new Date().toISOString(),
- };
- registry.documents.push(document);await jsonWrite(registryPath,registry);return {written:true,document_id:document.document_id,possible_same_document_ids:document.possible_same_document_ids};
+ const merged=mergeLegalCandidate(registry,candidate);
+ if(merged.result.written)await jsonWrite(registryPath,merged.registry);
+ return merged.result;
 }
 
 async function processOne(item){
  console.log(`\n[INTAKE] file: ${item.path}`);
  const sha=await sha256File(item.path);const key=sha.slice(0,16).toUpperCase();
- const priorByHash=Object.values(state.files).find(x=>x.sha256===sha&&x.status==='processed');
- if(priorByHash){state.files[item.signature]={status:'duplicate',sha256:sha,duplicate_of:priorByHash.path||null,updated_at:new Date().toISOString()};await jsonWrite(statePath,{...state,updated_at:new Date().toISOString()});console.log('[INTAKE] duplicate SHA-256; skipped.');return;}
+ const priorByHash=Object.values(state.files).find(x=>x.sha256===sha&&['processed','needs_review','duplicate'].includes(x.status));
+ if(priorByHash){state.files[item.signature]={status:'duplicate',path:item.path,sha256:sha,duplicate_of:priorByHash.path||null,source_id:priorByHash.source_id||null,capture_id:priorByHash.capture_id||null,updated_at:new Date().toISOString()};await jsonWrite(statePath,{...state,updated_at:new Date().toISOString()});console.log('[INTAKE] duplicate SHA-256; skipped.');return;}
  const extractPath=resolve(extractDir,`${key}.json`);
  if(!existsSync(extractPath)){
   const run=spawnSync(python,[extractor,'--input',item.path,'--output',extractPath],{stdio:'inherit'});if(run.error)throw run.error;if(run.status!==0)throw new Error(`PDF extraction failed: ${run.status}`);
@@ -116,7 +93,7 @@ async function processOne(item){
  const promotion=await promoteCandidate(candidate);candidate.workflow.registry_write=promotion;await jsonWrite(candidatePath,candidate);
  state.files[item.signature]={status:identity.needs_review?'needs_review':'processed',path:item.path,sha256:sha,source_id:actualSource,capture_id:actualCapture,full_title:identity.full_title,collection:identity.collection,candidate_path:candidatePath,registry_write:promotion,updated_at:new Date().toISOString()};
  await jsonWrite(statePath,{...state,updated_at:new Date().toISOString()});
- console.log(`[INTAKE] candidate: ${candidatePath}`);console.log(`[INTAKE] canonical registry: ${promotion.written?'PROPOSED '+promotion.document_id:'not written · '+promotion.reason}`);console.log(`[INTAKE] next: ${candidate.workflow.next_stage}`);
+ console.log(`[INTAKE] candidate: ${candidatePath}`);console.log(`[INTAKE] canonical registry: ${promotion.written?`${promotion.action||'written'} ${promotion.document_id}`:'not written · '+promotion.reason}`);console.log(`[INTAKE] next: ${candidate.workflow.next_stage}`);
 }
 
 let count=0;
