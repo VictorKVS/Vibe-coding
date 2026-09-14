@@ -12,31 +12,47 @@ function Require-Command([string]$Name) {
   if (-not $cmd) { throw "Required command not found: $Name" }
   return $cmd
 }
-
 function Write-Utf8NoBom([string]$Path, [string[]]$Lines) {
   $enc = New-Object System.Text.UTF8Encoding($false)
   [System.IO.File]::WriteAllLines($Path, $Lines, $enc)
 }
-
-if (-not $env:DATABASE_URL -and -not $env:POSTGRES_URL) {
-  throw 'DATABASE_URL or POSTGRES_URL must be set in the process environment/.env launcher. Do not pass credentials on the command line.'
+function Import-DotEnv([string]$Path) {
+  if (-not (Test-Path $Path)) { return }
+  foreach ($raw in Get-Content $Path) {
+    $line = $raw.Trim()
+    if (-not $line -or $line.StartsWith('#') -or -not $line.Contains('=')) { continue }
+    $parts = $line.Split('=',2)
+    $key = $parts[0].Trim()
+    $value = $parts[1].Trim()
+    if (($value.StartsWith('"') -and $value.EndsWith('"')) -or ($value.StartsWith("'") -and $value.EndsWith("'"))) {
+      $value = $value.Substring(1,$value.Length-2)
+    }
+    if ($key -and -not [Environment]::GetEnvironmentVariable($key,'Process')) {
+      [Environment]::SetEnvironmentVariable($key,$value,'Process')
+    }
+  }
 }
+
 if ([string]::IsNullOrWhiteSpace($Reason) -or $Reason.Trim().Length -lt 3) {
   throw 'Reason must describe the completed DB change/batch.'
 }
-
 Require-Command 'psql' | Out-Null
 Require-Command 'pg_dump' | Out-Null
 Require-Command 'git' | Out-Null
 
+$repoRoot = (Resolve-Path (Join-Path $PSScriptRoot '..\..\..')).Path
+$appRoot = (Resolve-Path (Join-Path $PSScriptRoot '..')).Path
+Import-DotEnv (Join-Path $appRoot '.env.local')
 $connection = if ($env:DATABASE_URL) { $env:DATABASE_URL } else { $env:POSTGRES_URL }
+if (-not $connection) {
+  throw 'DATABASE_URL or POSTGRES_URL must be set in .env.local or process environment. Do not pass credentials on the command line.'
+}
+
 # libpq accepts a connection string via PGDATABASE/dbname. This keeps credentials
 # out of the pg_dump/psql command line and therefore out of process listings/logs.
 $oldPgDatabase = $env:PGDATABASE
 $env:PGDATABASE = $connection
 
-$repoRoot = (Resolve-Path (Join-Path $PSScriptRoot '..\..\..')).Path
-$appRoot = (Resolve-Path (Join-Path $PSScriptRoot '..')).Path
 $snapshotRoot = Join-Path $repoRoot 'DZ_17\database_snapshots'
 $currentRoot = Join-Path $snapshotRoot 'current'
 $historyPath = Join-Path $snapshotRoot 'SNAPSHOT_HISTORY.jsonl'
