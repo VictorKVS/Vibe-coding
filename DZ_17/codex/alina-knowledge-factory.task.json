@@ -1,8 +1,9 @@
 {
-  "task_id": "CODEX-ALINA-KNOWLEDGE-FACTORY-V1",
-  "title": "Build ALINA Knowledge Factory for FATHER",
-  "status": "ready_for_codex",
+  "task_id": "CODEX-ALINA-KNOWLEDGE-FACTORY-V2",
+  "title": "Build ALINA Knowledge Factory + FATHER Model Zoo under Paper Design",
+  "status": "ready_for_codex_design_alignment",
   "branch": "feature/father-knowledge-operator-console",
+  "integration_contract": "DZ_17/codex/FATHER_DZ17_INTEGRATION_CONTRACT.md",
   "master_spec": "DZ_17/codex/CODEX_MASTER_TASK_ALINA_KNOWLEDGE_FACTORY.md",
   "mandatory_policies": [
     "DZ_17/knowledge_base/FATHER_KNOWLEDGE_DATABASE_TZ_V1.md",
@@ -12,29 +13,76 @@
     "DZ_17/knowledge_base/PROVENANCE_AND_STORAGE_POLICY.md",
     "DZ_17/processes/FATHER_DOCUMENT_KNOWLEDGE_PIPELINE.md"
   ],
+  "external_canonical_design": {
+    "repository": "VictorKVS/KNOWLEDGE_CORE",
+    "branch": "feature/father-artifact-factory",
+    "required": [
+      "father/factory/paper-pipeline/FATHER_PAPER_PIPELINE_ALGORITHM.md",
+      "father/factory/paper-pipeline/FATHER_PAPER_PIPELINE.yaml",
+      "father/factory/paper-pipeline/ANALYSIS_FIRST_ENGINEERING_POLICY.md",
+      "father/factory/paper-pipeline/ALGORITHM_DESIGN_STANDARD.md",
+      "father/factory/paper-pipeline/ARTIFACT_DEPENDENCY_MATRIX.yaml",
+      "father/factory/paper-pipeline/GATE_AUTHORITY_MATRIX.yaml",
+      "father/factory/paper-pipeline/EXCEPTION_REWORK_MODEL.yaml",
+      "father/factory/paper-pipeline/AUTOMATION_ACTIVATION_GATE.yaml",
+      "father/factory/visual-workbench-spec/01_STATION_CATALOG_S00_S59.md",
+      "father/factory/visual-workbench-spec/backend-spec/13_ROLE_AND_PROCESS_KB_ARCHITECTURE.md",
+      "father/factory/visual-workbench-spec/backend-spec/14_ROLE_PROCESS_KB_REGISTRY.yaml",
+      "father/factory/visual-workbench-spec/backend-spec/16_PROFESSIONAL_METHOD_ARTIFACT_CHAIN.md",
+      "father/factory/visual-workbench-spec/backend-spec/17_ROLE_ARTIFACT_HANDOFF_REGISTRY.yaml",
+      "father/factory/visual-workbench-spec/10_DUAL_SITE_ALINA_FATHER_WORKFLOW.md"
+    ]
+  },
   "pilot": "152-FZ",
-  "mission": "Turn ALINA into a source-to-reviewed-KB factory plus research analyst, knowledge engineer, RAG engineer, prompt engineer, evaluator and continuous-improvement advisor for FATHER agents.",
+  "otus_dz17_vertical_slice": "inference_capacity_planner",
+  "mission": "ALINA builds FATHER professional knowledge from sources; Codex assembles the complete Model Zoo and DZ-17 inference-capacity vertical slice; all material implementation is subordinate to FATHER paper design S00-S59 and shared osint_kb canonical state.",
   "hard_gates": {
+    "paper_design_precedes_material_implementation": true,
+    "design_gap_instead_of_guess": true,
+    "pre_code_gate_s50_required_for_material_product_code": true,
     "zero_base_capability_required": true,
     "external_kb_is_untrusted_by_default": true,
+    "role_kb_required_for_every_canonical_role": true,
+    "process_kb_required_for_s00_s59": true,
+    "one_knowledge_object_many_role_process_mappings": true,
     "node_without_provenance_is_candidate": true,
     "edge_without_evidence_is_hypothesis": true,
     "weight_without_method_and_origin_is_untrusted": true,
     "no_second_canonical_db": true,
+    "canonical_database": "osint_kb",
     "no_auto_verified": true,
     "no_auto_production_promotion": true,
     "llm_output_is_not_independent_evidence": true,
     "blind_mode_leakage_forbidden": true,
-    "human_gate_for_high_impact_promotion": true
+    "human_gate_for_high_impact_promotion": true,
+    "estimated_performance_must_not_be_labeled_measured": true
   },
   "phases": [
+    {
+      "id": "P-1",
+      "name": "paper_design_alignment",
+      "required": [
+        "read_external_canonical_design",
+        "map_dz17_to_s00_s59",
+        "map_roles_processes_artifacts",
+        "model_zoo_component_map",
+        "model_zoo_data_flow",
+        "model_zoo_security_boundary",
+        "model_zoo_state_machines",
+        "model_zoo_test_oracles",
+        "inference_capacity_planner_spec",
+        "design_gaps"
+      ]
+    },
     {
       "id": "P0",
       "name": "foundations",
       "required": [
         "repo_db_inventory",
-        "reuse_extend_new_matrix",
+        "keep_extend_rename_view_new_matrix",
         "alina_role_v2",
+        "role_kb_profiles",
+        "process_kb_profiles",
         "source_capture_contracts",
         "pdf_ocr_router",
         "trace_audit",
@@ -52,7 +100,8 @@
         "typed_relation_discovery",
         "weight_provenance",
         "candidate_graph",
-        "contradiction_gap_engine"
+        "contradiction_gap_engine",
+        "role_process_knowledge_mapping"
       ]
     },
     {
@@ -64,36 +113,68 @@
         "citation_expansion",
         "zero_base_blind_reconstruction",
         "external_kb_logic_validation",
-        "freeze_unblind_compare"
+        "freeze_unblind_compare",
+        "method_case_counterexample_candidates"
       ]
     },
     {
       "id": "P3",
-      "name": "agent_engineering",
+      "name": "model_zoo_specialist_engineering",
       "required": [
-        "rag_engineer",
-        "prompt_engineer",
-        "benchmark_corpus",
+        "prompt_registry",
+        "rag_profiles",
+        "frozen_evidence_bundle",
+        "model_provider_capability_registry",
+        "data_class_provider_policy",
+        "materiality_router",
+        "champion",
+        "blind_challengers",
+        "deterministic_verifiers",
+        "independent_judge",
+        "human_authority_gate",
+        "telemetry_audit",
+        "fallback_retry_timeout_circuit_policy",
         "ab_experiments",
-        "champion_challenger",
-        "gpt_senior_review"
+        "role_process_maturity_feedback"
       ]
     },
     {
       "id": "P4",
+      "name": "otus_dz17_inference_capacity",
+      "required": [
+        "vram_calculator",
+        "kv_cache_context_concurrency_model",
+        "quantization_scenarios",
+        "flashattention_applicability",
+        "vllm_applicability",
+        "continuous_batching_applicability",
+        "time_versioned_cloud_gpu_catalog",
+        "provider_fact_provenance",
+        "deployment_candidate_ranking",
+        "inference_calculator_artifact",
+        "reproducible_benchmark_contract"
+      ]
+    },
+    {
+      "id": "P5",
       "name": "continuous_improvement",
       "required": [
         "self_analysis",
         "improvement_proposals",
         "human_approval",
         "before_after_telemetry",
-        "promotion_rollback"
+        "promotion_rollback",
+        "project_lesson_to_alina_candidate_knowledge"
       ]
     }
   ],
   "required_deliverables": [
+    "paper design alignment report",
+    "DESIGN_GAPS.md",
     "architecture reconciliation",
     "ALINA Knowledge Factory role v2",
+    "Role KB profiles",
+    "Process KB profiles S00-S59",
     "intake service",
     "PDF extraction/OCR router",
     "knowledge extraction engine",
@@ -102,13 +183,16 @@
     "external KB validation/quarantine engine",
     "graph/ontology layer",
     "typed weight provenance layer",
+    "Model Zoo registry/routing/evidence/verifier/judge chain",
     "RAG engineer",
     "Prompt engineer",
     "A/B experiment engine",
-    "GPT/Senior review gate",
+    "human authority review gate",
+    "Inference Capacity Planner",
     "self-improvement engine",
-    "Knowledge Factory UI",
+    "ALINA Knowledge Factory site projection",
+    "FATHER Design site integration contract",
     "152-FZ reproducible acceptance dossier"
   ],
-  "definition_of_done": "See master_spec acceptance criteria. Documentation-only design is not IMPLEMENTED; every capability requires executable path, persisted output, trace, tests and failure behavior."
+  "definition_of_done": "Documentation-only design is not IMPLEMENTED, but material code is also forbidden from outrunning paper design. Done requires traceable paper alignment, shared osint_kb canonical IDs, executable paths, persisted outputs, trace, tests, security/authority gates, DZ-17 inference-capacity evidence and explicit DESIGN_GAP handling."
 }
