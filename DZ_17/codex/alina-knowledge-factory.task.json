@@ -1,0 +1,114 @@
+{
+  "task_id": "CODEX-ALINA-KNOWLEDGE-FACTORY-V1",
+  "title": "Build ALINA Knowledge Factory for FATHER",
+  "status": "ready_for_codex",
+  "branch": "feature/father-knowledge-operator-console",
+  "master_spec": "DZ_17/codex/CODEX_MASTER_TASK_ALINA_KNOWLEDGE_FACTORY.md",
+  "mandatory_policies": [
+    "DZ_17/knowledge_base/FATHER_KNOWLEDGE_DATABASE_TZ_V1.md",
+    "DZ_17/knowledge_base/FATHER_ANALYST_FOUNDATION.md",
+    "DZ_17/knowledge_base/ZERO_BASE_ANALYST_RECONSTRUCTION.md",
+    "DZ_17/knowledge_base/EXTERNAL_KB_ZERO_TRUST_VALIDATION_POLICY.md",
+    "DZ_17/knowledge_base/PROVENANCE_AND_STORAGE_POLICY.md",
+    "DZ_17/processes/FATHER_DOCUMENT_KNOWLEDGE_PIPELINE.md"
+  ],
+  "pilot": "152-FZ",
+  "mission": "Turn ALINA into a source-to-reviewed-KB factory plus research analyst, knowledge engineer, RAG engineer, prompt engineer, evaluator and continuous-improvement advisor for FATHER agents.",
+  "hard_gates": {
+    "zero_base_capability_required": true,
+    "external_kb_is_untrusted_by_default": true,
+    "node_without_provenance_is_candidate": true,
+    "edge_without_evidence_is_hypothesis": true,
+    "weight_without_method_and_origin_is_untrusted": true,
+    "no_second_canonical_db": true,
+    "no_auto_verified": true,
+    "no_auto_production_promotion": true,
+    "llm_output_is_not_independent_evidence": true,
+    "blind_mode_leakage_forbidden": true,
+    "human_gate_for_high_impact_promotion": true
+  },
+  "phases": [
+    {
+      "id": "P0",
+      "name": "foundations",
+      "required": [
+        "repo_db_inventory",
+        "reuse_extend_new_matrix",
+        "alina_role_v2",
+        "source_capture_contracts",
+        "pdf_ocr_router",
+        "trace_audit",
+        "external_kb_quarantine",
+        "tests"
+      ]
+    },
+    {
+      "id": "P1",
+      "name": "knowledge_creation",
+      "required": [
+        "structure_reconstruction",
+        "semantic_segmentation",
+        "typed_knowledge_objects",
+        "typed_relation_discovery",
+        "weight_provenance",
+        "candidate_graph",
+        "contradiction_gap_engine"
+      ]
+    },
+    {
+      "id": "P2",
+      "name": "autonomous_research",
+      "required": [
+        "source_discovery",
+        "normative_timeline",
+        "citation_expansion",
+        "zero_base_blind_reconstruction",
+        "external_kb_logic_validation",
+        "freeze_unblind_compare"
+      ]
+    },
+    {
+      "id": "P3",
+      "name": "agent_engineering",
+      "required": [
+        "rag_engineer",
+        "prompt_engineer",
+        "benchmark_corpus",
+        "ab_experiments",
+        "champion_challenger",
+        "gpt_senior_review"
+      ]
+    },
+    {
+      "id": "P4",
+      "name": "continuous_improvement",
+      "required": [
+        "self_analysis",
+        "improvement_proposals",
+        "human_approval",
+        "before_after_telemetry",
+        "promotion_rollback"
+      ]
+    }
+  ],
+  "required_deliverables": [
+    "architecture reconciliation",
+    "ALINA Knowledge Factory role v2",
+    "intake service",
+    "PDF extraction/OCR router",
+    "knowledge extraction engine",
+    "research/source discovery engine",
+    "Zero-Base reconstruction engine",
+    "external KB validation/quarantine engine",
+    "graph/ontology layer",
+    "typed weight provenance layer",
+    "RAG engineer",
+    "Prompt engineer",
+    "A/B experiment engine",
+    "GPT/Senior review gate",
+    "self-improvement engine",
+    "Knowledge Factory UI",
+    "152-FZ reproducible acceptance dossier"
+  ],
+  "definition_of_done": "See master_spec acceptance criteria. Documentation-only design is not IMPLEMENTED; every capability requires executable path, persisted output, trace, tests and failure behavior."
+}
