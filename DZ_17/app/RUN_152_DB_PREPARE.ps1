@@ -17,6 +17,17 @@ if ($LASTEXITCODE -ne 0) {
 
 if (-not (Test-Path $output)) { throw "Import SQL was not created: $output" }
 
+# Windows text mode can expand LF inside dollar-quoted legal text to CRLF.
+# Normalize the generated SQL bytes to UTF-8 without BOM + LF-only so the
+# byte-level SHA of canonical_text and every article survives PostgreSQL import.
+$utf8NoBom = New-Object System.Text.UTF8Encoding($false)
+$sqlText = [System.IO.File]::ReadAllText($output, [System.Text.Encoding]::UTF8)
+$sqlText = $sqlText.Replace("`r`n", "`n").Replace("`r", "`n")
+[System.IO.File]::WriteAllText($output, $sqlText, $utf8NoBom)
+
+$remainingCr = ([System.IO.File]::ReadAllText($output, [System.Text.Encoding]::UTF8).ToCharArray() | Where-Object { [int]$_ -eq 13 }).Count
+if ($remainingCr -ne 0) { throw "Generated SQL still contains CR characters: $remainingCr" }
+
 $hash = (Get-FileHash -Algorithm SHA256 $output).Hash.ToLowerInvariant()
 $size = (Get-Item $output).Length
 
@@ -25,5 +36,6 @@ Write-Host '[FATHER] DB import package prepared.'
 Write-Host "[FATHER] SQL: $output"
 Write-Host "[FATHER] SQL bytes: $size"
 Write-Host "[FATHER] SQL SHA-256: $hash"
+Write-Host '[FATHER] SQL line endings: LF-only'
 Write-Host '[FATHER] Database write: False'
 Write-Host '[FATHER] Next gate: RUN_152_DB_APPLY.ps1 performs backup + transaction + acceptance.'
