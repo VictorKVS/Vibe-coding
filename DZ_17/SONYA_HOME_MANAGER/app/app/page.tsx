@@ -10,11 +10,19 @@ type Result = {
   error?: string;
 };
 
-const DEFAULT_PROMPT = 'Проанализируй фото в контексте детского праздника. Отдели то, что реально видно, от предположений. Предложи 3 варианта меню, укажи что уже есть, что нужно докупить, и составь краткий план подготовки.';
+type PhotoMode = 'fridge' | 'inspiration';
+
+const PROMPTS: Record<PhotoMode, string> = {
+  fridge:
+    'Соня, проанализируй фотографию продуктов или холодильника. Отдели то, что реально видно, от предположений. Предложи 3 подходящих блюда для детского праздника, учти возраст детей, количество гостей, образ жизни и ограничения. Укажи, какие продукты уже есть, чего не хватает и что добавить в список покупок.',
+  inspiration:
+    'Соня, это идея еды для детского праздника. Проанализируй фотографию, определи, из чего сделаны фигурки или блюда, расскажи, как приготовить такое дома, рассчитай продукты на указанное число детей и составь список того, что нужно купить. Отдельно укажи: что видно точно, что является предположением и какие есть безопасные замены.'
+};
 
 export default function Home() {
   const [image, setImage] = useState<string | null>(null);
-  const [prompt, setPrompt] = useState(DEFAULT_PROMPT);
+  const [photoMode, setPhotoMode] = useState<PhotoMode>('inspiration');
+  const [prompt, setPrompt] = useState(PROMPTS.inspiration);
   const [childAge, setChildAge] = useState(8);
   const [guests, setGuests] = useState(10);
   const [budget, setBudget] = useState(15000);
@@ -24,6 +32,12 @@ export default function Home() {
   const [result, setResult] = useState<Result | null>(null);
 
   const progress = useMemo(() => 6, []);
+
+  function selectMode(mode: PhotoMode) {
+    setPhotoMode(mode);
+    setPrompt(PROMPTS[mode]);
+    setResult(null);
+  }
 
   function onFile(event: ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0];
@@ -37,7 +51,10 @@ export default function Home() {
       return;
     }
     const reader = new FileReader();
-    reader.onload = () => setImage(String(reader.result));
+    reader.onload = () => {
+      setImage(String(reader.result));
+      setResult(null);
+    };
     reader.readAsDataURL(file);
   }
 
@@ -50,6 +67,7 @@ export default function Home() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           prompt,
+          photoMode,
           imageDataUrl: image,
           profile: { childAge, guests, budget, lifestyle, allergies }
         })
@@ -83,7 +101,7 @@ export default function Home() {
         <div className="heroCopy">
           <p className="eyebrow">AI-помощник по дому и семье</p>
           <h1>Один управляющий для быта, покупок, счетов и семейных событий.</h1>
-          <p>Первый рабочий сценарий — детский праздник: фото + текст → меню → покупки → задачи → тайминг.</p>
+          <p>Первый рабочий сценарий — детский праздник: фото + текст → понимание идеи → рецепт/меню → покупки → задачи → тайминг.</p>
           <div className="chips"><span>Vision</span><span>Family profile</span><span>Budget</span><span>Shopping</span><span>Event plan</span></div>
         </div>
         <div className="scenarioCard">
@@ -98,12 +116,25 @@ export default function Home() {
       <section className="grid2">
         <article className="glass panel">
           <div className="panelHead"><div><p className="eyebrow">Мультимодальный тест</p><h2>Фото + текстовый запрос</h2></div><span className="badge">ДЗ-17</span></div>
+
+          <div className="modeSwitch" role="group" aria-label="Режим анализа фотографии">
+            <button className={photoMode === 'fridge' ? 'mode active' : 'mode'} onClick={() => selectMode('fridge')}>
+              <b>📷 Что у меня есть</b>
+              <span>Холодильник / продукты → блюда → покупки</span>
+            </button>
+            <button className={photoMode === 'inspiration' ? 'mode active' : 'mode'} onClick={() => selectMode('inspiration')}>
+              <b>🍽 Хочу такое</b>
+              <span>Готовое блюдо / идея → рецепт → расчёт на гостей</span>
+            </button>
+          </div>
+
           <label className="uploadBox">
             <input type="file" accept="image/jpeg,image/png,image/webp" onChange={onFile} />
             {image ? <img src={image} alt="Загруженный визуальный референс" /> : <div><b>＋ Добавить фото</b><span>JPG / PNG / WEBP · до 5 МБ</span></div>}
           </label>
-          <textarea value={prompt} onChange={e => setPrompt(e.target.value)} rows={6} aria-label="Текстовый запрос" />
-          <button className="primary" onClick={analyze} disabled={loading || !prompt.trim()}>{loading ? 'Анализирую…' : 'Анализировать вместе с фото'}</button>
+          <textarea value={prompt} onChange={e => setPrompt(e.target.value)} rows={7} aria-label="Текстовый запрос" />
+          <button className="primary" onClick={analyze} disabled={loading || !prompt.trim() || !image}>{loading ? 'Анализирую…' : 'Анализировать фото + запрос'}</button>
+          {!image && <p className="helper">Для сдачного мультимодального теста сначала загрузите изображение.</p>}
         </article>
 
         <article className="glass panel">
@@ -123,7 +154,7 @@ export default function Home() {
 
       <section className="glass resultPanel">
         <div className="panelHead"><div><p className="eyebrow">Результат</p><h2>Ответ Сони</h2></div>{result?.model && <span className="badge">{result.model}{result.latencyMs ? ` · ${result.latencyMs} ms` : ''}</span>}</div>
-        {!result && <p className="placeholder">Загрузите фото, уточните задачу и запустите анализ. Для сдачи здесь должен быть виден реальный совместный ответ image + text.</p>}
+        {!result && <p className="placeholder">Загрузите фото, выберите режим, уточните запрос и запустите анализ. Для сдачи здесь должен быть виден реальный совместный ответ image + text.</p>}
         {result?.error && <p className="error">{result.error}</p>}
         {result?.text && <pre>{result.text}</pre>}
       </section>
