@@ -61,7 +61,7 @@ echo [3/4] Cleaning stale local SONYA processes...
 powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0STOP_SONYA.ps1"
 if errorlevel 1 goto :fail
 
-echo [4/4] Starting SONYA agent v6...
+echo [4/4] Starting SONYA agent v7...
 echo Profile: %SONYA_AGENT_PROFILE%
 echo Vision model: %SONYA_VISION_MODEL%
 if /I "%SONYA_AGENT_PROFILE%"=="FAST" (
@@ -69,10 +69,11 @@ if /I "%SONYA_AGENT_PROFILE%"=="FAST" (
 ) else (
   echo Analyst model: %SONYA_REASONING_MODEL%
 )
-echo Vision contract: json-schema-v2
+echo Vision contract: resilient-json-v3
+echo Vision fallback: strict JSON ^> repair ^> salvage ^> semantic reconstruction
 echo Vision rules: precise color + carrot/potato disambiguation
 echo RAG: food-vision-kb-v6.md
-echo Validator: semantic-v6
+echo Validator: semantic-v7
 echo Image budget: max 1280 px / 1.2 MP
 echo Browser: http://localhost:5173
 echo Local API: http://127.0.0.1:8787
