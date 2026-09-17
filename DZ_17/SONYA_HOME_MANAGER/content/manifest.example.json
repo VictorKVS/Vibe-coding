@@ -1,0 +1,23 @@
+{
+  "hero": [
+    {
+      "id": "hero-family-breakfast-001",
+      "file": "hero/hero_family_breakfast_001.webp",
+      "title": "Вкусное детство сегодня",
+      "enabled": true,
+      "weight": 10,
+      "durationSec": 7
+    }
+  ],
+  "cards": {
+    "kids": [],
+    "family": [],
+    "party": [],
+    "desserts": [],
+    "drinks": [],
+    "products": [],
+    "recipes": [],
+    "collages": [],
+    "lifestyle": []
+  }
+}

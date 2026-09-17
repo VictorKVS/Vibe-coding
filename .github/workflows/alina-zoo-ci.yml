@@ -1,0 +1,58 @@
+name: Alina Agent Zoo CI
+
+on:
+  pull_request:
+    paths:
+      - 'DZ_10_API_logic_assistant_deploy/WILD_IDEAS/**'
+      - '.github/workflows/alina-zoo-ci.yml'
+  push:
+    branches:
+      - feature/alina-agent-zoo-rag
+    paths:
+      - 'DZ_10_API_logic_assistant_deploy/WILD_IDEAS/**'
+      - '.github/workflows/alina-zoo-ci.yml'
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: DZ_10_API_logic_assistant_deploy/WILD_IDEAS
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22.13.0'
+          cache: npm
+          cache-dependency-path: DZ_10_API_logic_assistant_deploy/WILD_IDEAS/package-lock.json
+      - name: Install
+        run: npm ci
+      - name: Validate Zoo JSON
+        run: |
+          node -e "const fs=require('fs'); for(const f of ['knowledge/zoo/agents.json','knowledge/zoo/knowledge.json','knowledge/zoo/eval-cases.json','knowledge/zoo/model-eval-cases.json','knowledge/zoo/quests.json','knowledge/zoo/compositions.json','knowledge/zoo/maturity-levels.json','knowledge/zoo/qualification-gates.json','knowledge/zoo/father-inheritance.json','prompts/manifest.json']) JSON.parse(fs.readFileSync(f,'utf8')); console.log('Zoo JSON OK')"
+      - name: Check Quest runner syntax
+        run: |
+          node --check scripts/run-quest-arena.mjs
+          node --check scripts/run-quest-matrix.mjs
+          node --check scripts/assess-zoo-maturity.mjs
+      - name: Lint Zoo runtime
+        run: npx oxlint lib/alina-zoo.ts lib/zoo-rag.ts lib/alina-orchestrator.ts lib/quest-arena.ts app/api/zoo/route.ts app/api/zoo/experiments/route.ts app/api/zoo/quests/route.ts app/api/health/route.ts
+      - name: Build full WILD_IDEAS app
+        run: npm run build
+      - name: Smoke production health endpoint
+        shell: bash
+        run: |
+          npm run start:prod >/tmp/alina-start.log 2>&1 &
+          pid=$!
+          trap 'kill "$pid" 2>/dev/null || true' EXIT
+          for i in $(seq 1 30); do
+            if curl -fsS http://127.0.0.1:8080/api/health; then
+              echo
+              echo "Production health check passed"
+              exit 0
+            fi
+            sleep 1
+          done
+          echo "Production server did not become healthy"
+          cat /tmp/alina-start.log
+          exit 1

@@ -1,0 +1,74 @@
+{
+  "schemaVersion": 1,
+  "catalogId": "ALINA-COMPOSITIONS-0001",
+  "maxCallsPerRun": 8,
+  "compositions": [
+    {
+      "id": "single",
+      "title": "Single model",
+      "description": "Одна модель выполняет квест через профильного агента.",
+      "modelSlots": ["M1"],
+      "waves": [
+        [
+          {"id":"answer","agent":"$quest.defaultAgent","modelSlot":"M1","instruction":"Реши профессиональный квест. Соблюдай ограничения и критерии успеха. Не оценивай сам себя."}
+        ]
+      ],
+      "finalStage":"answer"
+    },
+    {
+      "id": "relay_critic",
+      "title": "Draft → Critic → Revision",
+      "description": "Первая модель делает решение, вторая независимо критикует, затем первая пересобирает ответ с учётом замечаний.",
+      "modelSlots": ["M1","M2"],
+      "waves": [
+        [
+          {"id":"draft","agent":"$quest.defaultAgent","modelSlot":"M1","instruction":"Сделай первый профессиональный вариант решения по квесту."}
+        ],
+        [
+          {"id":"critique","agent":"skeptical_reviewer","modelSlot":"M2","uses":["draft"],"instruction":"Проведи независимую профессиональную критику черновика: скрытые предположения, нарушения ограничений, пропуски критериев, более сильные альтернативы."}
+        ],
+        [
+          {"id":"revision","agent":"$quest.defaultAgent","modelSlot":"M1","uses":["draft","critique"],"instruction":"Собери финальное решение. Исправь только обоснованные замечания критика, сохрани полезные части черновика и явно не придумывай отсутствующие факты."}
+        ]
+      ],
+      "finalStage":"revision"
+    },
+    {
+      "id": "parallel_synthesis",
+      "title": "Two independent models → Synthesis",
+      "description": "Две модели независимо решают один квест, третья сравнивает и синтезирует финальный ответ.",
+      "modelSlots": ["M1","M2","M3"],
+      "waves": [
+        [
+          {"id":"candidate_a","agent":"$quest.defaultAgent","modelSlot":"M1","instruction":"Реши квест независимо. Не предполагай, что увидишь ответы других моделей."},
+          {"id":"candidate_b","agent":"$quest.defaultAgent","modelSlot":"M2","instruction":"Реши квест независимо. Ищи другой разумный путь, если он существует; не создавай искусственных отличий."}
+        ],
+        [
+          {"id":"synthesis","agent":"alina_orchestrator","modelSlot":"M3","uses":["candidate_a","candidate_b"],"instruction":"Сравни два независимых решения по ограничениям и критериям квеста. Собери финальный ответ из сильных частей, сохрани существенные разногласия и не объявляй консенсус там, где его нет."}
+        ]
+      ],
+      "finalStage":"synthesis"
+    },
+    {
+      "id": "specialist_pipeline",
+      "title": "Research → Specialist → Reviewer → Synthesis",
+      "description": "Разные модели получают разные профессиональные роли, затем финальный синтез собирает результат.",
+      "modelSlots": ["M1","M2","M3","M4"],
+      "waves": [
+        [
+          {"id":"evidence","agent":"research_analyst","modelSlot":"M1","instruction":"Разбери только доказательную часть квеста: что известно, что неизвестно, какие утверждения требуют подтверждения. Не решай задачу за профильного специалиста."}
+        ],
+        [
+          {"id":"specialist","agent":"$quest.defaultAgent","modelSlot":"M2","uses":["evidence"],"instruction":"Сделай профильное профессиональное решение с учётом evidence/gaps. Не превращай неизвестное в факт."}
+        ],
+        [
+          {"id":"review","agent":"skeptical_reviewer","modelSlot":"M3","uses":["evidence","specialist"],"instruction":"Проверь решение против ограничений и критериев квеста. Найди критические ошибки, пропуски, authority leakage и более простой вариант, если он реально лучше."}
+        ],
+        [
+          {"id":"final","agent":"alina_orchestrator","modelSlot":"M4","uses":["evidence","specialist","review"],"instruction":"Собери итоговый профессиональный ответ. Раздели подтверждённое, предположения, gaps и решение. Не скрывай существенные возражения reviewer."}
+        ]
+      ],
+      "finalStage":"final"
+    }
+  ]
+}

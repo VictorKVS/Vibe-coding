@@ -1,0 +1,237 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://alina.local/schemas/knowledge-factory-core.schema.json",
+  "title": "ALINA Knowledge Factory Core Contracts",
+  "type": "object",
+  "$defs": {
+    "OriginClass": {
+      "type": "string",
+      "enum": [
+        "SOURCE_DERIVED",
+        "PROJECT_DECISION",
+        "ASSISTANT_PROPOSAL",
+        "HUMAN_DECISION",
+        "BENCHMARK_MEASURED",
+        "INFERENCE",
+        "HYPOTHESIS"
+      ]
+    },
+    "SecurityStatus": {
+      "type": "string",
+      "enum": [
+        "SECURITY_UNREVIEWED",
+        "SECURITY_APPROVED",
+        "SECURITY_RESTRICTED",
+        "SECURITY_HOLD",
+        "SECURITY_REJECTED"
+      ]
+    },
+    "KnowledgeStatus": {
+      "type": "string",
+      "enum": [
+        "draft",
+        "candidate",
+        "reviewed",
+        "verified",
+        "approved",
+        "production",
+        "deprecated",
+        "superseded",
+        "quarantined",
+        "rejected"
+      ]
+    },
+    "Source": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["source_id", "source_type", "status"],
+      "properties": {
+        "source_id": {"type": "string", "minLength": 1},
+        "source_type": {"type": "string", "minLength": 1},
+        "canonical_uri": {"type": ["string", "null"]},
+        "acquisition_uri": {"type": ["string", "null"]},
+        "title": {"type": ["string", "null"]},
+        "language": {"type": ["string", "null"]},
+        "metadata": {"type": "object"},
+        "status": {"type": "string", "minLength": 1},
+        "created_at": {"type": ["string", "null"], "format": "date-time"}
+      }
+    },
+    "Capture": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["capture_id", "source_id", "sha256", "security_status"],
+      "properties": {
+        "capture_id": {"type": "string", "minLength": 1},
+        "source_id": {"type": "string", "minLength": 1},
+        "captured_at": {"type": ["string", "null"], "format": "date-time"},
+        "sha256": {"type": "string", "minLength": 32},
+        "mime_type": {"type": ["string", "null"]},
+        "size_bytes": {"type": ["integer", "null"], "minimum": 0},
+        "storage_ref": {"type": ["string", "null"]},
+        "parser_status": {"type": "string"},
+        "security_status": {"$ref": "#/$defs/SecurityStatus"},
+        "metadata": {"type": "object"}
+      }
+    },
+    "StructureNode": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["structure_node_id", "capture_id", "node_type"],
+      "properties": {
+        "structure_node_id": {"type": "string", "minLength": 1},
+        "capture_id": {"type": "string", "minLength": 1},
+        "parent_id": {"type": ["string", "null"]},
+        "node_type": {
+          "type": "string",
+          "enum": [
+            "document", "part", "chapter", "section", "subsection",
+            "article", "clause", "subclause", "paragraph", "list",
+            "list_item", "table", "figure", "example", "case",
+            "appendix", "unknown"
+          ]
+        },
+        "ordinal": {"type": ["integer", "null"], "minimum": 0},
+        "label": {"type": ["string", "null"]},
+        "page_from": {"type": ["integer", "null"], "minimum": 1},
+        "page_to": {"type": ["integer", "null"], "minimum": 1},
+        "metadata": {"type": "object"}
+      }
+    },
+    "SourceSpan": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["span_id", "capture_id"],
+      "properties": {
+        "span_id": {"type": "string", "minLength": 1},
+        "capture_id": {"type": "string", "minLength": 1},
+        "structure_node_id": {"type": ["string", "null"]},
+        "page_from": {"type": ["integer", "null"], "minimum": 1},
+        "page_to": {"type": ["integer", "null"], "minimum": 1},
+        "char_from": {"type": ["integer", "null"], "minimum": 0},
+        "char_to": {"type": ["integer", "null"], "minimum": 0},
+        "text_hash": {"type": ["string", "null"]},
+        "text_content": {"type": ["string", "null"]},
+        "storage_ref": {"type": ["string", "null"]},
+        "metadata": {"type": "object"}
+      },
+      "anyOf": [
+        {"required": ["text_content"]},
+        {"required": ["storage_ref"]}
+      ]
+    },
+    "KnowledgeObject": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "object_id", "object_type", "canonical_key", "version",
+        "status", "origin_class", "security_status", "payload"
+      ],
+      "properties": {
+        "object_id": {"type": "string", "minLength": 1},
+        "object_type": {
+          "type": "string",
+          "enum": [
+            "concept", "claim", "evidence", "method", "algorithm",
+            "control", "metric", "implementation_option", "hypothesis",
+            "contradiction", "open_question", "evidence_synthesis"
+          ]
+        },
+        "canonical_key": {"type": "string", "minLength": 1},
+        "version": {"type": "integer", "minimum": 1},
+        "status": {"$ref": "#/$defs/KnowledgeStatus"},
+        "origin_class": {"$ref": "#/$defs/OriginClass"},
+        "security_status": {"$ref": "#/$defs/SecurityStatus"},
+        "title": {"type": ["string", "null"]},
+        "payload": {"type": "object"},
+        "supersedes_id": {"type": ["string", "null"]},
+        "created_at": {"type": ["string", "null"], "format": "date-time"},
+        "updated_at": {"type": ["string", "null"], "format": "date-time"}
+      }
+    },
+    "KnowledgeEdge": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["edge_id", "from_object_id", "relation_type", "to_object_id", "origin_class", "status"],
+      "properties": {
+        "edge_id": {"type": "string", "minLength": 1},
+        "from_object_id": {"type": "string", "minLength": 1},
+        "relation_type": {
+          "type": "string",
+          "enum": [
+            "defines", "supports", "contradicts", "limits", "refines",
+            "applies_to", "implements", "uses", "requires", "measured_by",
+            "checked_by", "alternative_to", "derived_from", "part_of",
+            "related_to", "supersedes"
+          ]
+        },
+        "to_object_id": {"type": "string", "minLength": 1},
+        "origin_class": {"$ref": "#/$defs/OriginClass"},
+        "status": {"type": "string", "minLength": 1},
+        "confidence": {"type": ["number", "null"], "minimum": 0, "maximum": 1},
+        "metadata": {"type": "object"}
+      }
+    },
+    "ObjectSourceRef": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["ref_id", "object_id", "span_id", "ref_role", "locator_status"],
+      "properties": {
+        "ref_id": {"type": "string", "minLength": 1},
+        "object_id": {"type": "string", "minLength": 1},
+        "span_id": {"type": "string", "minLength": 1},
+        "ref_role": {
+          "type": "string",
+          "enum": [
+            "supports", "contradicts", "limits", "source_of_definition",
+            "method_basis", "algorithm_step_basis", "example", "context"
+          ]
+        },
+        "locator_status": {"type": "string", "enum": ["verified", "pending_verification"]},
+        "note": {"type": ["string", "null"]},
+        "metadata": {"type": "object"}
+      }
+    },
+    "LocalizedText": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["localized_text_id", "object_id", "field_name", "language", "text_value", "translation_status"],
+      "properties": {
+        "localized_text_id": {"type": "string", "minLength": 1},
+        "object_id": {"type": "string", "minLength": 1},
+        "field_name": {"type": "string", "minLength": 1},
+        "language": {"type": "string", "minLength": 2},
+        "text_value": {"type": "string"},
+        "source_language": {"type": ["string", "null"]},
+        "translation_status": {"type": "string", "minLength": 1},
+        "producer_trace": {"type": "object"}
+      }
+    },
+    "SecurityDecision": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["security_decision_id", "decision", "findings"],
+      "properties": {
+        "security_decision_id": {"type": "string", "minLength": 1},
+        "object_id": {"type": ["string", "null"]},
+        "decision": {"type": "string", "enum": ["allow", "restrict", "hold", "reject"]},
+        "severity": {"type": ["string", "null"], "enum": ["low", "medium", "high", "critical", null]},
+        "policy_version": {"type": ["string", "null"]},
+        "findings": {"type": "array", "items": {"type": "object"}},
+        "reviewer_ref": {"type": ["string", "null"]},
+        "created_at": {"type": ["string", "null"], "format": "date-time"}
+      }
+    }
+  },
+  "properties": {
+    "source": {"$ref": "#/$defs/Source"},
+    "capture": {"$ref": "#/$defs/Capture"},
+    "structure_node": {"$ref": "#/$defs/StructureNode"},
+    "source_span": {"$ref": "#/$defs/SourceSpan"},
+    "knowledge_object": {"$ref": "#/$defs/KnowledgeObject"},
+    "knowledge_edge": {"$ref": "#/$defs/KnowledgeEdge"},
+    "object_source_ref": {"$ref": "#/$defs/ObjectSourceRef"},
+    "localized_text": {"$ref": "#/$defs/LocalizedText"},
+    "security_decision": {"$ref": "#/$defs/SecurityDecision"}
+  }
+}

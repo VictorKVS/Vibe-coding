@@ -1,0 +1,16 @@
+{
+  "schemaVersion": 1,
+  "datasetId": "ALINA-ZOO-ROUTING-EVAL-0001",
+  "cases": [
+    {"id":"ZR-001","input":"Сделай системный промпт для агента редактора и предложи тесты","expectedAgent":"prompt_engineer"},
+    {"id":"ZR-002","input":"Как построить базу знаний и не потерять происхождение утверждений?","expectedAgent":"knowledge_growth_analyst"},
+    {"id":"ZR-003","input":"Проверь по источникам, насколько сейчас популярен этот жанр","expectedAgent":"research_analyst"},
+    {"id":"ZR-004","input":"У героя мотивация противоречит второй главе, разберём арку","expectedAgent":"narrative_architect"},
+    {"id":"ZR-005","input":"Разнеси этот план: какие предположения и риски мы не заметили?","expectedAgent":"skeptical_reviewer"},
+    {"id":"ZR-006","input":"У меня новая идея книги, помоги начать и задай вопросы","expectedAgent":"alina_orchestrator"},
+    {"id":"ZR-007","input":"Сравни две версии промпта и скажи, какие eval-кейсы нужны","expectedAgent":"prompt_engineer"},
+    {"id":"ZR-008","input":"В источниках два разных определения. Не усредняй, разберись в конфликте","expectedAgent":"knowledge_growth_analyst"},
+    {"id":"ZR-009","input":"Найди подтверждение факта и отдели его от маркетинговой гипотезы","expectedAgent":"research_analyst"},
+    {"id":"ZR-010","input":"Не уверен, что запрос относится к специалисту — просто помоги уточнить задачу","expectedAgent":"alina_orchestrator"}
+  ]
+}

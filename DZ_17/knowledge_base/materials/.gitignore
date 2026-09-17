@@ -1,0 +1,8 @@
+# Full source originals are local-only by default.
+originals/**
+
+# Derived runtime/search indexes are reproducible and local-only by default.
+indexes/**
+
+# Structured project-authored extracts may be versioned in Git.
+!extracts/**

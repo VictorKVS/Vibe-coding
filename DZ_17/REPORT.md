@@ -1,0 +1,309 @@
+# ДЗ-17 · Отчёт для сдачи
+
+## Ссылка на приложение
+
+`TODO: вставить публичную Share / Deploy ссылку`
+
+Перед отправкой преподавателю открыть ссылку в отдельной сессии/браузере и убедиться, что доступ не зависит от аккаунта владельца.
+
+---
+
+## Скриншот
+
+Финальный скриншот должен одновременно показывать:
+
+- загруженное изображение;
+- блок `TEXT QUERY`;
+- ответ ALINA;
+- trace использованной модели.
+
+Путь:
+
+```text
+screenshots/dz17-alina-image-text-analysis.png
+```
+
+---
+
+## Как была выстроена логика взаимодействия?
+
+Я развил существующий проект **ALINA — AI-продюсер идей** до мультимодального сценария. Пользователь загружает визуальный референс и одновременно задаёт текстовый вопрос. Frontend передаёт оба входа в серверный `/api/llm`, где запрос маршрутизируется как отдельная задача `vision` к настроенной мультимодальной модели. Сначала ALINA выделяет наблюдаемые признаки изображения, затем отдельно интерпретирует их в контексте задачи и предлагает три творческих направления. Окончательное решение остаётся за пользователем.
+
+```text
+TEXT + IMAGE
+→ SERVER LLM GATEWAY
+→ VISION MODEL
+→ OBSERVATION
+→ CONTEXTUAL INTERPRETATION
+→ 3 DIRECTIONS
+→ HUMAN CONFIRMATION
+```
+
+Приложение не привязано к одной модели. Основной локальный путь теперь работает напрямую через `llama.cpp router`, а внешний глубокий анализ может выполняться через нативный GigaChat API. OpenAI / OpenAI-compatible / Ollama оставлены как дополнительные providers, но для локального режима они не обязательны. Реальные API-ключи не передаются браузеру.
+
+---
+
+## С какими основными сложностями пришлось столкнуться и как они решены?
+
+Главная сложность — добиться предсказуемого разделения между **тем, что модель действительно видит**, и **творческой интерпретацией ALINA**. Без дополнительного регламента мультимодальная модель может сразу достраивать отсутствующие детали или смешивать наблюдение с художественным предположением.
+
+Поэтому в системном промпте и контексте vision-запроса зафиксирован порядок:
+
+```text
+1. OBSERVATION — только наблюдаемые признаки.
+2. INTERPRETATION — связь увиденного с задачей пользователя.
+3. THREE DIRECTIONS — три варианта применения.
+4. HUMAN DECISION — ALINA не утверждает вариант вместо автора.
+```
+
+Вторая техническая задача — не раскрывать секрет модели во frontend. Для этого мультимодальный запрос идёт через server-side `/api/llm`; frontend передаёт изображение и текст приложению, а ключ провайдера остаётся в переменных окружения сервера.
+
+Третья задача — честное поведение при отсутствии vision-модели. DEMO fallback не имитирует анализ картинки. Vision-задача требует реально отмеченную image-capable модель.
+
+---
+
+## Реализовано сверх минимального задания
+
+- Model Switcher;
+- отдельная маршрутизация задачи `vision`;
+- прямой локальный provider `llama.cpp router` без LM Studio;
+- прямой GigaChat provider;
+- автоматическое получение/обновление GigaChat access token на сервере;
+- динамическое обнаружение локальных и GigaChat моделей;
+- автоматическая загрузка/смена локальной GGUF-модели через router mode;
+- `npm run dev:models` — единый запуск приложения и локального model runtime;
+- OpenAI / OpenAI-compatible / Ollama как опциональные providers;
+- Project Memory;
+- Research Pack;
+- Story DNA;
+- голосовой ввод текста;
+- серверная проверка входных изображений;
+- ограничения типов и размера файла;
+- trace модели и latency;
+- GitHub Actions: build + production `/api/health` smoke test;
+- ALINA Knowledge Base Analyst;
+- разложение материала на entities / facts / relationships / timeline / knowledge states / plot threads / visual requirements;
+- human review со статусами `proposed / approved / rejected`;
+- отдельный KB Validator;
+- мультимодальный путь `text + image → vision observation → KB extraction`.
+
+Эти функции не заменяют обязательный сценарий ДЗ. Для проверки отдельно фиксируется минимальный поток `изображение + текст → реальный мультимодальный ответ`.
+
+---
+
+# Model Manager без LM Studio
+
+Принцип подключения моделей:
+
+```text
+ALINA UI
+   ↓
+Model Switcher
+   ↓
+/api/llm
+   ├── LOCAL / llama.cpp router
+   ├── GigaChat API
+   ├── optional OpenAI
+   ├── optional compatible
+   └── optional Ollama
+```
+
+Для локальных моделей ALINA запускает `llama-server.exe` в router mode через `scripts/run-with-models.mjs`. GGUF-файлы находятся в каталоге `DZ_17/app/models/`, а runtime — в `DZ_17/app/runtime/llama/`. Оба каталога исключены из Git.
+
+```text
+npm run dev:models
+```
+
+Router стартует на `127.0.0.1`, публикует `/v1/models`, и ALINA автоматически добавляет найденные модели в UI. Выбор `LOCAL · <model>` отправляет exact model id в запросе; router сам загружает нужную модель. Таким образом смена модели выполняется **из приложения**, без отдельной Studio-программы.
+
+Для AUTO доступны role-specific переменные:
+
+```text
+LLAMA_DIALOGUE_MODEL
+LLAMA_SYNTHESIS_MODEL
+LLAMA_ARCHITECTURE_MODEL
+LLAMA_KB_MODEL
+LLAMA_KB_VALIDATE_MODEL
+LLAMA_VISION_MODEL
+```
+
+Внешний GigaChat подключается напрямую. Сервер ALINA получает access token по Authorization key, кэширует его до истечения срока и использует API списка моделей и chat completions. Секреты во frontend не отправляются.
+
+Рекомендуемый локальный порядок:
+
+```env
+ALINA_PROVIDER_ORDER=llamacpp,gigachat,demo
+```
+
+---
+
+# Расчёт локального Tool Zoo + Analysis Zoo
+
+Для развития ALINA как полноценного аналитика отдельно рассчитан максимально практичный зоопарк инструментов на текущем ПК.
+
+Подтверждённая конфигурация:
+
+| Ресурс | Конфигурация |
+|---|---|
+| ОС | Windows 11 Pro 23H2 |
+| CPU | Intel Core i5-10400F, 6 ядер / 12 потоков |
+| RAM | ~32 ГБ |
+| GPU | NVIDIA GeForce RTX 3060 |
+| VRAM | 12 ГБ |
+| CUDA | доступна |
+
+## GPU
+
+Из 12 ГБ VRAM резервируется примерно 1.5–2 ГБ под Windows/WDDM, UI и служебные буферы:
+
+```text
+12 ГБ - 2 ГБ ≈ 10 ГБ безопасного AI-бюджета
+```
+
+Поэтому базовое правило scheduler:
+
+```text
+GPU_HEAVY_SEMAPHORE = 1
+```
+
+На GPU одновременно исполняется одна тяжёлая задача: text LLM, vision LLM или STT.
+
+Плановый рабочий диапазон локальной 7–8B Q4 text-модели:
+
+```text
+weights              ≈ 5–6.5 ГБ
+KV/cache/runtime      ≈ 1.5–3 ГБ
+--------------------------------
+working set           ≈ 6.5–9.5 ГБ
+```
+
+Это подходит RTX 3060 12 ГБ. 14B Q4 рассматривается как экспериментальный on-demand профиль, а не как постоянный worker.
+
+## CPU
+
+Имеется 12 логических потоков. Два оставляются ОС/браузеру/IDE:
+
+```text
+12 - 2 = 10 usable threads
+```
+
+Если тяжёлый CPU worker получает примерно два логических потока:
+
+```text
+floor(10 / 2) = 5 theoretical workers
+```
+
+Для устойчивой интерактивной работы используется запас и принимается:
+
+```text
+recommended CPU-heavy workers = 4
+```
+
+## RAM
+
+Плановый бюджет:
+
+```text
+32 ГБ total
+- 8–10 ГБ Windows + browser + IDE
+- 3–4 ГБ PostgreSQL / services
+--------------------------------
+≈18–21 ГБ remaining
+```
+
+Этого достаточно для inference runtime, CPU embeddings/reranker, парсеров, временных OCR/STT buffers и graph artifacts при условии, что несколько больших LLM не держатся одновременно в RAM/VRAM.
+
+## Одновременные рабочие линии
+
+Безопасный baseline:
+
+```text
+4 CPU-heavy lanes
++ 1 local GPU lane
++ 2 external GigaChat lanes
+= 7 полезных параллельных lanes
+```
+
+Тестовый максимум после проверки API limits GigaChat:
+
+```text
+4 CPU + 1 GPU + 3 external = 8 lanes
+```
+
+Третья внешняя линия не считается гарантированной до фактической телеметрии rate-limit/429/latency.
+
+## Архитектурный вывод
+
+ALINA может иметь **25–30 специализированных аналитических ролей**, не загружая 25–30 моделей одновременно. Роли работают поверх малого числа физических движков:
+
+```text
+1 × Local Text LLM 7–8B Q4
+1 × Local Vision/VL 7B-class Q4
+1 × Local STT
+2 × small CPU ML: embeddings + reranker
+10+ deterministic tools
+PostgreSQL + pgvector
+Queue / Scheduler
++
+External GigaChat
+```
+
+Локальный слой выполняет массовую обработку: parsing, hashing, NER, chunking, embeddings, entity/fact/relation/event extraction, первичный graph и visual/STT passes.
+
+GigaChat используется как внешний сильный слой для deep synthesis, cross-document reasoning, hypothesis comparison, Socrates/counter-evidence и второй независимой проверки KB.
+
+Полный расчёт, ограничения и таблица плановой нагрузки вынесены в [`ANALYST_ZOO_CAPACITY.md`](ANALYST_ZOO_CAPACITY.md).
+
+Важно: tokens/sec, images/min, STT realtime factor, реальные VRAM/RAM peaks и лимиты GigaChat пока не измерены. Поэтому throughput, ускорение относительно одного потока и ETA не выдумываются. После локального запуска должна собираться telemetry:
+
+```text
+items/min
+chunks/min
+tokens/sec
+VRAM peak
+RAM peak
+CPU utilization
+queue wait
+retry rate
+GigaChat latency
+429/error rate
+% rework
+```
+
+После накопления телеметрии в отчёт добавляются:
+
+```text
+скорость vs 1 поток
+% ускорения / замедления
+throughput за проход
+throughput накопительно
+доля повторной работы
+остаток
+ETA завершения
+```
+
+---
+
+# Финальный checklist
+
+- [ ] `npm ci` проходит;
+- [ ] `npm run build` проходит;
+- [ ] production health-check проходит;
+- [ ] приложение открывается;
+- [ ] local llama.cpp router стартует через `npm run dev:models`;
+- [ ] Model Switcher показывает локальные модели из `/v1/models`;
+- [ ] GigaChat models появляются при настроенном Authorization key;
+- [ ] ручная смена LOCAL/GigaChat модели работает из UI;
+- [ ] AUTO выбирает модель согласно роли;
+- [ ] фото JPG/PNG/WEBP загружается;
+- [ ] preview изображения отображается;
+- [ ] текстовый запрос вводится;
+- [ ] выбранная модель действительно поддерживает vision;
+- [ ] image + text совместно обрабатываются;
+- [ ] ответ отделяет наблюдение от интерпретации;
+- [ ] выдаются три направления;
+- [ ] на экране виден MODEL trace;
+- [ ] сделан финальный скриншот;
+- [ ] публичная ссылка добавлена в отчёт;
+- [ ] публичный доступ проверен;
+- [ ] в репозитории отсутствуют реальные API-ключи.

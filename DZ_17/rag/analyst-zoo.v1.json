@@ -1,0 +1,124 @@
+{
+  "schema_version": "alina-rag-profile-v1",
+  "rag_profile_id": "RAG-FATHER-ANALYST-ZOO-v1",
+  "version": 1,
+  "status": "active",
+  "origin_class": "PROJECT_DECISION",
+  "principles": {
+    "canonical_source_once": true,
+    "minimal_sufficient_evidence": true,
+    "fixed_overlap_chunks_are_not_canonical": true,
+    "runtime_overlap_allowed": true,
+    "translation_is_projection": true,
+    "require_provenance": true,
+    "contradictions_are_preserved": true,
+    "model_output_is_not_independent_evidence": true
+  },
+  "retrieval_order": [
+    "task_context",
+    "role_profile",
+    "domain_profile",
+    "canonical_method_control_metric",
+    "evidence_synthesis",
+    "idea_candidates",
+    "source_spans_on_demand",
+    "neighbor_structure_on_demand",
+    "full_capture_only_if_required"
+  ],
+  "global_kb_refs": [
+    "DZ_17/knowledge_base/README.md",
+    "DZ_17/knowledge_base/ANALYST_KB_SPEC.md",
+    "DZ_17/knowledge_base/FATHER_ANALYST_FOUNDATION.md",
+    "DZ_17/knowledge_base/analyst_method_cards.v1.json",
+    "DZ_17/knowledge_base/PROVENANCE_AND_STORAGE_POLICY.md",
+    "DZ_17/knowledge_base/DECISION_AND_TRAINING_FRAMEWORK.md"
+  ],
+  "role_routes": {
+    "source_curator": {
+      "top_k": 8,
+      "retrieve": ["source_registry", "provenance_policy", "duplicate_index", "source_status_rules"],
+      "exclude": ["unreviewed_model_summaries_without_source_refs"]
+    },
+    "translator": {
+      "top_k": 12,
+      "retrieve": ["translation_terminology", "translation_memory", "domain_terms", "neighbor_source_spans"],
+      "exact_source_span_required": true
+    },
+    "structure_analyst": {
+      "top_k": 12,
+      "retrieve": ["source_spans", "page_neighbors", "existing_structure_proposal", "document_type_rules"],
+      "prefer_deterministic_cues": true
+    },
+    "idea_boundary_analyst": {
+      "top_k": 16,
+      "retrieve": ["current_structure_node", "ordered_source_spans", "previous_idea_tail", "next_span_preview"],
+      "window_policy": "expand_until_semantic_closure",
+      "max_context_policy": "summarize_closed_prior_ideas_before dropping provenance"
+    },
+    "claim_concept_analyst": {
+      "top_k": 14,
+      "retrieve": ["idea_candidate", "exact_source_spans", "canonical_concepts", "near_duplicate_claims", "contradictions"]
+    },
+    "method_analyst": {
+      "top_k": 14,
+      "retrieve": ["idea_candidate", "method_cards", "canonical_concepts", "controls", "metrics", "alternatives"]
+    },
+    "algorithm_engineer": {
+      "top_k": 18,
+      "retrieve": ["method_candidate", "source_basis", "existing_algorithms", "implementation_options", "controls", "metrics", "failure_modes", "technology_registry"],
+      "must_retrieve_alternatives": true
+    },
+    "scenario_analyst": {
+      "top_k": 18,
+      "retrieve": ["algorithm_candidate", "preconditions", "failure_modes", "security_controls", "known_incidents_or_verified_examples", "metrics"]
+    },
+    "realization_conditions_analyst": {
+      "top_k": 18,
+      "retrieve": ["algorithm_candidate", "domain_profile", "runtime_constraints", "security_controls", "legal_constraints", "benchmarks", "dependencies"]
+    },
+    "provenance_validator": {
+      "top_k": 32,
+      "retrieve": ["object_source_refs", "source_spans", "captures", "sources", "decision_records", "version_history"],
+      "semantic_search_only_is_insufficient": true
+    },
+    "security_reviewer": {
+      "top_k": 20,
+      "retrieve": ["algorithm_candidate", "runtime_config", "ai_security_process", "controls", "tool_permissions", "data_control_plane_rules", "source_trust"]
+    },
+    "socrates_reviewer": {
+      "top_k": 24,
+      "retrieve": ["selected_conclusion", "supporting_evidence", "counter_evidence", "contradictions", "alternative_methods", "negative_scenarios", "open_questions"]
+    },
+    "kb_publisher": {
+      "top_k": 24,
+      "retrieve": ["candidate_objects", "canonical_keys", "near_duplicates", "review_decisions", "security_decisions", "supersedes_history"]
+    }
+  },
+  "ranking": {
+    "priority": [
+      "exact_provenance_match",
+      "verified_or_approved_status",
+      "same_domain",
+      "semantic_relevance",
+      "recency_when_domain_requires_it",
+      "source_quality",
+      "diversity_for_counter_evidence"
+    ],
+    "status_weights_are_configurable": true,
+    "do_not_hide_rejected_or_contradicting_records_when_reviewing": true
+  },
+  "context_package_contract": {
+    "required": [
+      "task_id",
+      "role_id",
+      "prompt_version",
+      "rag_profile_version",
+      "query",
+      "retrieved_ids",
+      "source_span_refs",
+      "excluded_reason_counts",
+      "model_route"
+    ],
+    "trace_required": true
+  }
+}

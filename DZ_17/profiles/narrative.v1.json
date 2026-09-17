@@ -1,0 +1,104 @@
+{
+  "schema_version": "alina-domain-profile-v1",
+  "id": "narrative",
+  "version": "1.0.0",
+  "title": "Narrative / Fiction Knowledge Base",
+  "description": "Профиль для книг, серий, сценариев и визуально связанных историй.",
+  "ontology": {
+    "project_hierarchy": ["universe", "series", "project", "volume", "chapter", "scene"],
+    "knowledge_layers": ["fact", "belief", "rumor", "lie", "secret", "hypothesis"]
+  },
+  "entity_types": [
+    "character",
+    "location",
+    "organization",
+    "artifact",
+    "scene",
+    "event",
+    "concept"
+  ],
+  "relation_types": [
+    "knows",
+    "believes",
+    "owns",
+    "uses",
+    "located_at",
+    "member_of",
+    "related_to",
+    "heard_from",
+    "participates_in",
+    "appears_in",
+    "causes",
+    "precedes",
+    "contradicts"
+  ],
+  "event_types": [
+    "movement",
+    "dialogue",
+    "conflict",
+    "discovery",
+    "decision",
+    "transfer",
+    "injury",
+    "death",
+    "appearance_change"
+  ],
+  "required_analysts": [
+    "entity",
+    "claim_fact",
+    "relation",
+    "event_timeline",
+    "contradiction",
+    "knowledge_state",
+    "kb_validator"
+  ],
+  "optional_analysts": [
+    "visual",
+    "visual_continuity",
+    "dialogue",
+    "relationship_state",
+    "plot_thread",
+    "foreshadowing_payoff",
+    "socrates"
+  ],
+  "validators": [
+    {"id": "provenance_required", "severity": "high", "enabled": true, "config": {}},
+    {"id": "knowledge_leak", "severity": "high", "enabled": true, "config": {}},
+    {"id": "timeline_conflict", "severity": "high", "enabled": true, "config": {}},
+    {"id": "duplicate_entity", "severity": "medium", "enabled": true, "config": {}},
+    {"id": "visual_continuity", "severity": "medium", "enabled": true, "config": {}},
+    {"id": "canon_scope", "severity": "high", "enabled": true, "config": {}}
+  ],
+  "evidence_rules": {
+    "verified_requires_provenance": true,
+    "minimum_sources_for_fact": 1,
+    "require_counter_evidence_check": false,
+    "allow_model_only_fact": false,
+    "author_statement_priority": "high",
+    "vision_observation_is_canon": false
+  },
+  "confidence_thresholds": {
+    "auto_accept_for_senior_review": 0.7,
+    "human_escalation": 0.55,
+    "entity_merge": 0.92
+  },
+  "model_routes": {
+    "entity_extract": {"preferred": ["local:text"], "fallback": ["gigachat:default"]},
+    "claim_fact_extract": {"preferred": ["local:text"], "fallback": ["gigachat:default"]},
+    "relation_extract": {"preferred": ["local:text"], "fallback": ["gigachat:default"]},
+    "event_timeline_extract": {"preferred": ["local:text"], "fallback": ["gigachat:default"]},
+    "vision": {"preferred": ["local:vision"], "fallback": ["gigachat:vision"]},
+    "contradiction": {"preferred": ["local:text"], "fallback": ["gigachat:default"]},
+    "kb_validate": {"preferred": ["gigachat:default"], "fallback": ["local:text"]},
+    "socrates": {"preferred": ["gigachat:default"], "fallback": ["local:text"]},
+    "senior_review": {"preferred": ["gpt:senior"], "fallback": ["gigachat:default"]}
+  },
+  "prompts": {
+    "entity_extract": "Extract only entities grounded in supplied material. Preserve aliases and provenance.",
+    "claim_fact_extract": "Separate source claims from candidate facts. Never promote interpretation to fact.",
+    "knowledge_state": "Track who knows, believes, suspects, heard or does not know each proposition at each scene state."
+  },
+  "schemas": {
+    "candidate_package": "../schemas/candidate-knowledge-package.schema.json"
+  }
+}

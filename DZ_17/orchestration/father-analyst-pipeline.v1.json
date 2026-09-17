@@ -1,0 +1,67 @@
+{
+  "schema_version": "alina-orchestration-v1",
+  "pipeline_id": "FATHER-ANALYST-PIPELINE-v1",
+  "version": 1,
+  "status": "active",
+  "origin_class": "PROJECT_DECISION",
+  "description": "Event-driven document-to-knowledge orchestration with five analytical streams and gated canonical publication.",
+  "default_parallel_streams": 5,
+  "role_profile": "ROLE-ANALYST-FATHER",
+  "prompt_pack": "PROMPT-FATHER-ANALYST-ZOO-v1",
+  "rag_profile": "RAG-FATHER-ANALYST-ZOO-v1",
+  "stages": [
+    {"id":"K0","name":"receive","role":"source_curator","requires":[],"produces":["intake_event"],"gate":"source_accessible"},
+    {"id":"K1","name":"register_provenance","role":"source_curator","requires":["K0"],"produces":["Source","Capture"],"gate":"source_capture_hash_provenance"},
+    {"id":"K2","name":"read_parse","role":"tool_zoo","requires":["K1"],"produces":["SourceSpan"],"gate":"addressable_content_or_explicit_failure"},
+    {"id":"K3","name":"language_translation_gate","role":"translator","requires":["K2"],"produces":["LocalizedText"],"gate":"original_preserved"},
+    {"id":"K4","name":"structure_reconstruction","role":"structure_analyst","requires":["K2"],"produces":["StructureProposal"],"gate":"proposal_only_until_review"},
+    {"id":"K5","name":"idea_detection","role":"idea_boundary_analyst","requires":["K4"],"produces":["IdeaCandidate"],"gate":"exact_span_refs"},
+    {"id":"K6","name":"idea_boundary_segmentation","role":"idea_boundary_analyst","requires":["K5"],"produces":["IdeaChunk"],"gate":"semantic_boundary_not_fixed_size"},
+    {"id":"K7","name":"knowledge_classification","role":"claim_concept_analyst","requires":["K6"],"produces":["KnowledgeCandidate"],"gate":"candidate_with_origin_and_provenance"},
+    {"id":"K8","name":"method_algorithm_engineering","role":"algorithm_engineer","requires":["K7"],"produces":["MethodCandidate","AlgorithmCandidate","ImplementationOption"],"gate":"author_method_separated_from_our_implementation"},
+    {"id":"K9","name":"scenario_engineering","role":"scenario_analyst","requires":["K8"],"produces":["ScenarioSet"],"gate":"positive_negative_degraded_adversarial_as_applicable"},
+    {"id":"K10","name":"realization_conditions","role":"realization_conditions_analyst","requires":["K8"],"produces":["RealizationCondition"],"gate":"conditions_measurable_or_marked_unknown"},
+    {"id":"K11","name":"validation","role":"multi_review","requires":["K7","K8","K9","K10"],"produces":["ProvenanceReview","SecurityReview","SocratesReview","QAReview"],"gate":"no_blocking_findings"},
+    {"id":"K12","name":"synthesis_changeset","role":"chief_analyst_orchestrator","requires":["K11"],"produces":["ChangeSet","EvidenceMap","ReviewPackage"],"gate":"disagreements_preserved"},
+    {"id":"K13","name":"review_publish","role":"kb_publisher","requires":["K12"],"produces":["ReviewDecision","CanonicalVersion"],"gate":"authorized_review_only"}
+  ],
+  "streams": {
+    "S1_SOURCE_STRUCTURE": {"roles":["source_curator","structure_analyst"],"consumes":["Source","Capture","SourceSpan"],"produces":["StructureProposal","source_quality_findings"]},
+    "S2_IDEA_SEMANTICS": {"roles":["idea_boundary_analyst","claim_concept_analyst"],"consumes":["StructureProposal","SourceSpan"],"produces":["IdeaCandidate","IdeaChunk","KnowledgeCandidate"]},
+    "S3_METHODS_ALGORITHMS": {"roles":["method_analyst","algorithm_engineer"],"consumes":["KnowledgeCandidate"],"produces":["MethodCandidate","AlgorithmCandidate","ImplementationOption"]},
+    "S4_NEGATIVE_SECURITY": {"roles":["scenario_analyst","security_reviewer","socrates_reviewer"],"consumes":["AlgorithmCandidate"],"produces":["ScenarioSet","counter_evidence","security_findings"]},
+    "S5_PROVENANCE_QUALITY": {"roles":["provenance_validator","kb_publisher"],"consumes":["all_outputs","trace"],"produces":["quality_metrics","ReviewPackage","ChangeSet"]}
+  },
+  "events": [
+    "SOURCE_REGISTERED",
+    "CAPTURE_PARSED",
+    "TRANSLATION_REQUIRED",
+    "TRANSLATION_READY",
+    "STRUCTURE_PROPOSED",
+    "IDEA_OPENED",
+    "IDEA_CLOSED",
+    "KNOWLEDGE_CANDIDATE_CREATED",
+    "METHOD_CANDIDATE_CREATED",
+    "ALGORITHM_CANDIDATE_CREATED",
+    "SCENARIO_SET_READY",
+    "REALIZATION_CONDITIONS_READY",
+    "VALIDATION_FAILED",
+    "REVIEW_REQUIRED",
+    "CHANGESET_READY",
+    "REVIEW_DECIDED"
+  ],
+  "runtime_policy": {
+    "cpu_heavy_workers": 4,
+    "gpu_heavy_workers": 1,
+    "external_llm_workers": 2,
+    "semantic_streams": 5,
+    "retry_max": 2,
+    "fail_fast_on_source_integrity": true,
+    "fail_fast_on_security_reject": true,
+    "continue_independent_streams_on_role_failure": true,
+    "canonical_auto_publish": false
+  },
+  "trace_required_fields": [
+    "run_id","trace_id","stage","stream","role_id","prompt_version","rag_profile_version","model_route","input_refs","output_ids","status","duration_ms"
+  ]
+}

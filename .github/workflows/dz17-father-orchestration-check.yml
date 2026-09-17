@@ -1,0 +1,57 @@
+name: DZ-17 FATHER Knowledge Orchestration Check
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'DZ_17/app/scripts/run-father-orchestration.mjs'
+      - 'DZ_17/app/scripts/detect-idea-boundaries.mjs'
+      - 'DZ_17/profiles/analyst.v1.json'
+      - 'DZ_17/rag/analyst-zoo.v1.json'
+      - 'DZ_17/orchestration/father-analyst-pipeline.v1.json'
+      - 'DZ_17/prompts/analyst-zoo.v1.md'
+      - 'DZ_17/knowledge_base/FATHER_ANALYST_FOUNDATION.md'
+      - 'DZ_17/processes/FATHER_DOCUMENT_KNOWLEDGE_PIPELINE.md'
+      - '.github/workflows/dz17-father-orchestration-check.yml'
+  pull_request:
+    paths:
+      - 'DZ_17/app/scripts/run-father-orchestration.mjs'
+      - 'DZ_17/app/scripts/detect-idea-boundaries.mjs'
+      - 'DZ_17/profiles/analyst.v1.json'
+      - 'DZ_17/rag/analyst-zoo.v1.json'
+      - 'DZ_17/orchestration/father-analyst-pipeline.v1.json'
+      - 'DZ_17/prompts/analyst-zoo.v1.md'
+      - 'DZ_17/knowledge_base/FATHER_ANALYST_FOUNDATION.md'
+      - 'DZ_17/processes/FATHER_DOCUMENT_KNOWLEDGE_PIPELINE.md'
+
+jobs:
+  validate-contracts:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: DZ_17
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22.13.1'
+      - name: Check executable orchestration syntax
+        run: |
+          node --check app/scripts/run-father-orchestration.mjs
+          node --check app/scripts/detect-idea-boundaries.mjs
+      - name: Parse machine-readable contracts
+        run: |
+          node -e "JSON.parse(require('fs').readFileSync('profiles/analyst.v1.json','utf8')); console.log('analyst profile OK')"
+          node -e "JSON.parse(require('fs').readFileSync('rag/analyst-zoo.v1.json','utf8')); console.log('RAG profile OK')"
+          node -e "JSON.parse(require('fs').readFileSync('orchestration/father-analyst-pipeline.v1.json','utf8')); console.log('orchestration manifest OK')"
+      - name: Contract invariants
+        run: |
+          node - <<'NODE'
+          const fs=require('fs');
+          const p=JSON.parse(fs.readFileSync('orchestration/father-analyst-pipeline.v1.json','utf8'));
+          if(p.default_parallel_streams!==5) throw new Error('Expected five-stream baseline');
+          if(p.runtime_policy?.canonical_auto_publish!==false) throw new Error('Canonical auto publish must be false');
+          const ids=new Set((p.stages||[]).map(x=>x.id));
+          for(const id of ['K1','K4','K5','K6','K8','K9','K10','K11','K13']) if(!ids.has(id)) throw new Error('Missing stage '+id);
+          console.log('FATHER orchestration invariants OK');
+          NODE
