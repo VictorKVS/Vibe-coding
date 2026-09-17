@@ -27,20 +27,20 @@ function emitTrace(payload: TracePayload) {
   window.dispatchEvent(new CustomEvent('sonya:trace', { detail: payload }));
 }
 
-function snapshotClient(reset = false) {
+function snapshotClient(reset = false, state: 'running' | 'done' | 'error' = 'running') {
   if (!activeRunId) return;
   emitTrace({
     runId: activeRunId,
     source: 'client',
     reset,
     steps: Array.from(clientSteps.values()),
-    state: 'running',
+    state,
   });
 }
 
-function setClientStep(step: TraceStep) {
+function setClientStep(step: TraceStep, state: 'running' | 'done' | 'error' = 'running') {
   clientSteps.set(step.key, step);
-  snapshotClient(false);
+  snapshotClient(false, state);
 }
 
 function beginTraceRun() {
@@ -100,7 +100,7 @@ export const api = {
           status: 'error',
           detail: (payload as { error?: string }).error || `HTTP ${response.status}`,
           durationMs: Math.round(performance.now() - started),
-        });
+        }, 'error');
         throw new Error((payload as { error?: string }).error || `HTTP ${response.status}`);
       }
       setClientStep({
@@ -115,7 +115,7 @@ export const api = {
         label: 'Передача результата в интерфейс',
         status: 'done',
         detail: 'Структурированный ответ готов к отображению',
-      });
+      }, 'done');
       return { data: payload };
     } finally {
       await Promise.race([polling, new Promise(resolve => setTimeout(resolve, 700))]);
