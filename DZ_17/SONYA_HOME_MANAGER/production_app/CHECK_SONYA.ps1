@@ -25,13 +25,13 @@ Write-Host "`n[Ports]" -ForegroundColor Yellow
 foreach ($port in @(8787, 5173)) {
     $listeners = Get-NetTCPConnection -LocalPort $port -State Listen -ErrorAction SilentlyContinue
     if (-not $listeners) {
-        Write-Host "Port $port: free" -ForegroundColor DarkGray
+        Write-Host "Port ${port}: free" -ForegroundColor DarkGray
         continue
     }
     foreach ($listener in $listeners) {
         $pidValue = $listener.OwningProcess
         $proc = Get-CimInstance Win32_Process -Filter "ProcessId=$pidValue" -ErrorAction SilentlyContinue
-        Write-Host "Port $port: PID $pidValue $($proc.Name)" -ForegroundColor Cyan
+        Write-Host "Port ${port}: PID $pidValue $($proc.Name)" -ForegroundColor Cyan
         if ($proc.CommandLine) { Write-Host "  $($proc.CommandLine)" -ForegroundColor DarkGray }
     }
 }
