@@ -1,12 +1,12 @@
 {
   "name": "sonya-home-manager-flagship",
   "private": true,
-  "version": "0.4.0",
+  "version": "0.4.1",
   "type": "module",
   "scripts": {
-    "dev": "concurrently -k -n API,WEB -c auto \"node local-server.mjs\" \"vite --host 0.0.0.0\"",
+    "dev": "concurrently -k -n API,WEB -c auto \"node local-server-v4.mjs\" \"vite --host 0.0.0.0\"",
     "dev:web": "vite --host 0.0.0.0",
-    "dev:api": "node local-server.mjs",
+    "dev:api": "node local-server-v4.mjs",
     "build": "vite build",
     "preview": "vite preview"
   },
