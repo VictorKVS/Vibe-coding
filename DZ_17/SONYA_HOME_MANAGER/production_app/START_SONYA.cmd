@@ -38,13 +38,22 @@ if errorlevel 1 (
   exit /b 1
 )
 
-if "%SONYA_AGENT_PROFILE%"=="" set SONYA_AGENT_PROFILE=BALANCED
-if "%SONYA_VISION_MODEL%"=="" set SONYA_VISION_MODEL=qwen3-vl:8b-instruct-q4_K_M
+if not "%~1"=="" set "SONYA_AGENT_PROFILE=%~1"
+if "%SONYA_AGENT_PROFILE%"=="" set "SONYA_AGENT_PROFILE=BALANCED"
+
+if /I not "%SONYA_AGENT_PROFILE%"=="FAST" if /I not "%SONYA_AGENT_PROFILE%"=="BALANCED" if /I not "%SONYA_AGENT_PROFILE%"=="DEEP" (
+  echo [ERROR] Unknown profile: %SONYA_AGENT_PROFILE%
+  echo Use: START_SONYA.cmd FAST ^| BALANCED ^| DEEP
+  pause
+  exit /b 1
+)
+
+if "%SONYA_VISION_MODEL%"=="" set "SONYA_VISION_MODEL=qwen3-vl:8b-instruct-q4_K_M"
 if "%SONYA_REASONING_MODEL%"=="" (
   if /I "%SONYA_AGENT_PROFILE%"=="DEEP" (
-    set SONYA_REASONING_MODEL=qwen2.5:7b
+    set "SONYA_REASONING_MODEL=qwen2.5:7b"
   ) else (
-    set SONYA_REASONING_MODEL=qwen2.5:3b
+    set "SONYA_REASONING_MODEL=qwen2.5:3b"
   )
 )
 
@@ -55,8 +64,12 @@ if errorlevel 1 goto :fail
 echo [4/4] Starting SONYA agent...
 echo Profile: %SONYA_AGENT_PROFILE%
 echo Vision model: %SONYA_VISION_MODEL%
-echo Analyst model: %SONYA_REASONING_MODEL%
-echo RAG: food-vision-kb.md v3
+if /I "%SONYA_AGENT_PROFILE%"=="FAST" (
+  echo Analyst model: skipped - deterministic synthesis
+) else (
+  echo Analyst model: %SONYA_REASONING_MODEL%
+)
+echo RAG: food-vision-kb.md v4
 echo Image budget: max 1280 px / 1.2 MP
 echo Browser: http://localhost:5173
 echo Local API: http://127.0.0.1:8787
