@@ -155,9 +155,11 @@ export const imageTools = {
       detail: 'Декодирование, масштабирование и JPEG-нормализация',
     });
 
-    const maxDimension = options.maxDimension ?? 1600;
-    const maxPixels = options.maxPixels ?? 2_000_000;
-    const quality = options.quality ?? 0.82;
+    // Local VLM profile: cap image tokens to keep Qwen3-VL responsive on 12 GB VRAM.
+    // The caller may ask for a larger image, but the local adapter never exceeds this budget.
+    const maxDimension = Math.min(options.maxDimension ?? 1280, 1280);
+    const maxPixels = Math.min(options.maxPixels ?? 1_200_000, 1_200_000);
+    const quality = Math.min(options.quality ?? 0.80, 0.82);
     const mimeType = options.mimeType ?? 'image/jpeg';
     const bitmap = await createImageBitmap(file);
     let width = bitmap.width;
@@ -185,7 +187,7 @@ export const imageTools = {
       key: 'client-image',
       label: 'Подготовка изображения',
       status: 'done',
-      detail: `${width}×${height}px · ${Math.round(blob.size / 1024)} KB${scale < 1 ? ' · уменьшено' : ''}`,
+      detail: `${width}×${height}px · ${Math.round(blob.size / 1024)} KB · local vision budget 1.2 MP${scale < 1 ? ' · уменьшено' : ''}`,
       durationMs: Math.round(performance.now() - started),
     });
     setClientStep({

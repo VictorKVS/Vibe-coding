@@ -11,13 +11,17 @@ ollama --version
 $tags = Invoke-RestMethod http://127.0.0.1:11434/api/tags
 $tags.models | Select-Object name, size | Format-Table -AutoSize
 
+$profile = if ($env:SONYA_AGENT_PROFILE) { $env:SONYA_AGENT_PROFILE } else { 'BALANCED' }
 $visionModel = if ($env:SONYA_VISION_MODEL) { $env:SONYA_VISION_MODEL } else { 'qwen3-vl:8b-instruct-q4_K_M' }
-$reasoningModel = if ($env:SONYA_REASONING_MODEL) { $env:SONYA_REASONING_MODEL } else { 'qwen2.5:7b' }
+$reasoningDefault = if ($profile -eq 'DEEP') { 'qwen2.5:7b' } else { 'qwen2.5:3b' }
+$reasoningModel = if ($env:SONYA_REASONING_MODEL) { $env:SONYA_REASONING_MODEL } else { $reasoningDefault }
 
 Write-Host "`n[Expected agent stack]" -ForegroundColor Yellow
+Write-Host "Profile:  $profile"
 Write-Host "Vision:   $visionModel"
 Write-Host "Analyst:  $reasoningModel"
-Write-Host 'RAG:      food-vision-kb.md'
+Write-Host 'RAG:      food-vision-kb.md v3'
+Write-Host 'Image:    <= 1280 px / <= 1.2 MP'
 
 $visionExists = $tags.models | Where-Object { $_.name -eq $visionModel }
 $reasoningExists = $tags.models | Where-Object { $_.name -eq $reasoningModel }
@@ -67,6 +71,12 @@ try {
         Write-Host '[OK] Local API is using the expected analyst model.' -ForegroundColor Green
     } elseif ($apiReasoning) {
         Write-Host "[WARN] Local API analyst model '$apiReasoning', expected '$reasoningModel'." -ForegroundColor Yellow
+    }
+
+    if ($health.ragLoaded) {
+        Write-Host "[OK] RAG loaded: $($health.ragChars) chars." -ForegroundColor Green
+    } else {
+        Write-Host '[WARN] RAG fallback is active.' -ForegroundColor Yellow
     }
 
     if ($apiVision -ne $visionModel -or ($apiReasoning -and $apiReasoning -ne $reasoningModel)) {
