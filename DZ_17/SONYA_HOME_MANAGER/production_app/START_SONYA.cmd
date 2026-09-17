@@ -39,15 +39,20 @@ if errorlevel 1 (
 )
 
 if "%SONYA_VISION_MODEL%"=="" set SONYA_VISION_MODEL=llava:7b
+if "%SONYA_REASONING_MODEL%"=="" set SONYA_REASONING_MODEL=qwen2.5:7b
+if "%SONYA_AGENT_PROFILE%"=="" set SONYA_AGENT_PROFILE=BALANCED
 
 echo [3/4] Cleaning stale local SONYA processes...
 powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0STOP_SONYA.ps1"
 if errorlevel 1 goto :fail
 
-echo [4/4] Starting SONYA with model %SONYA_VISION_MODEL% ...
+echo [4/4] Starting SONYA agent...
+echo Profile: %SONYA_AGENT_PROFILE%
+echo Vision model: %SONYA_VISION_MODEL%
+echo Analyst model: %SONYA_REASONING_MODEL%
 echo Browser: http://localhost:5173
 echo Local API: http://127.0.0.1:8787
-start "SONYA Local" cmd /k "cd /d ""%~dp0"" && set ""SONYA_VISION_MODEL=%SONYA_VISION_MODEL%"" && npm run dev"
+start "SONYA Local" cmd /k "cd /d ""%~dp0"" && set ""SONYA_AGENT_PROFILE=%SONYA_AGENT_PROFILE%"" && set ""SONYA_VISION_MODEL=%SONYA_VISION_MODEL%"" && set ""SONYA_REASONING_MODEL=%SONYA_REASONING_MODEL%"" && npm run dev"
 timeout /t 6 /nobreak >nul
 start "" http://localhost:5173
 exit /b 0
