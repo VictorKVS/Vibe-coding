@@ -43,9 +43,10 @@ if "%SONYA_VISION_MODEL%"=="" set SONYA_VISION_MODEL=llava:7b
 echo [3/3] Starting SONYA with model %SONYA_VISION_MODEL% ...
 echo Browser: http://localhost:5173
 echo Local API: http://127.0.0.1:8787
+start "SONYA Local" cmd /k "cd /d "%~dp0" && set SONYA_VISION_MODEL=%SONYA_VISION_MODEL% && npm run dev"
+timeout /t 5 /nobreak >nul
 start "" http://localhost:5173
-call npm run dev
-goto :eof
+exit /b 0
 
 :fail
 echo.
