@@ -38,7 +38,7 @@ if errorlevel 1 (
   exit /b 1
 )
 
-if "%SONYA_VISION_MODEL%"=="" set SONYA_VISION_MODEL=llava:7b
+if "%SONYA_VISION_MODEL%"=="" set SONYA_VISION_MODEL=qwen3-vl:8b-instruct-q4_K_M
 if "%SONYA_REASONING_MODEL%"=="" set SONYA_REASONING_MODEL=qwen2.5:7b
 if "%SONYA_AGENT_PROFILE%"=="" set SONYA_AGENT_PROFILE=BALANCED
 
@@ -50,6 +50,7 @@ echo [4/4] Starting SONYA agent...
 echo Profile: %SONYA_AGENT_PROFILE%
 echo Vision model: %SONYA_VISION_MODEL%
 echo Analyst model: %SONYA_REASONING_MODEL%
+echo RAG: food-vision-kb.md
 echo Browser: http://localhost:5173
 echo Local API: http://127.0.0.1:8787
 start "SONYA Local" cmd /k "cd /d ""%~dp0"" && set ""SONYA_AGENT_PROFILE=%SONYA_AGENT_PROFILE%"" && set ""SONYA_VISION_MODEL=%SONYA_VISION_MODEL%"" && set ""SONYA_REASONING_MODEL=%SONYA_REASONING_MODEL%"" && npm run dev"
