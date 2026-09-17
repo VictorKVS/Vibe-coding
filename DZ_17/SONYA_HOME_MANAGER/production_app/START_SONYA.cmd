@@ -38,9 +38,15 @@ if errorlevel 1 (
   exit /b 1
 )
 
-if "%SONYA_VISION_MODEL%"=="" set SONYA_VISION_MODEL=qwen3-vl:8b-instruct-q4_K_M
-if "%SONYA_REASONING_MODEL%"=="" set SONYA_REASONING_MODEL=qwen2.5:7b
 if "%SONYA_AGENT_PROFILE%"=="" set SONYA_AGENT_PROFILE=BALANCED
+if "%SONYA_VISION_MODEL%"=="" set SONYA_VISION_MODEL=qwen3-vl:8b-instruct-q4_K_M
+if "%SONYA_REASONING_MODEL%"=="" (
+  if /I "%SONYA_AGENT_PROFILE%"=="DEEP" (
+    set SONYA_REASONING_MODEL=qwen2.5:7b
+  ) else (
+    set SONYA_REASONING_MODEL=qwen2.5:3b
+  )
+)
 
 echo [3/4] Cleaning stale local SONYA processes...
 powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0STOP_SONYA.ps1"
@@ -50,7 +56,8 @@ echo [4/4] Starting SONYA agent...
 echo Profile: %SONYA_AGENT_PROFILE%
 echo Vision model: %SONYA_VISION_MODEL%
 echo Analyst model: %SONYA_REASONING_MODEL%
-echo RAG: food-vision-kb.md
+echo RAG: food-vision-kb.md v3
+echo Image budget: max 1280 px / 1.2 MP
 echo Browser: http://localhost:5173
 echo Local API: http://127.0.0.1:8787
 start "SONYA Local" cmd /k "cd /d ""%~dp0"" && set ""SONYA_AGENT_PROFILE=%SONYA_AGENT_PROFILE%"" && set ""SONYA_VISION_MODEL=%SONYA_VISION_MODEL%"" && set ""SONYA_REASONING_MODEL=%SONYA_REASONING_MODEL%"" && npm run dev"
