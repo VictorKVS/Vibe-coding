@@ -1,0 +1,64 @@
+dataset_id: father-specialist-factory-codex
+version: "0.1"
+status: draft
+constitution:
+  id: FATHER-SF-CONSTITUTION
+  version: 0.2-BASELINE
+  path: ../00_SPECIALIST_FACTORY_CONSTITUTION.md
+
+codices:
+  - id: C01
+    name: Profession Discovery
+    status: planned
+    required_outputs: [PROFESSION_DOSSIER]
+  - id: C02
+    name: Evidence
+    status: planned
+    required_outputs: [SOURCE_REGISTER, EVIDENCE_REGISTER, CONTRADICTION_REGISTER]
+  - id: C03
+    name: Professional Template
+    status: planned
+    required_outputs: [PROFESSIONAL_TEMPLATE, EVIDENCE_GRAPH]
+  - id: C04
+    name: Competency Engineering
+    status: planned
+    required_outputs: [COMPETENCY_MAP]
+  - id: C05
+    name: Curriculum
+    status: planned
+    required_outputs: [CURRICULUM, LEARNING_GRAPH]
+  - id: C06
+    name: Knowledge Build
+    status: planned
+    required_outputs: [KNOWLEDGE_PACKAGE]
+  - id: C07
+    name: Research and OSINT
+    status: planned
+    required_outputs: [RESEARCH_ORDER, RAW_EVIDENCE_INTAKE]
+  - id: C08
+    name: Legal and Ethics
+    status: planned
+    required_outputs: [REGULATORY_LAYER, ETHICAL_LAYER]
+  - id: C09
+    name: Specialist Assembly
+    status: planned
+    required_outputs: [DIGITAL_SPECIALIST_PACKAGE]
+  - id: C10
+    name: Examination
+    status: planned
+    required_outputs: [EVALUATION_REPORT]
+  - id: C11
+    name: Gap and Improvement
+    status: planned
+    required_outputs: [GAP_REGISTER, IMPROVEMENT_PLAN, REGRESSION_REPORT]
+  - id: C12
+    name: Governance
+    status: planned
+    required_outputs: [APPROVAL_RECORD, RELEASE_RECORD, AUDIT_TRAIL]
+
+constitutional_rules:
+  detailed_codices_approved_one_at_a_time: true
+  no_artifact_no_completion: true
+  no_provenance_no_verification: true
+  no_independent_evaluation_no_demonstrated_competency: true
+  no_regression_no_release: true
