@@ -1,0 +1,36 @@
+schema_id: father-specialist-decision-step
+version: "0.1"
+status: DRAFT
+
+required:
+  - id
+  - task_id
+  - statement
+  - based_on
+  - consistency_check
+  - status
+
+fields:
+  id: string
+  task_id: string
+  statement: string
+
+  based_on:
+    knowledge_units: [string]
+    requirements: [string]
+    evidence: [string]
+    source_fragments: [string]
+
+  previous_steps: [string]
+
+  consistency_check:
+    previous_steps: "PASS|FAIL|NOT_APPLICABLE"
+    requirements: "PASS|FAIL|UNKNOWN"
+    evidence: "PASS|FAIL|UNKNOWN"
+    currentness: "PASS|FAIL|UNKNOWN"
+
+  contradictions: [string]
+  unknowns: [string]
+
+  status: "SUPPORTED|PARTIALLY_SUPPORTED|UNSUPPORTED|BLOCKED"
+  human_review_required: boolean
