@@ -1,7 +1,9 @@
 import { useEffect, useMemo, useState } from "react";
 import { referencePersonas } from "../content_generator/personas/reference-personas";
 import { planDemoStoryboard } from "../content_generator/storyboard/planner";
-import type { PersonaSpec } from "../content_generator/personas/types";\nimport type { AvatarDto, VoiceDto } from "../content_generator/providers/types";\nimport { getHeygenHealth, loadHeygenCatalog } from "../content_generator/providers/heygen-client";
+import type { PersonaSpec } from "../content_generator/personas/types";
+import type { AvatarDto, VoiceDto } from "../content_generator/providers/types";
+import { getHeygenHealth, loadHeygenCatalog } from "../content_generator/providers/heygen-client";
 import { generateNewsletter, generatePodcast, type NewsletterOutput, type PodcastOutput } from "../content_generator/providers/llm-client";
 
 type Section = "newsletter" | "podcast" | "avatar" | "storyboard" | "diagnostics";
