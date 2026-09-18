@@ -1,0 +1,27 @@
+model_id: programmer-lifecycle-processes
+version: "0.1"
+status: EVIDENCE_CANDIDATE
+
+source:
+  source_id: RU-GOST-ISOIEC-12207-2010
+  authority: "Росстандарт"
+  status: ACTIVE
+
+observed_scope:
+  - acquisition
+  - supply
+  - development
+  - operation
+  - maintenance
+  - retirement
+  - lifecycle_process_definition_and_improvement
+
+programmer_mapping:
+  state: NOT_YET_MAPPED
+  rule: "Процесс или задача стандарта не превращается автоматически в компетенцию программиста. Mapping разрешён только после сопоставления с профессиональными функциями и evidence о роли специалиста."
+
+downstream:
+  professional_functions: []
+  competency_candidates: []
+  curriculum_nodes: []
+  exam_requirements: []
