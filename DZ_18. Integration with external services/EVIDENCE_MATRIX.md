@@ -21,7 +21,7 @@
 | Error handling | missing keys, HTTP errors, failed jobs | provider adapters + UI | CODE + LOCAL |
 | Тесты | HeyGen + OpenAI/TTS boundary | `server/providers/*.test.mjs` | CODE + LOCAL |
 | Production build | Vite build | `npm run build` | LOCAL |
-| Публикация | production server готов | `npm start` | PUBLISH |
+| Публикация | production deployment | AppDeploy | https://father-content-generator-dz-18-5urk89.v2.appdeploy.ai/ |
 | Итоговые screenshots | checklist ниже | — | SCREENSHOT |
 
 ## Screenshot checklist
@@ -56,3 +56,8 @@ CHECK_DZ18.cmd
 → deployment
 → published URL
 ```
+
+
+## Published URL
+
+https://father-content-generator-dz-18-5urk89.v2.appdeploy.ai/
