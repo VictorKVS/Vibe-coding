@@ -1,6 +1,6 @@
 # DZ-18 — FATHER Content Generator
 
-Статус: `RUNNABLE SHELL + HEYGEN V3 ADAPTER`
+Статус: `RUNNABLE SHELL + HEYGEN V3 + STRUCTURED LLM`
 
 ## Цель
 
@@ -133,12 +133,12 @@ npm start
 - [x] .env protection;
 - [x] provider tests;
 - [ ] проверить реальным HeyGen API key;
-- [ ] versioned LLM prompt registry;
-- [ ] реальный LLM generation для Newsletter/Podcast;
+- [x] versioned LLM prompt registry;
+- [x] server-side structured LLM generation для Newsletter/Podcast;
 - [ ] screenshots;
 - [ ] deployment;
 - [ ] submission evidence matrix.
 
 ## Следующий этап
 
-После smoke test на локальной машине: подключить versioned prompt registry и LLM provider для Newsletter/Podcast, затем зафиксировать скриншоты реальных HeyGen avatars/voices и готовить deployment.
+После локального smoke test с реальными `HEYGEN_API_KEY` и `OPENAI_API_KEY`: зафиксировать screenshots, добавить TTS provider для Podcast, затем подготовить deployment и submission evidence matrix.
