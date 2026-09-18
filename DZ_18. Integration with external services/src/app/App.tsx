@@ -57,7 +57,7 @@ export function App() {
             <p className="eyebrow">PRO AI · Integration with external services</p>
             <h1>{sections.find((item) => item.id === section)?.label}</h1>
           </div>
-          <span className="mode-badge">DEMO MODE</span>
+          <span className="mode-badge">INTEGRATION MODE</span>
         </header>
 
         {section === "newsletter" && <NewsletterPanel />}
