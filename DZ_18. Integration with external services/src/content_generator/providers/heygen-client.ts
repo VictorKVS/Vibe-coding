@@ -1,6 +1,6 @@
 import type { AvatarDto, VoiceDto } from "./types";
 
-export interface HeygenHealth {
+export interface RuntimeHealth {
   ok: boolean;
   app: string;
   heygen: {
@@ -8,6 +8,12 @@ export interface HeygenHealth {
     apiVersion: string;
     configured: boolean;
     baseUrl: string;
+  };
+  openai: {
+    provider: "openai";
+    configured: boolean;
+    model: string;
+    ttsModel: string;
   };
 }
 
@@ -24,9 +30,11 @@ export interface HeygenVideoJob {
   failureMessage?: string;
 }
 
-export async function getHeygenHealth(): Promise<HeygenHealth> {
-  return requestJson<HeygenHealth>("/api/health");
+export async function getRuntimeHealth(): Promise<RuntimeHealth> {
+  return requestJson<RuntimeHealth>("/api/health");
 }
+
+export const getHeygenHealth = getRuntimeHealth;
 
 export async function loadHeygenCatalog(): Promise<{
   avatars: AvatarDto[];
