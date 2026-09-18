@@ -1,6 +1,6 @@
 # DZ-18 — FATHER Content Generator
 
-Статус: `SUBMISSION BASELINE IMPLEMENTED / LOCAL REAL-KEY SMOKE TEST NEXT`
+Статус: `PUBLISHED / REAL-KEY SMOKE TEST NEXT`
 
 ## Цель
 
@@ -141,7 +141,7 @@ npm start
 - [x] versioned LLM prompt registry;
 - [x] server-side structured LLM generation для Newsletter/Podcast;
 - [ ] screenshots;
-- [ ] deployment;
+- [x] deployment;
 - [ ] submission evidence matrix.
 
 ## Следующий этап
@@ -166,3 +166,10 @@ http://localhost:5190/api/health
 ```
 
 Docker build сам выполняет `npm test` и `npm run build`, поэтому неуспешные тесты/сборка блокируют создание production image.
+
+
+## Published URL
+
+https://father-content-generator-dz-18-5urk89.v2.appdeploy.ai/
+
+Deployment status: ready. AppDeploy QA: frontend/network/backend errors = 0.
