@@ -1,0 +1,57 @@
+example_id: programmer-ru
+instruction_id: C01-I01
+status: DRAFT
+
+request:
+  requested_name_raw: "Программист"
+  context:
+    jurisdiction: "Российская Федерация"
+    industry: null
+    target_level: null
+    language: "ru"
+    time_point: "CURRENT_AT_EXECUTION"
+
+normalization:
+  normalized_candidates:
+    - term: "Программист"
+      relation: EXACT_REQUEST
+    - term: "разработчик"
+      relation: CANDIDATE
+    - term: "разработчик ПО"
+      relation: CANDIDATE
+    - term: "Software Developer"
+      relation: CANDIDATE
+    - term: "Software Engineer"
+      relation: CANDIDATE
+  rule: "CANDIDATE does not mean SYNONYM"
+
+identity_assessment:
+  recognition: PENDING_EVIDENCE_REGISTRATION
+  distinctiveness: PENDING
+  consistency: PENDING
+  currentness: PENDING
+
+decision:
+  status: PENDING
+  rationale: []
+  evidence_refs: []
+
+related_professional_entities: []
+competing_interpretations: []
+conflicts: []
+
+unknowns:
+  - "Какие термины являются доказанными синонимами?"
+  - "Какие связанные названия являются специализациями или отдельными профессиональными сущностями?"
+  - "Как российская сущность соотносится с Software Developer и Software Engineer?"
+
+handoff:
+  next_instruction: C01-I01_EVIDENCE_COLLECTION
+  blocking_conditions:
+    - "Нельзя считать профессию подтвержденной без зарегистрированных evidence candidates."
+    - "Нельзя переходить к построению компетенций."
+
+audit:
+  created_as: "Specialist Factory control example"
+  human_review_required: true
+  evidence_verification: PENDING_C02
