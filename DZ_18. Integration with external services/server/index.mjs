@@ -5,11 +5,13 @@ import { extname, join, normalize } from "node:path";
 import { fileURLToPath } from "node:url";
 import {
   ProviderConfigError,
+  createHeygenVideo,
+  getHeygenVideoJob,
   heygenHealth,
   listHeygenAvatars,
   listHeygenVoices,
 } from "./providers/heygen.mjs";
-import { generateStructured, openaiHealth } from "./providers/openai.mjs";
+import { generateStructured, openaiHealth, synthesizeSpeech } from "./providers/openai.mjs";
 import { getPrompt } from "./prompts/registry.mjs";
 
 const rootDir = fileURLToPath(new URL("../", import.meta.url));
@@ -53,6 +55,24 @@ const server = createServer(async (req, res) => {
     }
 
 
+
+    if (req.method === "POST" && url.pathname === "/api/heygen/video-jobs") {
+      const input = await readJson(req);
+      const job = await createHeygenVideo({
+        avatarId: input.avatarId,
+        voiceId: input.voiceId,
+        script: input.script,
+        orientation: input.orientation,
+      });
+      return sendJson(res, 202, job);
+    }
+
+    const videoJobMatch = url.pathname.match(/^\/api\/heygen\/video-jobs\/([^/]+)$/);
+    if (req.method === "GET" && videoJobMatch) {
+      const job = await getHeygenVideoJob(decodeURIComponent(videoJobMatch[1]));
+      return sendJson(res, 200, job);
+    }
+
     if (req.method === "POST" && url.pathname === "/api/generate/newsletter") {
       const input = await readJson(req);
       const result = await generateStructured({
@@ -71,6 +91,22 @@ const server = createServer(async (req, res) => {
       return sendJson(res, 200, result);
     }
 
+
+    if (req.method === "POST" && url.pathname === "/api/tts/openai") {
+      const input = await readJson(req);
+      const result = await synthesizeSpeech({
+        input: input.input,
+        voice: input.voice,
+        instructions: input.instructions,
+      });
+      return sendBinary(res, 200, result.audio, {
+        "Content-Type": result.contentType,
+        "X-AI-Generated": "true",
+        "X-TTS-Model": result.model,
+        "X-TTS-Voice": result.voice,
+      });
+    }
+
     if (production) {
       return serveStatic(url.pathname, res);
     }
@@ -87,7 +123,7 @@ const server = createServer(async (req, res) => {
 
     return sendJson(res, status, {
       error: error instanceof Error ? error.message : "Unexpected server error",
-      provider: "heygen",
+      provider: error?.provider,
       upstream: error?.upstream,
     });
   }
@@ -143,6 +179,15 @@ async function readJson(req) {
     error.statusCode = 400;
     throw error;
   }
+}
+
+
+function sendBinary(res, status, body, headers = {}) {
+  res.writeHead(status, {
+    "Cache-Control": "no-store",
+    ...headers,
+  });
+  res.end(body);
 }
 
 function sendJson(res, status, payload) {
