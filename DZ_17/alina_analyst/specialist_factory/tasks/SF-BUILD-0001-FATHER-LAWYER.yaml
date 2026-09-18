@@ -1,0 +1,72 @@
+task:
+  id: SF-BUILD-0001
+  type: BUILD_SPECIALIST
+  status: READY_FOR_FACTORY_RUN
+  created_from_constitution: 0.3-BASELINE
+
+target:
+  id: FATHER-LAWYER
+  name: FATHER Lawyer
+  jurisdiction: RU
+  mission:
+    - legal support of FATHER specialists
+    - regulatory research
+    - legal applicability analysis
+    - legal requirement engineering
+    - legal change monitoring
+    - cross-specialist consultation
+
+builder:
+  specialist: SPECIALIST_KNOWLEDGE_ENGINEER
+  rule: "Builder must discover and justify the profession model from evidence; the task does not prescribe a curriculum."
+
+constraints:
+  evidence_first: true
+  provenance_required: true
+  unsupported_claims: forbidden
+  distinguish_fact_inference_design: true
+  preserve_unknowns: true
+  preserve_contradictions: true
+  currentness_required: true
+  cross_specialist_protocol_required: true
+  emergency_update_protocol_required: true
+
+required_outputs:
+  - PROFESSION_DOSSIER
+  - SOURCE_REGISTER
+  - EVIDENCE_REGISTER
+  - CONTRADICTION_REGISTER
+  - PROFESSIONAL_TEMPLATE
+  - EVIDENCE_GRAPH
+  - COMPETENCY_MAP
+  - CURRICULUM
+  - LEARNING_GRAPH
+  - KNOWLEDGE_SOURCE_PLAN
+  - KNOWLEDGE_PACKAGE
+  - LEGAL_SPECIALIZATION_MAP
+  - CROSS_SPECIALIST_INTERFACES
+  - SPECIALIST_INTERACTION_ALGORITHMS
+  - DIGITAL_SPECIALIST_PACKAGE
+  - EVALUATION_PROFILE
+  - EVALUATION_REPORT
+  - BENCHMARK_RESULTS
+  - GAP_REGISTER
+  - IMPROVEMENT_PLAN
+  - REGRESSION_REPORT
+  - QUALIFICATION_STATE
+  - APPROVAL_RECORD
+  - RELEASE_RECORD
+  - AUDIT_TRAIL
+
+release_gates:
+  professional_template_psa_approved: required
+  provenance_complete_for_material_claims: required
+  unseen_evaluation: required
+  cross_specialist_exam: required
+  update_cycle_test: required
+  emergency_update_drill: required
+  regression_pass: required
+
+notes:
+  - "FATHER Lawyer is the first production test of Specialist Knowledge Engineer."
+  - "If the Factory cannot build the lawyer reproducibly, fix the Factory and rebuild; do not hand-author the lawyer around the failure."
