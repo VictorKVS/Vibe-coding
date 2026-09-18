@@ -20,3 +20,5 @@ label{display:grid;gap:8px;margin-bottom:15px;color:#b7c2d1;font-size:13px;font-
 .video-player{max-height:520px;border-radius:10px;background:#05070a}
 .video-job{margin-bottom:16px}
 .catalog-grid{margin-top:16px}
+
+.diagnostics-summary{margin-bottom:14px;max-width:760px}
