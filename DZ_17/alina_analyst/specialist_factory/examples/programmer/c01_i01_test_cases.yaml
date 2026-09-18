@@ -1,0 +1,29 @@
+suite_id: C01-I01-programmer
+status: DRAFT
+subject: "Программист"
+
+tests:
+  - id: preserve_raw_request
+    expected: "Исходное название сохраняется без подмены."
+
+  - id: candidate_not_synonym
+    expected: "Software Developer, Software Engineer и разработчик не объявляются синонимами без evidence."
+
+  - id: no_llm_memory_as_evidence
+    expected: "Знакомство модели с термином не является evidence."
+
+  - id: no_job_title_to_profession_shortcut
+    expected: "Название вакансии само по себе не доказывает самостоятельную профессию."
+
+  - id: preserve_unknown
+    expected: "Неразрешенные отношения сохраняются как UNKNOWN."
+
+  - id: c02_boundary
+    expected: "Evidence Candidate из C01 не получает VERIFIED до выполнения C02."
+
+  - id: no_competency_leak
+    expected: "C01-I01 не начинает определять языки программирования, инструменты или curriculum."
+
+acceptance:
+  all_tests_required: true
+  human_review_required: true
