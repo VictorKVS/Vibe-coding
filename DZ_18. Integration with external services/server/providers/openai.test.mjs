@@ -77,3 +77,42 @@ test("structured generation uses Responses API with strict schema and store fals
     else process.env.OPENAI_MODEL = previousModel;
   }
 });
+
+
+test("TTS uses audio speech endpoint without exposing secret", async () => {
+  const previousKey = process.env.OPENAI_API_KEY;
+  const previousFetch = globalThis.fetch;
+  process.env.OPENAI_API_KEY = "tts-test-key";
+
+  globalThis.fetch = async (url, options) => {
+    assert.equal(String(url), "https://api.openai.com/v1/audio/speech");
+    assert.equal(options.headers.Authorization, "Bearer tts-test-key");
+    const body = JSON.parse(options.body);
+    assert.equal(body.model, "gpt-4o-mini-tts");
+    assert.equal(body.voice, "marin");
+    assert.equal(body.response_format, "mp3");
+
+    return {
+      ok: true,
+      status: 200,
+      headers: new Headers({ "content-type": "audio/mpeg" }),
+      arrayBuffer: async () => new Uint8Array([1, 2, 3]).buffer,
+    };
+  };
+
+  try {
+    const { synthesizeSpeech } = await import("./openai.mjs");
+    const result = await synthesizeSpeech({
+      input: "Тестовая озвучка",
+      voice: "marin",
+      instructions: "Speak calmly.",
+    });
+    assert.equal(result.provider, "openai");
+    assert.equal(result.contentType, "audio/mpeg");
+    assert.equal(result.audio.length, 3);
+  } finally {
+    globalThis.fetch = previousFetch;
+    if (previousKey === undefined) delete process.env.OPENAI_API_KEY;
+    else process.env.OPENAI_API_KEY = previousKey;
+  }
+});
