@@ -1,0 +1,66 @@
+dataset_id: SF-BUILD-0001-SOURCE-REGISTER
+version: "0.1"
+status: evidence_collection_active
+target: FATHER-LAWYER
+
+sources:
+  - id: SRC-RU-FSES-40.03.01-1011
+    class: EDUCATION_STANDARD
+    jurisdiction: RU
+    title: "ФГОС ВО — бакалавриат 40.03.01 Юриспруденция"
+    authority: "Минобрнауки России"
+    document: "Приказ от 13.08.2020 № 1011"
+    registration: "Минюст России 07.09.2020 № 59673"
+    observed_revision: "27.02.2023"
+    url: "https://www.consultant.ru/document/cons_doc_LAW_361746/"
+    currentness_status: VERIFY_AGAINST_OFFICIAL_SOURCE
+    use: "Russian educational baseline"
+    authority_weight: PRIMARY_NORMATIVE_AFTER_OFFICIAL_VERIFICATION
+
+  - id: SRC-RU-MSAL-EDU-2026
+    class: UNIVERSITY_CURRICULUM
+    jurisdiction: RU
+    title: "МГЮА — образовательные программы 40.03.01 Юриспруденция, 2026"
+    publisher: "Московский государственный юридический университет имени О.Е. Кутафина"
+    url: "https://msal.ru/content/obrazovanie/"
+    currentness_status: CURRENT_PAGE_OBSERVED_2026
+    use: "Curriculum/profile discovery"
+    authority_weight: INSTITUTIONAL_PRIMARY
+
+  - id: SRC-RU-MSAL-BRANCH-2026
+    class: UNIVERSITY_CURRICULUM
+    jurisdiction: RU
+    title: "МГЮА, Оренбургский институт — 40.03.01 Юриспруденция, 2026"
+    publisher: "МГЮА"
+    url: "https://oimsal.msal.ru/sveden/education"
+    currentness_status: CURRENT_PAGE_OBSERVED_2026
+    use: "Discipline/practice discovery"
+    authority_weight: INSTITUTIONAL_PRIMARY
+
+  - id: SRC-UK-OXFORD-BA-JURISPRUDENCE
+    class: COMPARATIVE_UNIVERSITY_CURRICULUM
+    jurisdiction: UK
+    title: "BA in Jurisprudence"
+    publisher: "University of Oxford, Faculty of Law"
+    url: "https://www.law.ox.ac.uk/content/course/ba-jurisprudence"
+    currentness_status: CURRENT_PAGE_OBSERVED_2026
+    use: "Comparative method/research/formation evidence only"
+    applicability_warning: "Do not import English-law substantive requirements into RU layer."
+    authority_weight: INSTITUTIONAL_PRIMARY
+
+research_queue:
+  - id: RQ-001
+    query: "Current official Russian FSES source and amendments for 40.03.01"
+    priority: CRITICAL
+  - id: RQ-002
+    query: "General Russian lawyer/legal work professional qualification evidence; determine whether appropriate professional standard exists"
+    priority: CRITICAL
+  - id: RQ-003
+    query: "Multiple independent Russian law curricula and explicit learning outcomes"
+    priority: HIGH
+  - id: RQ-004
+    query: "Legal research, legal writing, legal interpretation competency evidence"
+    priority: HIGH
+  - id: RQ-005
+    query: "Regulated legal statuses and boundaries: advocate/notary/judge/prosecutor etc."
+    priority: HIGH
