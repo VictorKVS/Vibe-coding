@@ -1,4 +1,5 @@
-import "dotenv/config";\nimport { createServer } from "node:http";
+import "dotenv/config";
+import { createServer } from "node:http";
 import { readFile, stat } from "node:fs/promises";
 import { extname, join, normalize } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -7,11 +8,14 @@ import {
   heygenHealth,
   listHeygenAvatars,
   listHeygenVoices,
-} from "./providers/heygen.mjs";\nimport { generateStructured, openaiHealth } from "./providers/openai.mjs";\nimport { getPrompt } from "./prompts/registry.mjs";
+} from "./providers/heygen.mjs";
+import { generateStructured, openaiHealth } from "./providers/openai.mjs";
+import { getPrompt } from "./prompts/registry.mjs";
 
 const rootDir = fileURLToPath(new URL("../", import.meta.url));
 const distDir = join(rootDir, "dist");
-const port = Number(process.env.PORT || 5190);\nconst production = process.argv.includes("--production") || process.env.NODE_ENV === "production";
+const port = Number(process.env.PORT || 5190);
+const production = process.argv.includes("--production") || process.env.NODE_ENV === "production";
 
 const server = createServer(async (req, res) => {
   try {
