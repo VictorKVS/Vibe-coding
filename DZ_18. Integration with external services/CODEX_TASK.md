@@ -6,6 +6,36 @@
 
 Не делать отдельный экспериментальный проект. Результат должен быть самостоятельным publishable web app и одновременно первым Persona/Media Engine prototype для FATHER.
 
+## MVP PRIORITY — ENGINE FIRST
+
+Главный результат MVP — не набор вкладок, а **единый Persona/Scene Engine**.
+
+Обязательные reference-персонажи:
+- F-01 adult female;
+- M-01 adult male.
+
+Оба обязаны использовать один и тот же engine path.
+
+Возраст — data-driven параметр:
+- child_6_9;
+- child_10_12;
+- teen_13_17;
+- young_adult_18_29;
+- adult_30_49;
+- mature_50_64;
+- senior_65_plus.
+
+До advanced polish необходимо доказать:
+- один Persona Registry;
+- один Scene Registry;
+- emotion switching;
+- wardrobe/background switching;
+- provider abstraction;
+- female + male storyboard demo;
+- минимум один child/teen preset smoke test.
+
+Полный контракт: `PERSONA_ENGINE_MVP.md`.
+
 ## Source-of-truth по заданию
 Обязательные функции:
 - AI content assistant based on scenario;
