@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { referencePersonas } from "../content_generator/personas/reference-personas";
 import { planDemoStoryboard } from "../content_generator/storyboard/planner";
 import type { PersonaSpec } from "../content_generator/personas/types";
@@ -281,6 +281,7 @@ function AvatarPanel() {
   const [loading, setLoading] = useState(false);
   const [videoLoading, setVideoLoading] = useState(false);
   const [error, setError] = useState("");
+  const pollAttempts = useRef(0);
 
   async function refresh(loadCatalog = false) {
     setLoading(true);
@@ -314,6 +315,7 @@ function AvatarPanel() {
     setVideoLoading(true);
     setError("");
     setJob(null);
+    pollAttempts.current = 0;
 
     try {
       const created = await createHeygenVideoJob({
@@ -334,10 +336,28 @@ function AvatarPanel() {
     void refresh(false);
   }, []);
 
+  async function checkVideoStatus() {
+    if (!job?.sessionId) return;
+    setError("");
+    try {
+      setJob(await getHeygenVideoJob(job.sessionId));
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : "Video polling failed");
+    }
+  }
+
   useEffect(() => {
     if (!job?.sessionId || job.status === "completed" || job.status === "failed") return;
 
     const timer = window.setInterval(() => {
+      pollAttempts.current += 1;
+
+      if (pollAttempts.current > 36) {
+        setError("Автопроверка остановлена после 3 минут. Нажмите «Проверить статус» вручную.");
+        window.clearInterval(timer);
+        return;
+      }
+
       void getHeygenVideoJob(job.sessionId)
         .then(setJob)
         .catch((caught) => {
@@ -414,6 +434,11 @@ function AvatarPanel() {
             <Result label="Status" value={job.failureMessage ? `${job.status}: ${job.failureMessage}` : job.status} />
             {typeof job.progress === "number" && <Result label="Progress" value={`${job.progress}%`} />}
             {job.videoId && <Result label="Video ID" value={job.videoId} />}
+            {job.status !== "completed" && job.status !== "failed" && (
+              <button className="primary secondary-action" onClick={() => void checkVideoStatus()}>
+                Проверить статус
+              </button>
+            )}
             {job.videoUrl && (
               <div className="result">
                 <small>HeyGen generated video</small>
