@@ -11,6 +11,19 @@ export interface HeygenHealth {
   };
 }
 
+export interface HeygenVideoJob {
+  provider: "heygen";
+  apiVersion?: string;
+  sessionId: string;
+  videoId?: string;
+  status: string;
+  progress?: number;
+  videoUrl?: string;
+  thumbnailUrl?: string;
+  duration?: number;
+  failureMessage?: string;
+}
+
 export async function getHeygenHealth(): Promise<HeygenHealth> {
   return requestJson<HeygenHealth>("/api/health");
 }
@@ -30,9 +43,35 @@ export async function loadHeygenCatalog(): Promise<{
   };
 }
 
-async function requestJson<T>(url: string): Promise<T> {
+export function createHeygenVideoJob(input: {
+  avatarId: string;
+  voiceId: string;
+  script: string;
+  orientation: "landscape" | "portrait";
+}) {
+  return requestJson<HeygenVideoJob>("/api/heygen/video-jobs", {
+    method: "POST",
+    body: JSON.stringify(input),
+  });
+}
+
+export function getHeygenVideoJob(sessionId: string) {
+  return requestJson<HeygenVideoJob>(
+    `/api/heygen/video-jobs/${encodeURIComponent(sessionId)}`,
+  );
+}
+
+async function requestJson<T>(
+  url: string,
+  init: RequestInit = {},
+): Promise<T> {
   const response = await fetch(url, {
-    headers: { Accept: "application/json" },
+    ...init,
+    headers: {
+      Accept: "application/json",
+      ...(init.body ? { "Content-Type": "application/json" } : {}),
+      ...(init.headers ?? {}),
+    },
   });
 
   const payload = await response.json().catch(() => ({}));
