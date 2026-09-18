@@ -210,5 +210,12 @@ TEST_REPORT.md
 2. проверить реальные OpenAI/HeyGen keys;
 3. получить один completed HeyGen video;
 4. сделать screenshots;
-5. опубликовать приложение;
-6. указать published URL.
+5. проверить production secrets;
+6. зафиксировать финальный real-key smoke test.
+
+
+### 12. Published URL
+
+https://father-content-generator-dz-18-5urk89.v2.appdeploy.ai/
+
+Deployment status: ready. Автоматическая QA-проверка AppDeploy завершилась без frontend, backend и network errors.
