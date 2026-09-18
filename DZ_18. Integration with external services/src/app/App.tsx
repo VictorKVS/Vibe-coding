@@ -3,8 +3,9 @@ import { referencePersonas } from "../content_generator/personas/reference-perso
 import { planDemoStoryboard } from "../content_generator/storyboard/planner";
 import type { PersonaSpec } from "../content_generator/personas/types";
 import type { AvatarDto, VoiceDto } from "../content_generator/providers/types";
-import { getHeygenHealth, loadHeygenCatalog } from "../content_generator/providers/heygen-client";
+import { createHeygenVideoJob, getHeygenHealth, getHeygenVideoJob, loadHeygenCatalog, type HeygenVideoJob } from "../content_generator/providers/heygen-client";
 import { generateNewsletter, generatePodcast, type NewsletterOutput, type PodcastOutput } from "../content_generator/providers/llm-client";
+import { openAiTtsVoices, synthesizeOpenAiSpeech, type OpenAiTtsVoice } from "../content_generator/providers/tts-client";
 
 type Section = "newsletter" | "podcast" | "avatar" | "storyboard" | "diagnostics";
 
@@ -159,6 +160,16 @@ function PodcastPanel() {
   const [meta, setMeta] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [ttsVoice, setTtsVoice] = useState<OpenAiTtsVoice>("marin");
+  const [ttsLoading, setTtsLoading] = useState(false);
+  const [ttsError, setTtsError] = useState("");
+  const [audioUrl, setAudioUrl] = useState("");
+
+  useEffect(() => {
+    return () => {
+      if (audioUrl) URL.revokeObjectURL(audioUrl);
+    };
+  }, [audioUrl]);
 
   async function generate() {
     setLoading(true);
@@ -179,10 +190,29 @@ function PodcastPanel() {
     }
   }
 
+  async function synthesize() {
+    if (!result) return;
+    setTtsLoading(true);
+    setTtsError("");
+
+    try {
+      const blob = await synthesizeOpenAiSpeech({
+        text: result.script,
+        voice: ttsVoice,
+        instructions: result.voiceDirection || "Speak clearly and naturally.",
+      });
+      setAudioUrl(URL.createObjectURL(blob));
+    } catch (caught) {
+      setTtsError(caught instanceof Error ? caught.message : "TTS failed");
+    } finally {
+      setTtsLoading(false);
+    }
+  }
+
   return (
     <section className="workspace">
       <div className="card controls">
-        <PanelHeader title="Podcast brief" text="Сценарий генерируется отдельно от TTS и остаётся provider-independent." />
+        <PanelHeader title="Podcast brief" text="Сценарий отделён от TTS: текст можно проверить до расхода аудио-кредита." />
         <label>Тема<input value={topic} onChange={(e) => setTopic(e.target.value)} /></label>
         <label>
           Длительность
@@ -193,19 +223,31 @@ function PodcastPanel() {
           </select>
         </label>
         <label>
-          Voice profile
+          Persona voice profile
           <select value={voiceProfile} onChange={(e) => setVoiceProfile(e.target.value)}>
             <option value="F-01">F-01</option>
             <option value="M-01">M-01</option>
           </select>
         </label>
+        <label>
+          TTS voice
+          <select value={ttsVoice} onChange={(e) => setTtsVoice(e.target.value as OpenAiTtsVoice)}>
+            {openAiTtsVoices.map((voice) => <option key={voice} value={voice}>{voice}</option>)}
+          </select>
+        </label>
         {error && <div className="provider-state warning"><strong>LLM unavailable</strong><span>{error}</span></div>}
+        {ttsError && <div className="provider-state warning"><strong>TTS unavailable</strong><span>{ttsError}</span></div>}
         <button className="primary" disabled={loading} onClick={() => void generate()}>
           {loading ? "Генерация..." : "Сгенерировать сценарий"}
         </button>
+        {result && (
+          <button className="primary secondary-action" disabled={ttsLoading} onClick={() => void synthesize()}>
+            {ttsLoading ? "Синтез речи..." : "Озвучить сценарий"}
+          </button>
+        )}
       </div>
       <div className="card preview">
-        <PanelHeader title="Podcast output" text={meta || "TTS подключается следующим provider layer."} />
+        <PanelHeader title="Podcast output" text={meta || "Structured script + separate TTS provider."} />
         {result ? (
           <div className="result-stack">
             <Result label="Title" value={result.title} />
@@ -213,6 +255,12 @@ function PodcastPanel() {
             <Result label="Outline" value={result.outline.join(" → ")} />
             <Result label="Script" value={result.script} />
             <Result label="Voice direction" value={result.voiceDirection} />
+            {audioUrl && (
+              <div className="result">
+                <small>AI-generated voice · OpenAI TTS · {ttsVoice}</small>
+                <audio className="media-player" controls src={audioUrl} />
+              </div>
+            )}
           </div>
         ) : <EmptyState text="Сценарий ещё не сформирован." />}
       </div>
@@ -225,7 +273,13 @@ function AvatarPanel() {
   const [apiVersion, setApiVersion] = useState("v3");
   const [avatars, setAvatars] = useState<AvatarDto[]>([]);
   const [voices, setVoices] = useState<VoiceDto[]>([]);
+  const [selectedAvatarId, setSelectedAvatarId] = useState("");
+  const [selectedVoiceId, setSelectedVoiceId] = useState("");
+  const [script, setScript] = useState("Здравствуйте! Это демонстрация интеграции FATHER Content Generator с HeyGen Video Agent.");
+  const [orientation, setOrientation] = useState<"landscape" | "portrait">("landscape");
+  const [job, setJob] = useState<HeygenVideoJob | null>(null);
   const [loading, setLoading] = useState(false);
+  const [videoLoading, setVideoLoading] = useState(false);
   const [error, setError] = useState("");
 
   async function refresh(loadCatalog = false) {
@@ -241,6 +295,8 @@ function AvatarPanel() {
         const catalog = await loadHeygenCatalog();
         setAvatars(catalog.avatars);
         setVoices(catalog.voices);
+        setSelectedAvatarId((current) => current || catalog.avatars[0]?.id || "");
+        setSelectedVoiceId((current) => current || catalog.voices[0]?.id || "");
       }
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : "Provider request failed");
@@ -249,14 +305,54 @@ function AvatarPanel() {
     }
   }
 
+  async function generateVideo() {
+    if (!selectedAvatarId || !selectedVoiceId) {
+      setError("Сначала загрузите каталог и выберите avatar + voice.");
+      return;
+    }
+
+    setVideoLoading(true);
+    setError("");
+    setJob(null);
+
+    try {
+      const created = await createHeygenVideoJob({
+        avatarId: selectedAvatarId,
+        voiceId: selectedVoiceId,
+        script,
+        orientation,
+      });
+      setJob(created);
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : "Video generation failed");
+    } finally {
+      setVideoLoading(false);
+    }
+  }
+
   useEffect(() => {
     void refresh(false);
   }, []);
 
+  useEffect(() => {
+    if (!job?.sessionId || job.status === "completed" || job.status === "failed") return;
+
+    const timer = window.setInterval(() => {
+      void getHeygenVideoJob(job.sessionId)
+        .then(setJob)
+        .catch((caught) => {
+          setError(caught instanceof Error ? caught.message : "Video polling failed");
+          window.clearInterval(timer);
+        });
+    }, 5000);
+
+    return () => window.clearInterval(timer);
+  }, [job?.sessionId, job?.status]);
+
   return (
     <section className="workspace">
       <div className="card controls">
-        <PanelHeader title="External Avatar Provider" text="HeyGen вызывается только backend-адаптером. API key никогда не передаётся браузеру." />
+        <PanelHeader title="HeyGen Video Agent" text="v3 session → video polling. API key остаётся только на backend." />
         <div className="provider-state warning">
           <strong>
             {configured === null
@@ -268,21 +364,66 @@ function AvatarPanel() {
           <span>
             {error ||
               (configured
-                ? "Можно загрузить реальные avatars и voices."
-                : "Добавьте HEYGEN_API_KEY в локальный .env перед запуском API server.")}
+                ? "Загрузите catalog, выберите presenter и запустите Video Agent."
+                : "Добавьте HEYGEN_API_KEY в локальный .env.")}
           </span>
         </div>
-        <button
-          className="primary"
-          disabled={loading}
-          onClick={() => void refresh(true)}
-        >
+
+        <button className="primary" disabled={loading} onClick={() => void refresh(true)}>
           {loading ? "Загрузка..." : configured ? "Загрузить avatars + voices" : "Проверить провайдера"}
         </button>
+
+        {avatars.length > 0 && voices.length > 0 && (
+          <>
+            <label>
+              Avatar
+              <select value={selectedAvatarId} onChange={(e) => setSelectedAvatarId(e.target.value)}>
+                {avatars.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}
+              </select>
+            </label>
+            <label>
+              Voice
+              <select value={selectedVoiceId} onChange={(e) => setSelectedVoiceId(e.target.value)}>
+                {voices.map((item) => <option key={item.id} value={item.id}>{item.name}{item.language ? ` · ${item.language}` : ""}</option>)}
+              </select>
+            </label>
+            <label>
+              Orientation
+              <select value={orientation} onChange={(e) => setOrientation(e.target.value as "landscape" | "portrait")}>
+                <option value="landscape">16:9 · landscape</option>
+                <option value="portrait">9:16 · portrait</option>
+              </select>
+            </label>
+            <label>
+              Script
+              <textarea value={script} onChange={(e) => setScript(e.target.value)} />
+            </label>
+            <button className="primary secondary-action" disabled={videoLoading || !script.trim()} onClick={() => void generateVideo()}>
+              {videoLoading ? "Создание job..." : "Сгенерировать видео"}
+            </button>
+          </>
+        )}
       </div>
+
       <div className="card preview">
-        <PanelHeader title="Provider data" text="В UI приходят только нормализованные DTO, а не provider-specific payload." />
-        <div className="two-columns">
+        <PanelHeader title="Provider data + video job" text="UI получает нормализованный catalog и job status, provider payload скрыт adapter-слоем." />
+
+        {job && (
+          <div className="result-stack video-job">
+            <Result label="Session" value={job.sessionId} />
+            <Result label="Status" value={job.failureMessage ? `${job.status}: ${job.failureMessage}` : job.status} />
+            {typeof job.progress === "number" && <Result label="Progress" value={`${job.progress}%`} />}
+            {job.videoId && <Result label="Video ID" value={job.videoId} />}
+            {job.videoUrl && (
+              <div className="result">
+                <small>HeyGen generated video</small>
+                <video className="media-player video-player" controls poster={job.thumbnailUrl} src={job.videoUrl} />
+              </div>
+            )}
+          </div>
+        )}
+
+        <div className="two-columns catalog-grid">
           <CatalogColumn
             title={`Avatars (${avatars.length})`}
             items={avatars.slice(0, 8).map((item) => ({
@@ -388,8 +529,8 @@ function DiagnosticsPanel() {
       <Diagnostic title="Research handoff" status="ready" text="ResearchPacket → ContentBrief contracts заведены." />
       <Diagnostic title="Persona Engine" status="ready" text="F-01 / M-01 проходят один engine path." />
       <Diagnostic title="Scene Engine" status="ready" text="Typed SceneSpec + demo storyboard planner." />
-      <Diagnostic title="External API" status="ready" text="Server-side HeyGen v3 adapter + normalized avatars/voices DTO." />
-      <Diagnostic title="LLM provider" status="ready" text="Versioned prompt registry + server-side OpenAI Responses adapter." />
+      <Diagnostic title="External API" status="ready" text="HeyGen v3 catalog + Video Agent create/poll + completed MP4 URL." />
+      <Diagnostic title="LLM + TTS" status="ready" text="Versioned Responses prompts + server-side OpenAI TTS MP3." />
       <Diagnostic title="Publish" status="pending" text="После baseline и smoke tests." />
     </section>
   );
