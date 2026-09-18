@@ -1,104 +1,144 @@
 # DZ-18 — FATHER Content Generator
 
-Статус: `ARCHITECTURE SPLIT STARTED / BUILD BASELINE NEXT`
+Статус: `RUNNABLE SHELL + HEYGEN V3 ADAPTER`
 
 ## Цель
 
-Собрать рабочее и публикуемое ДЗ PRO AI «Интеграция с внешними сервисами» как отдельный модуль **FATHER Content Generator**.
-
-ALINA Analyst и FATHER Content Generator — разные bounded contexts:
+DZ-18 — самостоятельное приложение **FATHER Content Generator**. ALINA Analyst остаётся отдельным аналитическим bounded context и передаёт генератору только проверенный `ResearchPacket` через `shared/contracts`.
 
 ```text
 ALINA Analyst
-  research / RAG / graph / reports
-        |
-        | verified ResearchPacket
-        v
+      |
+      v
+ResearchPacket
+      |
+      v
 shared/contracts
-        |
-        | ContentBrief
-        v
+      |
+      v
+ContentBrief
+      |
+      v
 FATHER Content Generator
-  personas / scenes / storyboard / images / audio / avatars / video / providers
 ```
 
-Content Generator не перепроверяет и не меняет фактическую основу самостоятельно. Если данных недостаточно или обнаружен конфликт, он возвращает состояние `NEED_RESEARCH`, `CONFLICT_FOUND`, `MISSING_FACT` или `SOURCE_REQUIRED`.
+Generator не должен молча менять проверенные факты. Для возврата в аналитику предусмотрены `NEED_RESEARCH`, `CONFLICT_FOUND`, `MISSING_FACT`, `SOURCE_REQUIRED`.
 
-## Кодовая граница DZ-18
+## Что уже работает
+
+- React + TypeScript + Vite application shell;
+- Рассылки — local baseline preview;
+- Подкасты — local baseline script flow;
+- Видео-аватар — server-side HeyGen adapter;
+- HeyGen API key остаётся только на backend;
+- `GET /v3/avatars` и `GET /v3/voices` нормализуются в наши DTO;
+- Comic / Storyboard — F-01 и M-01 через один Persona/Scene Engine;
+- responsive UI;
+- diagnostics;
+- provider unit tests;
+- Windows one-click launcher.
+
+## Структура
 
 ```text
-src/
-├── content_generator/
-│   ├── briefs/
-│   ├── personas/
-│   ├── scenes/
-│   ├── storyboard/
+DZ_18. Integration with external services/
+├── server/
+│   ├── index.mjs
 │   └── providers/
-└── shared/
-    └── contracts/
+│       ├── heygen.mjs
+│       └── heygen.test.mjs
+├── src/
+│   ├── app/
+│   ├── content_generator/
+│   │   ├── briefs/
+│   │   ├── personas/
+│   │   ├── providers/
+│   │   ├── scenes/
+│   │   └── storyboard/
+│   └── shared/
+│       └── contracts/
+├── .env.example
+├── START_DZ18.cmd
+├── package.json
+└── vite.config.ts
 ```
 
-ALINA Analyst не переносится внутрь DZ-18. Связь с ней идёт только через версионированные контракты.
+## Быстрый запуск Windows
 
-## Продуктовые разделы
+Из проводника можно запустить:
 
-- Рассылки
-- Подкасты
-- Видео-аватар
-- Комикс / Storyboard
-- Настройки / диагностика
+```text
+START_DZ18.cmd
+```
 
-## Persona / Scene Engine
+Или PowerShell:
 
-Сохраняется спроектированный ранее подход:
-- reference personas F-01 и M-01;
-- data-driven age presets;
-- emotion switching;
-- wardrobe/background/props;
-- Scene Registry;
-- provider abstraction;
-- частичная регенерация кадра без переписывания всей истории.
+```powershell
+cd "G:\1\Vibe coding\Vibe-coding-router\DZ_18. Integration with external services"
+.\START_DZ18.cmd
+```
 
-Подробности: `PERSONA_ENGINE_MVP.md`.
+Скрипт сам создаст локальный `.env` из `.env.example` и установит зависимости, если `node_modules` ещё нет.
 
-## External services
+Web UI:
 
-Первый обязательный provider integration:
-- HeyGen или совместимый AvatarProvider;
-- server-side API key;
-- реальные API lists для avatars и voices;
-- нормализованные DTO;
-- timeout/error handling;
-- явный demo/mock mode только как fallback.
+```text
+http://localhost:5188
+```
 
-## Фазы
+Backend health:
 
-### Phase A — Architecture split
-- [x] отделить ALINA Analyst от Content Generator концептуально;
-- [x] завести отдельную ветку `feature/dz18-father-content-generator`;
-- [x] создать кодовые namespaces;
-- [x] ввести ResearchPacket / ContentBrief boundary;
-- [ ] выбрать web runtime и поднять application shell.
+```text
+http://localhost:5190/api/health
+```
 
-### Phase B — Submission baseline
-- [ ] Newsletter;
-- [ ] Podcast;
-- [ ] Video Avatar real API lists;
-- [ ] Comic / Storyboard;
-- [ ] versioned prompts;
-- [ ] .env.example;
-- [ ] tests;
-- [ ] publish;
-- [ ] screenshots and evidence matrix.
+## HeyGen
 
-### Phase C — Polish
-- consistency benchmark;
-- emotion/pose sheets;
-- provider comparison;
-- richer persona continuity;
-- video/TTS/lip-sync;
-- extraction into reusable FATHER service.
+Для реального списка аватаров/голосов открой локальный `.env`:
 
-## Definition of Done
+```env
+HEYGEN_API_KEY=your_key_here
+HEYGEN_BASE_URL=https://api.heygen.com
+PORT=5190
+```
 
-ДЗ готово к сдаче, когда опубликованный UI работает, внешняя API-интеграция подтверждена, секреты не попадают в клиент/Git, все обязательные разделы проходят smoke test, а README содержит запуск, demo-flow и evidence matrix.
+Ключ нельзя добавлять в `VITE_*`: такие значения попадают в browser bundle.
+
+Текущий adapter использует HeyGen v3 и заголовок `X-Api-Key`.
+
+## Проверки
+
+```powershell
+npm test
+npm run build
+```
+
+Production после build:
+
+```powershell
+npm run build
+npm start
+```
+
+## Текущий baseline
+
+- [x] architecture split ALINA Analyst / FATHER Content Generator;
+- [x] ResearchPacket / ContentBrief contracts;
+- [x] application shell;
+- [x] Persona Registry baseline;
+- [x] SceneSpec + storyboard planner;
+- [x] F-01 / M-01;
+- [x] HeyGen server adapter;
+- [x] avatars/voices UI wiring;
+- [x] .env protection;
+- [x] provider tests;
+- [ ] проверить реальным HeyGen API key;
+- [ ] versioned LLM prompt registry;
+- [ ] реальный LLM generation для Newsletter/Podcast;
+- [ ] screenshots;
+- [ ] deployment;
+- [ ] submission evidence matrix.
+
+## Следующий этап
+
+После smoke test на локальной машине: подключить versioned prompt registry и LLM provider для Newsletter/Podcast, затем зафиксировать скриншоты реальных HeyGen avatars/voices и готовить deployment.
