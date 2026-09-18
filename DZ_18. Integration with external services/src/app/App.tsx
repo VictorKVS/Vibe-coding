@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { referencePersonas } from "../content_generator/personas/reference-personas";
 import { planDemoStoryboard } from "../content_generator/storyboard/planner";
 import type { PersonaSpec } from "../content_generator/personas/types";\nimport type { AvatarDto, VoiceDto } from "../content_generator/providers/types";\nimport { getHeygenHealth, loadHeygenCatalog } from "../content_generator/providers/heygen-client";
+import { generateNewsletter, generatePodcast, type NewsletterOutput, type PodcastOutput } from "../content_generator/providers/llm-client";
 
 type Section = "newsletter" | "podcast" | "avatar" | "storyboard" | "diagnostics";
 
@@ -80,60 +81,138 @@ function PanelHeader({ title, text }: { title: string; text: string }) {
 
 function NewsletterPanel() {
   const [topic, setTopic] = useState("Новые возможности FATHER Content Generator");
-  const [generated, setGenerated] = useState(false);
+  const [audience, setAudience] = useState("Специалисты и пользователи продукта");
+  const [tone, setTone] = useState("professional");
+  const [result, setResult] = useState<NewsletterOutput | null>(null);
+  const [meta, setMeta] = useState("");
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  async function generate() {
+    setLoading(true);
+    setError("");
+    try {
+      const response = await generateNewsletter({
+        topic,
+        audience,
+        tone,
+        factualConstraints: [],
+      });
+      setResult(response.data);
+      setMeta(`${response.provider} · ${response.model} · ${response.promptId}@${response.promptVersion}`);
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : "Generation failed");
+    } finally {
+      setLoading(false);
+    }
+  }
 
   return (
     <section className="workspace">
       <div className="card controls">
-        <PanelHeader title="Newsletter brief" text="Подготовка структуры рассылки без привязки к конкретному LLM provider." />
+        <PanelHeader title="Newsletter brief" text="Versioned prompt + server-side LLM provider + structured output." />
         <label>
           Тема
           <textarea value={topic} onChange={(e) => setTopic(e.target.value)} />
         </label>
         <label>
           Аудитория
-          <input defaultValue="Специалисты и пользователи продукта" />
+          <input value={audience} onChange={(e) => setAudience(e.target.value)} />
         </label>
         <label>
           Тон
-          <select defaultValue="professional">
+          <select value={tone} onChange={(e) => setTone(e.target.value)}>
             <option value="professional">Профессиональный</option>
             <option value="friendly">Дружелюбный</option>
             <option value="expert">Экспертный</option>
           </select>
         </label>
-        <button className="primary" onClick={() => setGenerated(true)}>Собрать preview</button>
+        {error && <div className="provider-state warning"><strong>LLM unavailable</strong><span>{error}</span></div>}
+        <button className="primary" disabled={loading} onClick={() => void generate()}>
+          {loading ? "Генерация..." : "Сгенерировать рассылку"}
+        </button>
       </div>
 
       <div className="card preview">
-        <PanelHeader title="Preview" text="Пока локальный deterministic fallback. LLM adapter подключается следующим этапом." />
-        {generated ? (
+        <PanelHeader title="Newsletter output" text={meta || "Результат появится после server-side generation."} />
+        {result ? (
           <div className="result-stack">
-            <Result label="Subject" value={topic} />
-            <Result label="Preheader" value="Коротко о том, что изменилось и как использовать новые возможности." />
-            <Result label="CTA" value="Открыть FATHER Content Generator" />
+            <Result label="Subject" value={result.subject} />
+            <Result label="Preheader" value={result.preheader} />
+            <Result label="Body" value={result.body} />
+            <Result label="CTA" value={result.cta} />
+            <Result label="Image brief" value={result.imageBrief} />
           </div>
-        ) : <EmptyState text="Заполните brief и соберите preview." />}
+        ) : <EmptyState text="Заполните brief и запустите генерацию." />}
       </div>
     </section>
   );
 }
 
 function PodcastPanel() {
-  const [ready, setReady] = useState(false);
+  const [topic, setTopic] = useState("Как аналитика превращается в проверенный контент");
+  const [duration, setDuration] = useState(5);
+  const [voiceProfile, setVoiceProfile] = useState("F-01");
+  const [result, setResult] = useState<PodcastOutput | null>(null);
+  const [meta, setMeta] = useState("");
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  async function generate() {
+    setLoading(true);
+    setError("");
+    try {
+      const response = await generatePodcast({
+        topic,
+        durationMinutes: duration,
+        voiceProfile,
+        factualConstraints: [],
+      });
+      setResult(response.data);
+      setMeta(`${response.provider} · ${response.model} · ${response.promptId}@${response.promptVersion}`);
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : "Generation failed");
+    } finally {
+      setLoading(false);
+    }
+  }
 
   return (
     <section className="workspace">
       <div className="card controls">
-        <PanelHeader title="Podcast brief" text="Сценарий отделён от TTS, поэтому отсутствие API-ключа не ломает работу." />
-        <label>Тема<input defaultValue="Как аналитика превращается в проверенный контент" /></label>
-        <label>Длительность<select defaultValue="5"><option value="3">3 минуты</option><option value="5">5 минут</option><option value="10">10 минут</option></select></label>
-        <label>Voice profile<select defaultValue="F-01"><option>F-01</option><option>M-01</option></select></label>
-        <button className="primary" onClick={() => setReady(true)}>Подготовить сценарий</button>
+        <PanelHeader title="Podcast brief" text="Сценарий генерируется отдельно от TTS и остаётся provider-independent." />
+        <label>Тема<input value={topic} onChange={(e) => setTopic(e.target.value)} /></label>
+        <label>
+          Длительность
+          <select value={duration} onChange={(e) => setDuration(Number(e.target.value))}>
+            <option value={3}>3 минуты</option>
+            <option value={5}>5 минут</option>
+            <option value={10}>10 минут</option>
+          </select>
+        </label>
+        <label>
+          Voice profile
+          <select value={voiceProfile} onChange={(e) => setVoiceProfile(e.target.value)}>
+            <option value="F-01">F-01</option>
+            <option value="M-01">M-01</option>
+          </select>
+        </label>
+        {error && <div className="provider-state warning"><strong>LLM unavailable</strong><span>{error}</span></div>}
+        <button className="primary" disabled={loading} onClick={() => void generate()}>
+          {loading ? "Генерация..." : "Сгенерировать сценарий"}
+        </button>
       </div>
       <div className="card preview">
-        <PanelHeader title="Podcast output" text="TTS provider будет подключён через отдельный adapter." />
-        {ready ? <Result label="Сценарий" value="Вступление → исходный факт → объяснение → пример → вывод → CTA." /> : <EmptyState text="Сценарий ещё не сформирован." />}
+        <PanelHeader title="Podcast output" text={meta || "TTS подключается следующим provider layer."} />
+        {result ? (
+          <div className="result-stack">
+            <Result label="Title" value={result.title} />
+            <Result label="Hook" value={result.hook} />
+            <Result label="Outline" value={result.outline.join(" → ")} />
+            <Result label="Script" value={result.script} />
+            <Result label="Voice direction" value={result.voiceDirection} />
+          </div>
+        ) : <EmptyState text="Сценарий ещё не сформирован." />}
       </div>
     </section>
   );
@@ -308,7 +387,7 @@ function DiagnosticsPanel() {
       <Diagnostic title="Persona Engine" status="ready" text="F-01 / M-01 проходят один engine path." />
       <Diagnostic title="Scene Engine" status="ready" text="Typed SceneSpec + demo storyboard planner." />
       <Diagnostic title="External API" status="ready" text="Server-side HeyGen v3 adapter + normalized avatars/voices DTO." />
-      <Diagnostic title="LLM provider" status="pending" text="Нужен versioned prompt registry + adapter." />
+      <Diagnostic title="LLM provider" status="ready" text="Versioned prompt registry + server-side OpenAI Responses adapter." />
       <Diagnostic title="Publish" status="pending" text="После baseline и smoke tests." />
     </section>
   );
