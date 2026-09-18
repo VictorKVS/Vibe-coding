@@ -1,0 +1,44 @@
+name: DZ18 CI
+
+on:
+  push:
+    branches:
+      - feature/dz18-father-content-generator
+    paths:
+      - "DZ_18. Integration with external services/**"
+      - ".github/workflows/dz18-ci.yml"
+  pull_request:
+    paths:
+      - "DZ_18. Integration with external services/**"
+      - ".github/workflows/dz18-ci.yml"
+
+jobs:
+  test-build:
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+
+    defaults:
+      run:
+        working-directory: DZ_18. Integration with external services
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: DZ_18. Integration with external services/package-lock.json
+
+      - name: Install
+        run: npm install
+
+      - name: Tests
+        run: npm test
+
+      - name: Build
+        run: npm run build
