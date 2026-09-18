@@ -7,7 +7,7 @@ import {
   heygenHealth,
   listHeygenAvatars,
   listHeygenVoices,
-} from "./providers/heygen.mjs";
+} from "./providers/heygen.mjs";\nimport { generateStructured, openaiHealth } from "./providers/openai.mjs";\nimport { getPrompt } from "./prompts/registry.mjs";
 
 const rootDir = fileURLToPath(new URL("../", import.meta.url));
 const distDir = join(rootDir, "dist");
@@ -24,6 +24,7 @@ const server = createServer(async (req, res) => {
         ok: true,
         app: "father-content-generator-dz18",
         heygen: await heygenHealth(),
+        openai: await openaiHealth(),
       });
     }
 
@@ -45,6 +46,25 @@ const server = createServer(async (req, res) => {
         count: voices.length,
         voices,
       });
+    }
+
+
+    if (req.method === "POST" && url.pathname === "/api/generate/newsletter") {
+      const input = await readJson(req);
+      const result = await generateStructured({
+        prompt: getPrompt("newsletter"),
+        input,
+      });
+      return sendJson(res, 200, result);
+    }
+
+    if (req.method === "POST" && url.pathname === "/api/generate/podcast") {
+      const input = await readJson(req);
+      const result = await generateStructured({
+        prompt: getPrompt("podcast"),
+        input,
+      });
+      return sendJson(res, 200, result);
     }
 
     if (production) {
@@ -92,6 +112,32 @@ async function serveStatic(pathname, res) {
     } catch {
       sendJson(res, 404, { error: "Build not found. Run npm run build first." });
     }
+  }
+}
+
+
+async function readJson(req) {
+  const chunks = [];
+  let size = 0;
+
+  for await (const chunk of req) {
+    size += chunk.length;
+    if (size > 256 * 1024) {
+      const error = new Error("Request body is too large.");
+      error.statusCode = 413;
+      throw error;
+    }
+    chunks.push(chunk);
+  }
+
+  if (chunks.length === 0) return {};
+
+  try {
+    return JSON.parse(Buffer.concat(chunks).toString("utf8"));
+  } catch {
+    const error = new Error("Request body must be valid JSON.");
+    error.statusCode = 400;
+    throw error;
   }
 }
 
