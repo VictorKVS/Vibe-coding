@@ -1,0 +1,41 @@
+registry_id: programmer-regulatory-source-register
+version: "0.1"
+status: DRAFT
+retrieved_at: "2026-09-18"
+
+sources:
+  - id: RU-LAW-273FZ-2012
+    type: LAW
+    title: "Федеральный закон от 29.12.2012 № 273-ФЗ «Об образовании в Российской Федерации»"
+    publisher: "Официальный интернет-портал правовой информации"
+    official_url: "https://publication.pravo.gov.ru/document/0001201212300007"
+    jurisdiction: RU
+    source_verified: true
+    current_text_verified: false
+    applicability_to_programmer:
+      status: TO_BE_ANALYZED
+      note: "Регистрация источника не означает автоматическую применимость всех положений к профессии."
+
+  - id: RU-GOST-ISOIEC-12207-2010
+    type: STANDARD
+    title: "ГОСТ Р ИСО/МЭК 12207-2010. Информационная технология. Системная и программная инженерия. Процессы жизненного цикла программных средств"
+    publisher: "Росстандарт"
+    official_url: "https://protect.gost.ru/gost/details/350d1d97-8905-4368-8a8c-7ce7c041bb09"
+    jurisdiction: RU
+    status: ACTIVE
+    effective_from: "2012-03-01"
+    replaces: RU-GOST-ISOIEC-12207-99
+    applicability_to_programmer:
+      status: CANDIDATE
+      reason: "Стандарт охватывает процессы разработки и другие процессы жизненного цикла программных средств."
+    mandatory_status: TO_BE_DETERMINED
+
+  - id: RU-GOST-ISOIEC-12207-99
+    type: STANDARD
+    title: "ГОСТ Р ИСО/МЭК 12207-99. Информационная технология. Процессы жизненного цикла программных средств"
+    publisher: "Росстандарт"
+    official_url: "https://protect.gost.ru/gost/details/1d3608d5-2365-485c-b09a-33f07cf39e91"
+    jurisdiction: RU
+    status: SUPERSEDED
+    replaced_by: RU-GOST-ISOIEC-12207-2010
+    use_policy: HISTORICAL_ONLY_UNLESS_TEMPORAL_CONTEXT_REQUIRES
