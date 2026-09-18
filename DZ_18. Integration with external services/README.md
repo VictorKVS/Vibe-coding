@@ -1,6 +1,6 @@
 # DZ-18 — FATHER Content Generator
 
-Статус: `RUNNABLE SHELL + HEYGEN V3 + STRUCTURED LLM`
+Статус: `SUBMISSION BASELINE IMPLEMENTED / LOCAL REAL-KEY SMOKE TEST NEXT`
 
 ## Цель
 
@@ -29,7 +29,10 @@ Generator не должен молча менять проверенные фа�
 - React + TypeScript + Vite application shell;
 - Рассылки — local baseline preview;
 - Подкасты — local baseline script flow;
-- Видео-аватар — server-side HeyGen adapter;
+- Видео-аватар — server-side HeyGen v3 adapter;
+- выбор avatar + voice + orientation + script;
+- Video Agent generation через `POST /v3/video-agents`;
+- polling session/video status до готового MP4;
 - HeyGen API key остаётся только на backend;
 - `GET /v3/avatars` и `GET /v3/voices` нормализуются в наши DTO;
 - Comic / Storyboard — F-01 и M-01 через один Persona/Scene Engine;
@@ -130,9 +133,11 @@ npm start
 - [x] F-01 / M-01;
 - [x] HeyGen server adapter;
 - [x] avatars/voices UI wiring;
+- [x] HeyGen video create + polling + preview;
+- [x] OpenAI TTS + AI-voice disclosure;
 - [x] .env protection;
 - [x] provider tests;
-- [ ] проверить реальным HeyGen API key;
+- [ ] проверить реальными `HEYGEN_API_KEY` + `OPENAI_API_KEY`;
 - [x] versioned LLM prompt registry;
 - [x] server-side structured LLM generation для Newsletter/Podcast;
 - [ ] screenshots;
@@ -142,3 +147,22 @@ npm start
 ## Следующий этап
 
 После локального smoke test с реальными `HEYGEN_API_KEY` и `OPENAI_API_KEY`: зафиксировать screenshots, добавить TTS provider для Podcast, затем подготовить deployment и submission evidence matrix.
+
+
+## Docker
+
+Production image:
+
+```powershell
+docker build -t father-dz18 .
+docker run --rm -p 5190:5190 --env-file .env father-dz18
+```
+
+После запуска:
+
+```text
+http://localhost:5190
+http://localhost:5190/api/health
+```
+
+Docker build сам выполняет `npm test` и `npm run build`, поэтому неуспешные тесты/сборка блокируют создание production image.
