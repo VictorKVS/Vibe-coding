@@ -1,176 +1,104 @@
-# DZ-18 — ALINA Content Studio
+# DZ-18 — FATHER Content Generator
 
-Статус: `BUILD FULL HOMEWORK FIRST -> POLISH SECOND`
+Статус: `ARCHITECTURE SPLIT STARTED / BUILD BASELINE NEXT`
 
 ## Цель
-Собрать полностью рабочее и публикуемое ДЗ PRO AI «Контент-мейкер», а затем использовать его как полигон Persona/Media Engine для FATHER.
 
-## Обязательное соответствие заданию
+Собрать рабочее и публикуемое ДЗ PRO AI «Интеграция с внешними сервисами» как отдельный модуль **FATHER Content Generator**.
 
-Приложение должно:
-1. создавать контент по заданному сценарию;
-2. иметь индивидуальный дизайн и логику;
-3. использовать самостоятельно написанные системные промпты;
-4. иметь вкладку «Видео-аватар» с реальной внешней API-интеграцией;
-5. получать по API список голосов и список аватаров HeyGen либо выбранного аналога;
-6. иметь дополнительную собственную вкладку;
-7. быть опубликовано;
-8. иметь скриншоты итогового тестирования.
-
-## Выбранная архитектура приложения
+ALINA Analyst и FATHER Content Generator — разные bounded contexts:
 
 ```text
-ALINA CONTENT STUDIO
-├── Рассылки
-├── Подкасты
-├── Видео-аватар
-├── Комикс / Storyboard        # дополнительная вкладка
-└── Настройки / диагностика
+ALINA Analyst
+  research / RAG / graph / reports
+        |
+        | verified ResearchPacket
+        v
+shared/contracts
+        |
+        | ContentBrief
+        v
+FATHER Content Generator
+  personas / scenes / storyboard / images / audio / avatars / video / providers
 ```
 
-### Рассылки
-- тема / аудитория / тон;
-- генерация текста;
-- subject/preheader/CTA;
-- генерация/подбор изображения;
-- preview результата;
-- копирование/экспорт.
+Content Generator не перепроверяет и не меняет фактическую основу самостоятельно. Если данных недостаточно или обнаружен конфликт, он возвращает состояние `NEED_RESEARCH`, `CONFLICT_FOUND`, `MISSING_FACT` или `SOURCE_REQUIRED`.
 
-### Подкасты
-- тема и длительность;
-- сценарий;
-- выбор voice profile;
-- скорость / эмоциональность;
-- TTS provider abstraction;
-- preview/export результата.
+## Кодовая граница DZ-18
 
-### Видео-аватар
-- server-side API key only;
-- загрузка списка avatars;
-- загрузка списка voices;
-- фильтр/поиск/preview;
-- выбор avatar + voice;
-- optional generate video;
-- status polling при генерации;
-- понятные ошибки API;
-- mock/demo fallback только с явной маркировкой.
-
-### Комикс / Storyboard
-Это наша дополнительная вкладка и первый Persona Engine MVP.
-
-Пользователь задаёт:
-- тему;
-- персонажа;
-- число кадров;
-- стиль;
-- цель публикации.
-
-ALINA создаёт:
 ```text
-scenario
-→ scenes
-→ emotion per scene
-→ pose/action
-→ dialogue
-→ background/clothes/props
-→ image prompt
-→ frames
-→ comic strip
+src/
+├── content_generator/
+│   ├── briefs/
+│   ├── personas/
+│   ├── scenes/
+│   ├── storyboard/
+│   └── providers/
+└── shared/
+    └── contracts/
 ```
 
-Минимальные эмоции:
-```text
-neutral
-friendly
-focused
-thinking
-doubtful
-concerned
-surprised
-confident
-strict
-explaining
-happy
-```
+ALINA Analyst не переносится внутрь DZ-18. Связь с ней идёт только через версионированные контракты.
 
-## Общие ядра
+## Продуктовые разделы
 
-### Persona Registry
-Хранит:
-- persona_id;
-- identity description;
-- face consistency description;
-- age appearance;
-- hairstyle;
-- character;
-- voice profile;
-- default wardrobe;
-- allowed styles;
-- negative constraints.
+- Рассылки
+- Подкасты
+- Видео-аватар
+- Комикс / Storyboard
+- Настройки / диагностика
 
-### Scene Registry
-Хранит:
-- scene_id;
-- persona_id;
-- environment;
-- time/season;
-- emotion;
-- pose;
-- action;
-- clothing;
-- props;
-- dialogue;
-- image prompt;
-- generation metadata.
+## Persona / Scene Engine
 
-### Media Generation Core
-Один общий слой для:
-- newsletter image;
-- comic frame;
-- podcast cover;
-- avatar scene/background.
+Сохраняется спроектированный ранее подход:
+- reference personas F-01 и M-01;
+- data-driven age presets;
+- emotion switching;
+- wardrobe/background/props;
+- Scene Registry;
+- provider abstraction;
+- частичная регенерация кадра без переписывания всей истории.
 
-## Безопасность
-- API secrets только на сервере/.env;
-- никогда не коммитить ключи;
-- логировать provider/status/error без секретов;
-- внешний контент и prompt input считаются недоверенными;
-- graceful failure вместо падения UI.
+Подробности: `PERSONA_ENGINE_MVP.md`.
 
-## Две фазы
+## External services
 
-### Phase A — Submission Baseline
-Сначала закрыть ДЗ полностью:
-- все вкладки работают;
-- системные промпты собственные;
-- HeyGen/аналог реально отдаёт voices + avatars;
-- Comic tab работает как дополнительная вкладка;
-- приложение публикуется;
-- есть README, инструкция запуска, .env.example;
-- есть сценарий демонстрации;
-- подготовлены места под скриншоты.
+Первый обязательный provider integration:
+- HeyGen или совместимый AvatarProvider;
+- server-side API key;
+- реальные API lists для avatars и voices;
+- нормализованные DTO;
+- timeout/error handling;
+- явный demo/mock mode только как fallback.
 
-### Phase B — Polish
-Только после baseline:
-- постоянство лица;
-- emotion sheet;
-- pose sheet;
-- comic composition;
-- смена одежды/фона по сцене;
-- animation/motion comic;
-- TTS/lip-sync;
-- перенос Persona/Scene Engine в общий модуль FATHER.
+## Фазы
+
+### Phase A — Architecture split
+- [x] отделить ALINA Analyst от Content Generator концептуально;
+- [x] завести отдельную ветку `feature/dz18-father-content-generator`;
+- [x] создать кодовые namespaces;
+- [x] ввести ResearchPacket / ContentBrief boundary;
+- [ ] выбрать web runtime и поднять application shell.
+
+### Phase B — Submission baseline
+- [ ] Newsletter;
+- [ ] Podcast;
+- [ ] Video Avatar real API lists;
+- [ ] Comic / Storyboard;
+- [ ] versioned prompts;
+- [ ] .env.example;
+- [ ] tests;
+- [ ] publish;
+- [ ] screenshots and evidence matrix.
+
+### Phase C — Polish
+- consistency benchmark;
+- emotion/pose sheets;
+- provider comparison;
+- richer persona continuity;
+- video/TTS/lip-sync;
+- extraction into reusable FATHER service.
 
 ## Definition of Done
-ДЗ считается готовым к сдаче, когда:
-- [ ] опубликованный URL открывается;
-- [ ] Newsletter работает;
-- [ ] Podcast работает;
-- [ ] Video Avatar показывает реальные API lists;
-- [ ] Comic/Storyboard работает;
-- [ ] промпты версионированы и написаны внутри проекта;
-- [ ] секреты не попали в Git;
-- [ ] ошибки API видимы и понятны;
-- [ ] smoke test пройден;
-- [ ] README содержит запуск и demo-flow;
-- [ ] подготовлен отчёт со скриншотами.
+
+ДЗ готово к сдаче, когда опубликованный UI работает, внешняя API-интеграция подтверждена, секреты не попадают в клиент/Git, все обязательные разделы проходят smoke test, а README содержит запуск, demo-flow и evidence matrix.
