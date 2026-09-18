@@ -373,3 +373,39 @@ S5 PROVENANCE / TELEMETRY / QUALITY
 - выполнен provenance/security/review gate;
 - canonical publish происходит только после разрешённого review;
 - trace позволяет воспроизвести весь маршрут.
+
+## 16. Обязательный режим Zero-Base Reconstruction
+
+Для обучения, benchmark и независимой проверки Аналитик должна уметь проходить документ **с нуля**, не используя готовые связи canonical Knowledge Graph как входные доказательства.
+
+Эталонный процесс определён в:
+
+```text
+DZ_17/knowledge_base/ZERO_BASE_ANALYST_RECONSTRUCTION.md
+```
+
+Главный маршрут:
+
+```text
+MINIMAL SEED
+→ PRIMARY SOURCE DISCOVERY
+→ IDENTITY
+→ ORIGINAL / CURRENT VERSION
+→ AMENDMENT DISCOVERY
+→ TIMELINE
+→ STRUCTURAL DIFF
+→ RELATED DOCUMENT DISCOVERY
+→ RELATION CLASSIFICATION
+→ REQUIREMENT EXTRACTION
+→ HISTORICAL / POLICY CONTEXT
+→ CAUSE / IMPACT ANALYSIS
+→ CONTRADICTIONS / GAPS
+→ INDEPENDENT GRAPH CANDIDATE
+→ FREEZE
+→ UNBLIND CANONICAL KB
+→ COMPARE / REVIEW / CHANGESET
+```
+
+В `blind_mode=true` retrieval не должен отдавать Аналитику готовые graph edges, requirement mappings, impact conclusions и ранее сформированные причинные объяснения. Canonical KB открывается только после фиксации независимого результата.
+
+152-ФЗ является первым эталонным benchmark-документом этого режима. Цель — научить Аналитика методу самостоятельного исследования, а не запомнить заранее подготовленный набор связей.
