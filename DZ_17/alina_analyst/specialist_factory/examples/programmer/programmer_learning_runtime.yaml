@@ -1,0 +1,54 @@
+model_id: father-programmer-learning-runtime
+version: "0.1"
+status: DRAFT
+
+subject:
+  profession: "Программист"
+  jurisdiction: "Российская Федерация"
+  time_scope: CURRENT_AT_EXECUTION
+
+foundation_layers:
+  - id: L0
+    type: CONTEXT
+  - id: L1
+    type: LAW_NORMATIVE
+  - id: L2
+    type: STANDARDS
+  - id: L3
+    type: PROFESSIONAL_STANDARD
+  - id: L4
+    type: INTERNATIONAL_PROFESSIONAL_MODEL
+  - id: L5
+    type: PROFESSIONAL_EDUCATION
+  - id: L6
+    type: SCIENTIFIC_ENGINEERING_KNOWLEDGE
+  - id: L7
+    type: PRACTICE
+  - id: L8
+    type: EXPERIENCE
+  - id: L9
+    type: EXAM_BENCHMARK
+
+knowledge_state_machine:
+  - DISCOVERED
+  - SOURCED
+  - LEARNED
+  - REPRODUCED
+  - APPLIED
+  - TRANSFERRED
+  - VALIDATED
+
+runtime:
+  retrieval_required_for_significant_decision: true
+  decision_ledger_required: true
+  previous_step_consistency_check: true
+  provenance_required: true
+  contradictions_preserved: true
+  unknown_allowed: true
+
+qualification:
+  independent_exam_required: true
+  unseen_task_required: true
+  regression_required_after_material_change: true
+
+evidence_status: PENDING_POPULATION
