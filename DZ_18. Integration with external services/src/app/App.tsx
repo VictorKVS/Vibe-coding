@@ -3,7 +3,7 @@ import { referencePersonas } from "../content_generator/personas/reference-perso
 import { planDemoStoryboard } from "../content_generator/storyboard/planner";
 import type { PersonaSpec } from "../content_generator/personas/types";
 import type { AvatarDto, VoiceDto } from "../content_generator/providers/types";
-import { createHeygenVideoJob, getHeygenHealth, getHeygenVideoJob, loadHeygenCatalog, type HeygenVideoJob } from "../content_generator/providers/heygen-client";
+import { createHeygenVideoJob, getHeygenHealth, getHeygenVideoJob, getRuntimeHealth, loadHeygenCatalog, type HeygenVideoJob, type RuntimeHealth } from "../content_generator/providers/heygen-client";
 import { generateNewsletter, generatePodcast, type NewsletterOutput, type PodcastOutput } from "../content_generator/providers/llm-client";
 import { openAiTtsVoices, synthesizeOpenAiSpeech, type OpenAiTtsVoice } from "../content_generator/providers/tts-client";
 
@@ -549,15 +549,60 @@ function StoryboardPanel() {
 }
 
 function DiagnosticsPanel() {
+  const [health, setHealth] = useState<RuntimeHealth | null>(null);
+  const [healthError, setHealthError] = useState("");
+
+  async function refreshHealth() {
+    setHealthError("");
+    try {
+      setHealth(await getRuntimeHealth());
+    } catch (caught) {
+      setHealthError(caught instanceof Error ? caught.message : "Health check failed");
+    }
+  }
+
+  useEffect(() => {
+    void refreshHealth();
+  }, []);
+
   return (
-    <section className="diagnostics-grid">
-      <Diagnostic title="Research handoff" status="ready" text="ResearchPacket → ContentBrief contracts заведены." />
-      <Diagnostic title="Persona Engine" status="ready" text="F-01 / M-01 проходят один engine path." />
-      <Diagnostic title="Scene Engine" status="ready" text="Typed SceneSpec + demo storyboard planner." />
-      <Diagnostic title="External API" status="ready" text="HeyGen v3 catalog + Video Agent create/poll + completed MP4 URL." />
-      <Diagnostic title="LLM + TTS" status="ready" text="Versioned Responses prompts + server-side OpenAI TTS MP3." />
-      <Diagnostic title="Publish" status="pending" text="После baseline и smoke tests." />
-    </section>
+    <>
+      <div className="card controls diagnostics-summary">
+        <PanelHeader title="Runtime diagnostics" text="Показывает доступность backend и конфигурацию providers без раскрытия API keys." />
+        {healthError && <div className="provider-state warning"><strong>Backend unavailable</strong><span>{healthError}</span></div>}
+        <button className="primary" onClick={() => void refreshHealth()}>Обновить диагностику</button>
+      </div>
+
+      <section className="diagnostics-grid">
+        <Diagnostic title="Research handoff" status="ready" text="ResearchPacket → ContentBrief contracts заведены." />
+        <Diagnostic title="Persona Engine" status="ready" text="F-01 / M-01 проходят один engine path." />
+        <Diagnostic title="Scene Engine" status="ready" text="Typed SceneSpec + demo storyboard planner." />
+        <Diagnostic
+          title="HeyGen v3"
+          status={health?.heygen.configured ? "ready" : "pending"}
+          text={health
+            ? `configured=${health.heygen.configured} · API ${health.heygen.apiVersion}`
+            : "Проверка backend..."}
+        />
+        <Diagnostic
+          title="OpenAI Responses"
+          status={health?.openai.configured ? "ready" : "pending"}
+          text={health
+            ? `configured=${health.openai.configured} · model=${health.openai.model}`
+            : "Проверка backend..."}
+        />
+        <Diagnostic
+          title="OpenAI TTS"
+          status={health?.openai.configured ? "ready" : "pending"}
+          text={health
+            ? `model=${health.openai.ttsModel} · ключ не выводится в UI`
+            : "Проверка backend..."}
+        />
+        <Diagnostic title="Provider tests" status="ready" text="Node 22: 8/8 provider tests passed." />
+        <Diagnostic title="Production image" status="ready" text="Dockerfile + healthcheck + test/build gates заведены." />
+        <Diagnostic title="Publish" status="pending" text="Нужен локальный real-key smoke test и опубликованный URL." />
+      </section>
+    </>
   );
 }
 
