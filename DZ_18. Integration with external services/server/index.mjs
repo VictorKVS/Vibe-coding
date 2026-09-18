@@ -1,4 +1,4 @@
-import { createServer } from "node:http";
+import "dotenv/config";\nimport { createServer } from "node:http";
 import { readFile, stat } from "node:fs/promises";
 import { extname, join, normalize } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -11,7 +11,7 @@ import {
 
 const rootDir = fileURLToPath(new URL("../", import.meta.url));
 const distDir = join(rootDir, "dist");
-const port = Number(process.env.PORT || 5190);
+const port = Number(process.env.PORT || 5190);\nconst production = process.argv.includes("--production") || process.env.NODE_ENV === "production";
 
 const server = createServer(async (req, res) => {
   try {
@@ -47,7 +47,7 @@ const server = createServer(async (req, res) => {
       });
     }
 
-    if (process.env.NODE_ENV === "production") {
+    if (production) {
       return serveStatic(url.pathname, res);
     }
 
