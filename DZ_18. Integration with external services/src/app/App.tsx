@@ -1,7 +1,7 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { referencePersonas } from "../content_generator/personas/reference-personas";
 import { planDemoStoryboard } from "../content_generator/storyboard/planner";
-import type { PersonaSpec } from "../content_generator/personas/types";
+import type { PersonaSpec } from "../content_generator/personas/types";\nimport type { AvatarDto, VoiceDto } from "../content_generator/providers/types";\nimport { getHeygenHealth, loadHeygenCatalog } from "../content_generator/providers/heygen-client";
 
 type Section = "newsletter" | "podcast" | "avatar" | "storyboard" | "diagnostics";
 
@@ -140,24 +140,111 @@ function PodcastPanel() {
 }
 
 function AvatarPanel() {
+  const [configured, setConfigured] = useState<boolean | null>(null);
+  const [apiVersion, setApiVersion] = useState("v3");
+  const [avatars, setAvatars] = useState<AvatarDto[]>([]);
+  const [voices, setVoices] = useState<VoiceDto[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+
+  async function refresh(loadCatalog = false) {
+    setLoading(true);
+    setError("");
+
+    try {
+      const health = await getHeygenHealth();
+      setConfigured(health.heygen.configured);
+      setApiVersion(health.heygen.apiVersion);
+
+      if (health.heygen.configured && loadCatalog) {
+        const catalog = await loadHeygenCatalog();
+        setAvatars(catalog.avatars);
+        setVoices(catalog.voices);
+      }
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : "Provider request failed");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  useEffect(() => {
+    void refresh(false);
+  }, []);
+
   return (
     <section className="workspace">
       <div className="card controls">
-        <PanelHeader title="External Avatar Provider" text="UI готов к серверному HeyGen/совместимому adapter. Ключ в браузер не передаётся." />
+        <PanelHeader title="External Avatar Provider" text="HeyGen вызывается только backend-адаптером. API key никогда не передаётся браузеру." />
         <div className="provider-state warning">
-          <strong>Provider not configured</strong>
-          <span>HEYGEN_API_KEY отсутствует — реальный API вызов пока не выполняется.</span>
+          <strong>
+            {configured === null
+              ? "Checking provider..."
+              : configured
+                ? `HeyGen ${apiVersion} configured`
+                : "HeyGen key not configured"}
+          </strong>
+          <span>
+            {error ||
+              (configured
+                ? "Можно загрузить реальные avatars и voices."
+                : "Добавьте HEYGEN_API_KEY в локальный .env перед запуском API server.")}
+          </span>
         </div>
-        <button className="primary" disabled>Загрузить avatars + voices</button>
+        <button
+          className="primary"
+          disabled={loading}
+          onClick={() => void refresh(true)}
+        >
+          {loading ? "Загрузка..." : configured ? "Загрузить avatars + voices" : "Проверить провайдера"}
+        </button>
       </div>
       <div className="card preview">
-        <PanelHeader title="Provider data" text="После backend-интеграции здесь появятся нормализованные AvatarDto и VoiceDto." />
+        <PanelHeader title="Provider data" text="В UI приходят только нормализованные DTO, а не provider-specific payload." />
         <div className="two-columns">
-          <EmptyState text="Avatars: нет данных" />
-          <EmptyState text="Voices: нет данных" />
+          <CatalogColumn
+            title={`Avatars (${avatars.length})`}
+            items={avatars.slice(0, 8).map((item) => ({
+              id: item.id,
+              name: item.name,
+              meta: "HeyGen avatar",
+            }))}
+          />
+          <CatalogColumn
+            title={`Voices (${voices.length})`}
+            items={voices.slice(0, 8).map((item) => ({
+              id: item.id,
+              name: item.name,
+              meta: [item.language, item.gender].filter(Boolean).join(" · ") || "HeyGen voice",
+            }))}
+          />
         </div>
       </div>
     </section>
+  );
+}
+
+function CatalogColumn({
+  title,
+  items,
+}: {
+  title: string;
+  items: Array<{ id: string; name: string; meta: string }>;
+}) {
+  if (items.length === 0) {
+    return <EmptyState text={`${title}: нет данных`} />;
+  }
+
+  return (
+    <div className="result-stack">
+      <Result label="Catalog" value={title} />
+      {items.map((item) => (
+        <div className="result" key={item.id}>
+          <small>{item.meta}</small>
+          <strong>{item.name}</strong>
+        </div>
+      ))}
+    </div>
   );
 }
 
@@ -220,7 +307,7 @@ function DiagnosticsPanel() {
       <Diagnostic title="Research handoff" status="ready" text="ResearchPacket → ContentBrief contracts заведены." />
       <Diagnostic title="Persona Engine" status="ready" text="F-01 / M-01 проходят один engine path." />
       <Diagnostic title="Scene Engine" status="ready" text="Typed SceneSpec + demo storyboard planner." />
-      <Diagnostic title="External API" status="pending" text="Нужен server-side HeyGen adapter." />
+      <Diagnostic title="External API" status="ready" text="Server-side HeyGen v3 adapter + normalized avatars/voices DTO." />
       <Diagnostic title="LLM provider" status="pending" text="Нужен versioned prompt registry + adapter." />
       <Diagnostic title="Publish" status="pending" text="После baseline и smoke tests." />
     </section>
