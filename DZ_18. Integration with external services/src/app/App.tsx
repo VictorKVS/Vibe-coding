@@ -7,28 +7,36 @@ import { createHeygenVideoJob, getHeygenHealth, getHeygenVideoJob, getRuntimeHea
 import { generateNewsletter, generatePodcast, type NewsletterOutput, type PodcastOutput } from "../content_generator/providers/llm-client";
 import { openAiTtsVoices, synthesizeOpenAiSpeech, type OpenAiTtsVoice } from "../content_generator/providers/tts-client";
 
-type Section = "newsletter" | "podcast" | "avatar" | "storyboard" | "diagnostics";
+type Section = "studio" | "newsletter" | "podcast" | "avatar" | "storyboard" | "diagnostics";
+type VisualMode = "strontium" | "alina";
 
-const sections: Array<{ id: Section; label: string; description: string }> = [
-  { id: "newsletter", label: "Рассылки", description: "Текст, subject, preheader и CTA" },
-  { id: "podcast", label: "Подкасты", description: "Сценарий и голосовой профиль" },
-  { id: "avatar", label: "Видео-аватар", description: "Avatars / voices / provider API" },
-  { id: "storyboard", label: "Комикс / Storyboard", description: "Persona + Scene Engine" },
-  { id: "diagnostics", label: "Диагностика", description: "Контракты, provider status, demo mode" },
+const sections: Array<{ id: Section; label: string; description: string; icon: string }> = [
+  { id: "studio", label: "AI Центр", description: "Control Model · RAG · Creative Studio", icon: "✦" },
+  { id: "newsletter", label: "Рассылки", description: "Текст, subject, preheader и CTA", icon: "▤" },
+  { id: "podcast", label: "Подкасты", description: "Сценарий и голосовой профиль", icon: "◉" },
+  { id: "avatar", label: "Видео-аватар", description: "Avatars / voices / provider API", icon: "▶" },
+  { id: "storyboard", label: "Комикс / Storyboard", description: "Persona + Scene Engine", icon: "▧" },
+  { id: "diagnostics", label: "Диагностика", description: "Контракты, provider status, demo mode", icon: "⚙" },
 ];
 
 export function App() {
-  const [section, setSection] = useState<Section>("storyboard");
+  const [section, setSection] = useState<Section>("studio");
+  const [visualMode, setVisualMode] = useState<VisualMode>("strontium");
 
   return (
-    <div className="app-shell">
+    <div className={`app-shell theme-${visualMode}`}>
       <aside className="sidebar">
         <div className="brand">
-          <span className="brand-mark">F</span>
+          <span className="brand-mark">{visualMode === "strontium" ? "S" : "A"}</span>
           <div>
-            <strong>FATHER</strong>
-            <small>Content Generator · DZ-18</small>
+            <strong>{visualMode === "strontium" ? "STRONTIUM" : "ALINA"}</strong>
+            <small>{visualMode === "strontium" ? "AI Studio for Bigger Stories" : "Book · Komiks · AI Studio"}</small>
           </div>
+        </div>
+
+        <div className="mode-switch" aria-label="Visual mode">
+          <button className={visualMode === "alina" ? "selected" : ""} onClick={() => setVisualMode("alina")}>ALINA</button>
+          <button className={visualMode === "strontium" ? "selected" : ""} onClick={() => setVisualMode("strontium")}>STRONTIUM</button>
         </div>
 
         <nav className="nav">
@@ -38,28 +46,49 @@ export function App() {
               className={section === item.id ? "nav-item active" : "nav-item"}
               onClick={() => setSection(item.id)}
             >
-              <span>{item.label}</span>
-              <small>{item.description}</small>
+              <span className="nav-icon">{item.icon}</span>
+              <span className="nav-copy">
+                <span>{item.label}</span>
+                <small>{item.description}</small>
+              </span>
             </button>
           ))}
         </nav>
 
         <div className="sidebar-note">
           <span className="status-dot" />
-          Architecture split active
-          <small>ALINA Analyst → contracts → Generator</small>
+          FATHER architecture active
+          <small>ALINA Analyst → contracts → Content Generator</small>
         </div>
       </aside>
 
       <main className="main">
+        <div className="commandbar">
+          <div className="searchbox">
+            <span>⌕</span>
+            <input aria-label="Поиск" placeholder="Поиск по проектам, персонажам, сюжетам, видео..." />
+            <kbd>⌘ K</kbd>
+          </div>
+          <button className="new-scenario" onClick={() => setSection("storyboard")}>＋ Новый сценарий</button>
+        </div>
+
         <header className="topbar">
           <div>
-            <p className="eyebrow">PRO AI · Integration with external services</p>
-            <h1>{sections.find((item) => item.id === section)?.label}</h1>
+            <p className="eyebrow">{visualMode === "strontium" ? "POWER · SPEED · RESULTS" : "BOOK · KOMIKS · AI STUDIO"}</p>
+            <h1>{section === "studio" ? "Control Model, RAG & Creative Admin Studio" : sections.find((item) => item.id === section)?.label}</h1>
+            <p className="topbar-subtitle">
+              {visualMode === "strontium"
+                ? "Управляющая модель для создания, развития и монетизации историй, персонажей, видео и визуальных миров."
+                : "Управляющая модель для общения, сюжетной помощи, базы знаний, RAG, безопасности и творчества."}
+            </p>
           </div>
-          <span className="mode-badge">INTEGRATION MODE</span>
+          <div className="topbar-actions">
+            <span className="mode-badge">INTEGRATION MODE</span>
+            <span className="profile-pill">{visualMode === "strontium" ? "Максим" : "Алина"} · online</span>
+          </div>
         </header>
 
+        {section === "studio" && <StudioPanel onNavigate={setSection} visualMode={visualMode} />}
         {section === "newsletter" && <NewsletterPanel />}
         {section === "podcast" && <PodcastPanel />}
         {section === "avatar" && <AvatarPanel />}
@@ -68,6 +97,163 @@ export function App() {
       </main>
     </div>
   );
+}
+
+function StudioPanel({
+  onNavigate,
+  visualMode,
+}: {
+  onNavigate: (section: Section) => void;
+  visualMode: VisualMode;
+}) {
+  const [health, setHealth] = useState<RuntimeHealth | null>(null);
+
+  useEffect(() => {
+    void getRuntimeHealth().then(setHealth).catch(() => setHealth(null));
+  }, []);
+
+  const modules: Array<{ title: string; text: string; target: Section; metric: string; icon: string }> = [
+    { title: "Рассылки", text: "Structured text · CTA · image brief", target: "newsletter", metric: "OpenAI", icon: "▤" },
+    { title: "Подкасты", text: "Script · TTS · AI voice", target: "podcast", metric: "MP3", icon: "◉" },
+    { title: "Видео", text: "Avatar · voice · Video Agent", target: "avatar", metric: "HeyGen v3", icon: "▶" },
+    { title: "Storyboard", text: "Persona · Scene · continuity", target: "storyboard", metric: "F-01 / M-01", icon: "▧" },
+  ];
+
+  return (
+    <div className="studio-grid">
+      <section className="card studio-dialog">
+        <PanelHeader
+          title={visualMode === "strontium" ? "Диалог с Strontium" : "Диалог с управляющей моделью ALina"}
+          text="Твой AI-компаньон для идей, сюжета, анализа и реализации."
+        />
+        <div className="dialog-thread">
+          <div className="dialog-message user-message">
+            <span className="dialog-avatar">{visualMode === "strontium" ? "M" : "A"}</span>
+            <p>Как лучше развить этого персонажа? Он ищет своё место в новом мире, но должен принять решение.</p>
+          </div>
+          <div className="dialog-message ai-message">
+            <span className="dialog-avatar ai">{visualMode === "strontium" ? "S" : "AI"}</span>
+            <div>
+              <p>Вижу несколько сильных направлений для развития:</p>
+              <ol>
+                <li>Прошлое возвращается через незакрытый конфликт.</li>
+                <li>Новый мир требует принять новые правила.</li>
+                <li>Выбор героя меняет отношения и дальнейший сюжет.</li>
+              </ol>
+            </div>
+          </div>
+        </div>
+        <div className="suggestions">
+          <button onClick={() => onNavigate("storyboard")}>Идеи для сюжета</button>
+          <button onClick={() => onNavigate("storyboard")}>Развитие персонажа</button>
+          <button onClick={() => onNavigate("newsletter")}>Сделать анонс</button>
+        </div>
+        <div className="fake-input"><span>Напиши сообщение...</span><b>➤</b></div>
+      </section>
+
+      <section className="card knowledge-card">
+        <PanelHeader title="База знаний и RAG" text="Подключённые источники и трассируемый research boundary." />
+        <div className="source-list">
+          <SourceRow title="Проекты и сценарии" value="ResearchPacket" ready />
+          <SourceRow title="Persona Registry" value="F-01 / M-01" ready />
+          <SourceRow title="Scene Registry" value="Typed SceneSpec" ready />
+          <SourceRow title="Provider contracts" value="Normalized DTO" ready />
+        </div>
+        <div className="metrics-row">
+          <Metric title="Контракты" value="v1.0" />
+          <Metric title="Research" value="Protected" />
+          <Metric title="RAG" value="Ready" />
+        </div>
+      </section>
+
+      <section className="card prompt-card">
+        <PanelHeader title="Prompt / Persona" text="Версионированные промпты и единая модель персонажей." />
+        <div className="slider-list">
+          <FakeSlider label="Креативность" value="80%" width="80%" />
+          <FakeSlider label="Логичность" value="72%" width="72%" />
+          <FakeSlider label="Детальность" value="84%" width="84%" />
+          <FakeSlider label="Строгость" value="40%" width="40%" />
+        </div>
+        <div className="persona-mini-grid">
+          <button onClick={() => onNavigate("storyboard")}>F-01 · Ведущая</button>
+          <button onClick={() => onNavigate("storyboard")}>M-01 · Эксперт</button>
+        </div>
+      </section>
+
+      <section className="card security-card">
+        <PanelHeader title="Безопасность" text="Server-side providers и закрытые secrets." />
+        <SecurityRow label="OpenAI key" ready={Boolean(health?.openai.configured)} />
+        <SecurityRow label="HeyGen key" ready={Boolean(health?.heygen.configured)} />
+        <SecurityRow label="Browser secrets" ready />
+        <SecurityRow label="Provider DTO boundary" ready />
+        <SecurityRow label="Bounded polling" ready />
+      </section>
+
+      <section className="card modules-card">
+        <PanelHeader title="Контент и подборки" text="Рабочие внешние интеграции DZ-18." />
+        <div className="module-grid">
+          {modules.map((module) => (
+            <button key={module.title} className="module-tile" onClick={() => onNavigate(module.target)}>
+              <span className="module-icon">{module.icon}</span>
+              <strong>{module.title}</strong>
+              <p>{module.text}</p>
+              <small>{module.metric}</small>
+            </button>
+          ))}
+        </div>
+      </section>
+
+      <section className="card assistant-card">
+        <PanelHeader title="Сюжетный ассистент" text="Переход от идеи к сценам и медиапроизводству." />
+        <div className="assistant-steps">
+          <button onClick={() => onNavigate("storyboard")}><b>1</b> Идея и концепт</button>
+          <button onClick={() => onNavigate("storyboard")}><b>2</b> Сцены и персонажи</button>
+          <button onClick={() => onNavigate("podcast")}><b>3</b> Голос и подкаст</button>
+          <button onClick={() => onNavigate("avatar")}><b>4</b> Видео-аватар</button>
+        </div>
+      </section>
+
+      <section className="card analytics-card">
+        <PanelHeader title="Отчёт о творчестве" text="Состояние текущего DZ-18 baseline." />
+        <div className="analytics-metrics">
+          <Metric title="Модулей" value="5" />
+          <Metric title="Provider tests" value="8/8" />
+          <Metric title="Промптов" value="2" />
+          <Metric title="Deploy" value="Ready" />
+        </div>
+        <div className="bars">
+          {[42, 65, 54, 78, 61, 88, 72].map((height, index) => (
+            <i key={index} style={{ height: `${height}%` }} />
+          ))}
+        </div>
+      </section>
+
+      <section className="card memory-card">
+        <PanelHeader title="Память персонажей" text="Identity, continuity и контекстные состояния." />
+        <div className="memory-people">
+          <div><span>F-01</span><strong>Алина</strong><small>Face Lock ✓</small></div>
+          <div><span>M-01</span><strong>Михаил</strong><small>Face Lock ✓</small></div>
+          <button className="add-person" onClick={() => onNavigate("storyboard")}>＋<small>Новый</small></button>
+        </div>
+      </section>
+    </div>
+  );
+}
+
+function SourceRow({ title, value, ready }: { title: string; value: string; ready: boolean }) {
+  return <div className="source-row"><span>▣</span><div><strong>{title}</strong><small>{value}</small></div><b>{ready ? "● Активно" : "○ Ожидание"}</b></div>;
+}
+
+function Metric({ title, value }: { title: string; value: string }) {
+  return <div className="metric"><small>{title}</small><strong>{value}</strong></div>;
+}
+
+function FakeSlider({ label, value, width }: { label: string; value: string; width: string }) {
+  return <div className="fake-slider"><span>{label}</span><i><b style={{ width }} /></i><strong>{value}</strong></div>;
+}
+
+function SecurityRow({ label, ready }: { label: string; ready: boolean }) {
+  return <div className="security-row"><span className={ready ? "security-dot ok" : "security-dot"}>●</span><strong>{label}</strong><small>{ready ? "Активно" : "Не настроено"}</small></div>;
 }
 
 function PanelHeader({ title, text }: { title: string; text: string }) {
