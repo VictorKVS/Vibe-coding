@@ -173,3 +173,34 @@ Docker build сам выполняет `npm test` и `npm run build`, поэто
 https://father-content-generator-dz-18-5urk89.v2.appdeploy.ai/
 
 Deployment status: ready. AppDeploy QA: frontend/network/backend errors = 0.
+
+
+## Dual-mode UI
+
+Интерфейс собран как единая Creative Admin Studio с двумя визуальными режимами:
+
+- **STRONTIUM** — тёмный cyber/admin режим: power, speed, results; сине-оранжевые акценты, плотная инженерная панель;
+- **ALINA** — светлый creative/editorial режим: книги, комиксы, персонажи и сюжетная работа; красно-синие акценты.
+
+Оба режима используют один и тот же функциональный слой:
+
+```text
+AI Центр
+├── Рассылки
+├── Подкасты
+├── Видео-аватар
+├── Comic / Storyboard
+└── Диагностика
+```
+
+AI Центр объединяет:
+- диалог с управляющей моделью;
+- Knowledge / RAG boundary;
+- Prompt / Persona;
+- Security status;
+- Content modules;
+- Story assistant;
+- Creativity analytics;
+- Character memory.
+
+Переключение ALINA / STRONTIUM меняет только presentation layer и не раздваивает бизнес-логику.
