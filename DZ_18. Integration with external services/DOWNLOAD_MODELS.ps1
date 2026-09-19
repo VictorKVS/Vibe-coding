@@ -13,9 +13,13 @@ Write-Host "Tier: $Tier"
 Write-Host "Target: $ModelRoot"
 Write-Host ""
 
-if (-not (Get-Command huggingface-cli -ErrorAction SilentlyContinue)) {
-    Write-Host "[setup] Installing huggingface_hub CLI..." -ForegroundColor Yellow
-    python -m pip install -U "huggingface_hub[cli]"
+if (-not (Get-Command hf -ErrorAction SilentlyContinue)) {
+    Write-Host "[setup] Installing Hugging Face hf CLI..." -ForegroundColor Yellow
+    powershell -ExecutionPolicy ByPass -Command "irm https://hf.co/cli/install.ps1 | iex"
+}
+
+if (-not (Get-Command hf -ErrorAction SilentlyContinue)) {
+    throw "Hugging Face hf CLI was not found after installation. Reopen PowerShell and run the script again."
 }
 
 New-Item -ItemType Directory -Force -Path $ModelRoot | Out-Null
@@ -85,7 +89,7 @@ foreach ($model in $models) {
       $args += @("--include", $model.include)
     }
 
-    huggingface-cli @args
+    hf @args
 }
 
 Write-Host ""
