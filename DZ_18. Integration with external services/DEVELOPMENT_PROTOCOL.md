@@ -1049,3 +1049,88 @@ The goal is to reconstruct the exact historical pipeline: checkpoint, adapter/Lo
 Added `RECOVER_PERSONA_PROVENANCE.ps1`.
 
 The script is read-only toward legacy/runtime assets. It stores extracted evidence under `benchmarks/persona_provenance`.
+
+
+---
+
+## 21. Development log — 2026-09-20 — Historical persona workflow identified
+
+### Evidence
+
+Provenance recovery produced a decisive split between two historical paths.
+
+#### A. `ages` and `emotions` PNG outputs
+
+Embedded ComfyUI prompt metadata references only the basic SDXL generation chain:
+
+- `sd_xl_base_1.0.safetensors`;
+- `CheckpointLoaderSimple`;
+- `KSampler`;
+- `VAEDecode`;
+- seed/VAE data.
+
+No IP-Adapter, InstantID, ReActor, FaceID or ControlNet identity nodes were present in the extracted prompt metadata.
+
+Interpretation: these outputs are useful historical generation samples, but they are not sufficient evidence of a stable identity-preservation workflow.
+
+#### B. MindForge `studio_character_v1.json`
+
+This workflow explicitly references:
+
+- `sd_xl_base_1.0.safetensors`;
+- `CLIP-ViT-H-14-laion2B-s32B-b79K.safetensors`;
+- `ip-adapter-plus-face_sdxl_vit-h.bin`;
+- `controlnet-openpose-sdxl.safetensors`;
+- `IPAdapterAdvanced`;
+- `InstantIDFaceAnalysis`;
+- `ControlNetApplyAdvanced`;
+- `KSampler`.
+
+This is the strongest recovered candidate for the historical "one persona → many poses/scenes" architecture.
+
+#### C. MindForge `web_hero_v1.json`
+
+This workflow explicitly references:
+
+- SDXL Base;
+- CLIP Vision ViT-H;
+- `ip-adapter-plus_sdxl_vit-h.bin`;
+- `IPAdapterAdvanced`;
+- `KSampler`.
+
+Interpretation: this appears to be a lighter identity/style-preservation path for hero/site imagery without the full pose stack.
+
+### Critical compatibility finding
+
+The historical workflow names `.bin` IP-Adapter assets, while the active ComfyUI tree contains a non-zero approximately 808.3 MB `ip-adapter-plus-face_sdxl_vit-h.safetensors` in the correct `models/ipadapter` directory.
+
+Therefore the recovered workflow should not be executed blindly. It first needs a compatibility audit that resolves:
+
+- whether the historical `.bin` reference has a valid current equivalent;
+- whether `controlnet-openpose-sdxl.safetensors` is present and non-zero;
+- whether the required InstantID node/provider is installed in the active ComfyUI;
+- whether node names/API schemas still match the current plugin versions.
+
+### Decision
+
+Decision: `MIGRATE CANDIDATE`.
+
+`studio_character_v1.json` is promoted to the primary recovery target.
+
+The `ages` / `emotions` PNG series remains useful as visual history but is not accepted as proof of identity consistency.
+
+### Change
+
+Added `CHECK_PERSONA_WORKFLOW_COMPAT.ps1`.
+
+The script performs a read-only filesystem compatibility audit for the recovered MindForge workflows and reports:
+
+- referenced nodes;
+- referenced model/assets;
+- FOUND / ZERO / MISSING status;
+- compatible alternate filename candidates;
+- installed custom-node hints.
+
+### Next step
+
+Run the compatibility audit. If the required active components are present, create a migrated `studio_character_v2` workflow using current model filenames and validate it with one controlled reference image before any new downloads.
