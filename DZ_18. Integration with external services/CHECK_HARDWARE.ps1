@@ -48,7 +48,8 @@ else {
 Write-Host ""
 Write-Host "[PyTorch / CUDA]" -ForegroundColor Yellow
 if (Get-Command python -ErrorAction SilentlyContinue) {
-  python -c @'
+  $pyTorchCheck = Join-Path $env:TEMP "father_torch_check.py"
+  @'
 try:
     import torch
     print("torch:", torch.__version__)
@@ -60,24 +61,35 @@ try:
         print("vram_gb:", round(props.total_memory / 1024**3, 2))
 except Exception as e:
     print("torch_check_error:", repr(e))
-'@
+'@ | Set-Content -Path $pyTorchCheck -Encoding UTF8
+  python $pyTorchCheck
+  Remove-Item $pyTorchCheck -Force -ErrorAction SilentlyContinue
 }
 
 Write-Host ""
 Write-Host "[llama.cpp]" -ForegroundColor Yellow
 
-$commands = @("llama-cli", "llama-server", "main")
-foreach ($cmd in $commands) {
-  $found = Get-Command $cmd -ErrorAction SilentlyContinue
+$llamaCommands = @("llama-cli", "llama-server", "llama")
+$llamaFound = @()
+
+foreach ($cmd in $llamaCommands) {
+  $found = Get-Command $cmd -CommandType Application -ErrorAction SilentlyContinue
   if ($found) {
+    $llamaFound += $found
     Write-Host ("{0}: {1}" -f $cmd, $found.Source)
   }
 }
 
-if (-not (Get-Command llama-cli -ErrorAction SilentlyContinue) -and
-    -not (Get-Command llama-server -ErrorAction SilentlyContinue) -and
-    -not (Get-Command main -ErrorAction SilentlyContinue)) {
+if ($llamaFound.Count -eq 0) {
   Write-Host "llama.cpp executable: not found in PATH"
+}
+else {
+  $cli = Get-Command llama-cli -CommandType Application -ErrorAction SilentlyContinue
+  if ($cli) {
+    Write-Host ""
+    Write-Host "[llama.cpp devices]" -ForegroundColor Yellow
+    & $cli.Source --list-devices 2>&1
+  }
 }
 
 Write-Host ""
