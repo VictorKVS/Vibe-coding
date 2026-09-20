@@ -1,6 +1,6 @@
 param(
   [int]$Context = 4096,
-  [int]$Predict = 128,
+  [int]$Predict = 0,
   [int]$GpuLayers = 999
 )
 
@@ -10,9 +10,9 @@ $outDir = Join-Path $PSScriptRoot ("benchmarks\" + $timestamp)
 New-Item -ItemType Directory -Force -Path $outDir | Out-Null
 
 $cases = @(
-  @{ model = "3b"; prompt = "Классифицируй запрос одним словом: Пользователь просит кратко переписать текст. Категория:" },
-  @{ model = "8b"; prompt = "На русском языке предложи три варианта развития персонажа, который впервые оказался в незнакомом городе. Кратко и без лишней воды." },
-  @{ model = "14b"; prompt = "Ты Prompt Engineer. Найди три риска в системном промпте: Отвечай уверенно, даже если данных недостаточно. Затем предложи безопасную улучшенную формулировку." }
+  @{ model = "3b"; promptFile = "router_ru.txt"; predict = 160 },
+  @{ model = "8b"; promptFile = "creative_ru.txt"; predict = 256 },
+  @{ model = "14b"; promptFile = "prompt_engineer_ru.txt"; predict = 512 }
 )
 
 $summary = @()
@@ -24,10 +24,30 @@ foreach ($case in $cases) {
   $start = Get-Date
 
   $runner = Join-Path $PSScriptRoot "RUN_MODEL_SMOKE.ps1"
-  & $runner -Model $case.model -Prompt $case.prompt -Context $Context -Predict $Predict -GpuLayers $GpuLayers *>&1 | Tee-Object -FilePath $log
+  $promptPath = Join-Path $PSScriptRoot ("benchmarks\prompts\" + $case.promptFile)
+  $tokenBudget = if ($Predict -gt 0) { $Predict } else { $case.predict }
+
+  & $runner -Model $case.model -PromptFile $promptPath -Context $Context -Predict $tokenBudget -GpuLayers $GpuLayers *>&1 | Tee-Object -FilePath $log
 
   $elapsed = ((Get-Date) - $start).TotalSeconds
-  $summary += [PSCustomObject]@{ Model = $case.model; Seconds = [math]::Round($elapsed, 2); Log = $log }
+
+  $logText = Get-Content -Raw -Encoding UTF8 $log
+  $promptTps = $null
+  $generationTps = $null
+
+  if ($logText -match 'Prompt:\s*([0-9.]+)\s*t/s\s*\|\s*Generation:\s*([0-9.]+)\s*t/s') {
+    $promptTps = [double]::Parse($Matches[1], [Globalization.CultureInfo]::InvariantCulture)
+    $generationTps = [double]::Parse($Matches[2], [Globalization.CultureInfo]::InvariantCulture)
+  }
+
+  $summary += [PSCustomObject]@{
+    Model = $case.model
+    Predict = $tokenBudget
+    Seconds = [math]::Round($elapsed, 2)
+    PromptTps = $promptTps
+    GenerationTps = $generationTps
+    Log = $log
+  }
 }
 
 $csv = Join-Path $outDir "summary.csv"
