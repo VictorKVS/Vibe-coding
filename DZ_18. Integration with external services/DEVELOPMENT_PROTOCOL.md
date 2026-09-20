@@ -986,3 +986,66 @@ P0.
 ### Next step
 
 Run the concise evidence audit, preserve its log, then select one historical workflow/output pair for reproduction.
+
+
+---
+
+## 20. Development log — 2026-09-20 — Persona evidence narrowed to active ComfyUI
+
+### Evidence
+
+The concise evidence audit found a strong active-runtime baseline in the primary ComfyUI tree.
+
+Validated identity assets:
+
+- CLIP Vision ViT-H: approximately 3.76 GB, non-zero;
+- SDXL IP-Adapter Plus Face safetensors: approximately 808.3 MB, non-zero;
+- a misplaced/incomplete 15.3 MB IP-Adapter-named file still exists under `models/checkpoints`;
+- zero-length placeholder copies also exist and must not be treated as valid models.
+
+Validated components in the active ComfyUI tree:
+
+- `ComfyUI_IPAdapter_plus`;
+- `ComfyUI_Controlnet_Aux`;
+- AnimateDiff code.
+
+Validated historical outputs:
+
+- `output/ages/face_*.png`;
+- `output/emotions/face_*.png`.
+
+The age series contains multiple generated images and a `было` archive/copy set. The repeated byte sizes between some files suggest that some files may be copies/moves rather than fresh generations; this must be verified from embedded metadata and hashes before interpreting them as separate benchmark samples.
+
+MindForge Studio contains orchestration/workflow candidates including:
+
+- `workflows/studio_character_v1.json`;
+- `workflows/web_hero_v1.json`.
+
+It does not itself expose the same model/runtime asset tree, which is consistent with treating MindForge as an orchestration/product layer over a separate generation runtime.
+
+### Interpretation
+
+The earlier assumption that a new IP-Adapter weight must be downloaded is no longer valid. A non-zero approximately 808 MB SDXL Plus Face adapter already exists in the correct active `models/ipadapter` location.
+
+Decision: `KEEP / VERIFY`.
+
+Do not download another identity adapter until the existing 808 MB adapter is load-tested.
+
+### Next forensic step
+
+Recover provenance from:
+
+- embedded ComfyUI PNG metadata in one age output;
+- embedded ComfyUI PNG metadata in one emotion output;
+- `workflow_api.json`;
+- `simple_generation.json`;
+- MindForge `studio_character_v1.json`;
+- MindForge `web_hero_v1.json`.
+
+The goal is to reconstruct the exact historical pipeline: checkpoint, adapter/LoRA, reference input, prompt, seed, sampler, dimensions and identity-control nodes.
+
+### Change
+
+Added `RECOVER_PERSONA_PROVENANCE.ps1`.
+
+The script is read-only toward legacy/runtime assets. It stores extracted evidence under `benchmarks/persona_provenance`.
