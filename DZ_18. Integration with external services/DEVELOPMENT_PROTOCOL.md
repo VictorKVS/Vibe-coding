@@ -1471,3 +1471,97 @@ and auto-publishes both through the guarded evidence publisher.
 Decision: `SCHEMA-FIRST MIGRATION`.
 
 Do not hand-author the runnable v2 graph until the live runtime schema is captured and reviewed.
+
+
+---
+
+## 27. Development log — 2026-09-20 — Runnable Persona Identity MVP assembled from live schema
+
+### Evidence
+
+The published live runtime schema confirms exact current ComfyUI contracts for the Identity MVP:
+
+- `CheckpointLoaderSimple` outputs MODEL / CLIP / VAE;
+- `CLIPVisionLoader` outputs CLIP_VISION;
+- `IPAdapterModelLoader` loads both available Plus Face adapter variants;
+- `IPAdapterAdvanced` accepts MODEL + IPADAPTER + IMAGE and optional CLIP_VISION;
+- `LoadImage` exposes `reference_face.jpg`;
+- standard CLIP text encoding, latent, KSampler, VAE decode and SaveImage nodes are registered.
+
+### Recovered parameter baseline
+
+The first runnable migration keeps the historical MindForge values where they remain valid:
+
+- checkpoint: `sd_xl_base_1.0.safetensors`;
+- CLIP Vision: `CLIP-ViT-H-14-laion2B-s32B-b79K.safetensors`;
+- IP-Adapter: `ip-adapter-plus-face_sdxl_vit-h.bin`;
+- adapter weight: `0.45`;
+- weight type: `linear`;
+- combine embeds: `concat`;
+- embeds scaling: `V only`;
+- adapter range: `0.0 → 1.0`;
+- sampler: `dpmpp_2m`;
+- scheduler: `karras`;
+- steps: `40`;
+- CFG: `7.0`;
+- denoise: `1.0`;
+- resolution: `1024 × 1024`;
+- fixed smoke seed: `424242`.
+
+### Change
+
+Added runnable ComfyUI API prompt:
+
+`workflows/persona/studio_character_v2_identity_smoke_bin.json`
+
+Graph:
+
+```text
+CheckpointLoaderSimple
+  ├── CLIP -> positive / negative conditioning
+  ├── VAE -> VAEDecode
+  └── MODEL
+        ↓
+IPAdapterAdvanced
+  ↑        ↑        ↑
+IPADAPTER  IMAGE   CLIP_VISION
+  ↓
+KSampler
+  ↓
+VAEDecode
+  ↓
+SaveImage
+```
+
+Reference input:
+
+`reference_face.jpg`
+
+Output prefix:
+
+`FATHER/persona/identity_smoke_bin`
+
+### Runner
+
+Added `RUN_PERSONA_IDENTITY_SMOKE.ps1`.
+
+The runner:
+
+- checks the live ComfyUI API;
+- submits the versioned workflow to `/prompt`;
+- waits for execution history;
+- captures wall-clock duration and ComfyUI output metadata;
+- writes evidence under `benchmarks/persona_smoke`;
+- auto-publishes the textual execution evidence to GitHub.
+
+### Decision
+
+Decision: `RUN FIRST CHAMPION SMOKE`.
+
+The historical `.bin` adapter is the champion/reproduction baseline because it is the adapter referenced by the recovered MindForge workflow.
+
+Do not compare against the safetensors challenger until this baseline executes successfully.
+
+### Next step
+
+Run the identity smoke against the live ComfyUI runtime. Review execution evidence and the produced image before changing any parameter.
