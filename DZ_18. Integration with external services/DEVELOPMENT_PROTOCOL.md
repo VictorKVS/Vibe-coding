@@ -1412,3 +1412,62 @@ Do not auto-publish generated images, model weights, secrets, `.env`, raw creden
 Decision: `KEEP`.
 
 This becomes the standard evidence handoff mechanism for FATHER development.
+
+
+---
+
+## 26. Development log — 2026-09-20 — GitHub evidence review exposed manifest/inspector gap
+
+### Evidence review
+
+The automatically published files were successfully read from GitHub.
+
+`studio_character_v1.normalized.json` contains a compact MindForge persona manifest with:
+
+- checkpoint: `sd_xl_base_1.0.safetensors`;
+- identity adapter: `IPAdapterAdvanced`;
+- CLIP Vision ViT-H;
+- IP-Adapter Plus Face;
+- optional InstantID face analysis;
+- optional ControlNet/OpenPose stage;
+- sampler: DPM++ 2M, Karras, 40 steps, CFG 7.0;
+- IP-Adapter weight 0.45, linear, full 0.0→1.0 range;
+- ControlNet strength 0.65, active 0.0→0.85.
+
+The manifest has explicit high-level connections:
+
+```text
+checkpoint.model
+  -> ipadapter.model
+  -> controlnet.model
+  -> sampler.model
+```
+
+However, this is not a complete runnable ComfyUI API prompt. It omits several execution-critical inputs such as positive/negative conditioning, latent/image input, reference image wiring, VAE decode/save wiring and concrete node link tuples.
+
+### Inspector defect
+
+`studio_character_v1.nodes.txt` showed only `NODE nodes: <unknown>` because the inspector supported a top-level node map and a `nodes` list, but not a `nodes` dictionary.
+
+Decision: `REVISE`.
+
+The inspector was corrected to support dictionary-based MindForge manifests.
+
+### Next engineering requirement
+
+Before generating `studio_character_v2_identity_smoke`, capture the **live ComfyUI schemas** for the exact nodes we intend to use. This avoids inventing required input names or old plugin API shapes.
+
+Added `CAPTURE_PERSONA_RUNTIME_SCHEMA.ps1`.
+
+It queries live `/object_info`, extracts only Persona-relevant nodes, writes:
+
+- `benchmarks/persona_runtime/persona_runtime_schema.json`;
+- `benchmarks/persona_runtime/persona_runtime_schema.txt`;
+
+and auto-publishes both through the guarded evidence publisher.
+
+### Decision
+
+Decision: `SCHEMA-FIRST MIGRATION`.
+
+Do not hand-author the runnable v2 graph until the live runtime schema is captured and reviewed.
