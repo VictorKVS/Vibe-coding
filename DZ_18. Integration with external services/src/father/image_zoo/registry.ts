@@ -3,6 +3,7 @@ import type { ImageModelSpec } from "./types";
 export const imageModelRegistry: ImageModelSpec[] = [
   {
     id: "IMG-JUGGERNAUT-XL-V8",
+    capabilities: ["portrait", "full_body", "fashion", "swimwear", "adult_artistic_nude", "anatomy_reference", "identity_consistency"],
     displayName: "JuggernautXL v8 Rundiffusion",
     kind: "text_to_image",
     tier: "standard",
@@ -26,6 +27,7 @@ export const imageModelRegistry: ImageModelSpec[] = [
   },
   {
     id: "IMG-REALVIS-XL-50",
+    capabilities: ["portrait", "full_body", "fashion", "swimwear", "adult_artistic_nude", "anatomy_reference"],
     displayName: "RealVisXL V5.0 Lightning",
     kind: "text_to_image",
     tier: "standard",
@@ -45,6 +47,7 @@ export const imageModelRegistry: ImageModelSpec[] = [
   },
   {
     id: "IMG-DREAMSHAPER-XL-LIGHTNING",
+    capabilities: ["portrait", "full_body", "fashion", "comic", "poster"],
     displayName: "DreamShaperXL Lightning",
     kind: "text_to_image",
     tier: "standard",
@@ -64,6 +67,7 @@ export const imageModelRegistry: ImageModelSpec[] = [
   },
   {
     id: "IMG-SDXL-BASE",
+    capabilities: ["portrait", "full_body", "fashion", "swimwear", "adult_artistic_nude", "anatomy_reference", "pose_control", "inpainting"],
     displayName: "Stable Diffusion XL Base 1.0",
     kind: "text_to_image",
     tier: "starter",
@@ -84,6 +88,7 @@ export const imageModelRegistry: ImageModelSpec[] = [
   },
   {
     id: "IMG-SDXL-MSPAINT-PORTRAIT",
+    capabilities: ["portrait", "expression_sheet"],
     displayName: "SDXL MSPaint Portrait",
     kind: "text_to_image",
     tier: "standard",
@@ -99,6 +104,7 @@ export const imageModelRegistry: ImageModelSpec[] = [
   },
   {
     id: "IMG-IP-ADAPTER-PLUS-FACE-SDXL",
+    capabilities: ["identity_consistency", "portrait", "expression_sheet"],
     displayName: "IP-Adapter Plus Face SDXL ViT-H",
     kind: "identity_adapter",
     tier: "standard",
@@ -122,6 +128,7 @@ export const imageModelRegistry: ImageModelSpec[] = [
   },
   {
     id: "IMG-SD15-INPAINT-GGUF",
+    capabilities: ["inpainting"],
     displayName: "Stable Diffusion 1.5 Inpainting Q8",
     kind: "inpainting",
     tier: "starter",
@@ -141,6 +148,7 @@ export const imageModelRegistry: ImageModelSpec[] = [
   },
   {
     id: "IMG-ICLIGHT-SD15",
+    capabilities: ["relighting"],
     displayName: "IC-Light SD1.5",
     kind: "lighting",
     tier: "standard",
@@ -160,6 +168,7 @@ export const imageModelRegistry: ImageModelSpec[] = [
   },
   {
     id: "IMG-BODY-POSE-CONTROL",
+    capabilities: ["pose_control", "full_body"],
     displayName: "Body Pose Model",
     kind: "control_adapter",
     tier: "starter",
