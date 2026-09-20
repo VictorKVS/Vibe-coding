@@ -1565,3 +1565,62 @@ Do not compare against the safetensors challenger until this baseline executes s
 ### Next step
 
 Run the identity smoke against the live ComfyUI runtime. Review execution evidence and the produced image before changing any parameter.
+
+
+---
+
+## 28. Development log — 2026-09-20 — MindForge Telegram contour added to recovery scope
+
+### User correction
+
+MindForge Studio was not only an image/workflow orchestration layer. It also had a Telegram connection and a designed Telegram dialogue flow.
+
+### Architectural correction
+
+The recovered MindForge architecture must therefore be treated as at least two coupled contours:
+
+```text
+MindForge Studio
+  ├── Visual / Persona workflow
+  │     └── ComfyUI / identity / scene generation
+  │
+  └── Telegram interaction layer
+        ├── bot transport
+        ├── dialogue / state flow
+        ├── commands / callbacks / keyboards
+        └── handoff to generation/orchestration
+```
+
+This changes the recovery target from "recover a persona workflow" to "recover the persona workflow plus the original human interaction channel that invoked it."
+
+### Decision
+
+Decision: `RECOVER, DO NOT REBUILD YET`.
+
+Do not design a new Telegram bot/dialog until the historical MindForge implementation has been inventoried.
+
+### Change
+
+Added `AUDIT_MINDFORGE_TELEGRAM.ps1`.
+
+The audit:
+
+- scans the existing MindForge Studio tree read-only;
+- searches filenames and source/config content for Telegram/bot/dialog/state/webhook/polling/FSM patterns;
+- records file path, size, SHA-256, modification time and keyword matches;
+- stores only short secret-redacted excerpts in evidence;
+- never publishes raw tokens, credentials or `.env` content;
+- auto-publishes the evidence inventory to GitHub under `benchmarks/mindforge_telegram`.
+
+### Next step
+
+Run the Telegram recovery audit and review the published inventory. Then classify the historical Telegram pieces as:
+
+- transport;
+- dialogue/state machine;
+- UI/keyboard layer;
+- orchestration bridge;
+- secrets/config;
+- obsolete/duplicate code.
+
+Only after that decide what is migrated into the current FATHER platform.
