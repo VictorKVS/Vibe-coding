@@ -9,6 +9,12 @@ param(
 
 $ErrorActionPreference = "Stop"
 
+# Force UTF-8 end-to-end for Russian prompts and llama.cpp console output.
+[Console]::InputEncoding = [System.Text.UTF8Encoding]::new($false)
+[Console]::OutputEncoding = [System.Text.UTF8Encoding]::new($false)
+$OutputEncoding = [System.Text.UTF8Encoding]::new($false)
+try { chcp 65001 | Out-Null } catch {}
+
 function Find-LlamaCli {
   $cmd = Get-Command llama-cli -CommandType Application -ErrorAction SilentlyContinue
   if ($cmd) { return $cmd.Source }
