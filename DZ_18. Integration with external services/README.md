@@ -2,6 +2,16 @@
 
 Статус: `PUBLISHED / REAL-KEY SMOKE TEST NEXT`
 
+## Engineering protocol
+
+Канонический журнал инженерных решений и правил эксплуатации:
+
+- [DEVELOPMENT_PROTOCOL.md](./DEVELOPMENT_PROTOCOL.md) — production-first, reuse-first, capability/provider routing, cost guard, Persona R&D, Recipe Registry, observability, security, quality gates и ADR.
+- [REUSE_FIRST_PLAN.md](./REUSE_FIRST_PLAN.md) — восстановление и повторное использование старых MindForge/AUTOMATIC1111/ComfyUI контуров до новых загрузок.
+- [PRODUCTION_PERSONA_MEDIA_ENGINE_ROADMAP.md](./PRODUCTION_PERSONA_MEDIA_ENGINE_ROADMAP.md) — целевая production-архитектура Persona/Media Engine.
+
+Все значимые изменения должны фиксироваться в протоколе или в связанном evidence/benchmark-документе.
+
 ## Цель
 
 DZ-18 — самостоятельное приложение **FATHER Content Generator**. ALINA Analyst остаётся отдельным аналитическим bounded context и передаёт генератору только проверенный `ResearchPacket` через `shared/contracts`.
