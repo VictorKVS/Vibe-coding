@@ -65,7 +65,7 @@ if (Get-Command nvidia-smi -ErrorAction SilentlyContinue) {
 Write-Host ""
 Write-Host "[inference]" -ForegroundColor Yellow
 
-$args = @("-m", $gguf.FullName, "-ngl", "$GpuLayers", "-c", "$Context", "-n", "$Predict", "--temp", "0.2", "-p", $Prompt)
+$args = @("-m", $gguf.FullName, "-ngl", "$GpuLayers", "-c", "$Context", "-n", "$Predict", "--temp", "0.2", "--single-turn", "--show-timings", "-p", $Prompt)
 & $llama @args
 $exitCode = $LASTEXITCODE
 
