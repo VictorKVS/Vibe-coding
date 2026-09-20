@@ -26,8 +26,8 @@ $ggufs = @(
 
 $llama = $null
 
-foreach ($candidate in @("llama-cli","main")) {
-  $cmd = Get-Command $candidate -ErrorAction SilentlyContinue
+foreach ($candidate in @("llama-cli","llama")) {
+  $cmd = Get-Command $candidate -CommandType Application -ErrorAction SilentlyContinue
   if ($cmd) {
     $llama = $cmd.Source
     break
@@ -54,11 +54,15 @@ Write-Host ""
 Write-Host "[llama.cpp runtime]" -ForegroundColor Yellow
 
 if (-not $llama) {
-  Write-Host "SKIP: llama-cli/main is not installed or not in PATH." -ForegroundColor Yellow
+  Write-Host "SKIP: llama.cpp is not installed or not in PATH." -ForegroundColor Yellow
   Write-Host "The model weights are valid; only the runtime is missing."
 }
 else {
   Write-Host ("Found: " + $llama) -ForegroundColor Green
+  if (Get-Command llama-cli -CommandType Application -ErrorAction SilentlyContinue) {
+    Write-Host "Devices:" -ForegroundColor Yellow
+    llama-cli --list-devices 2>&1
+  }
   Write-Host "GGUF inference benchmark can be enabled next."
 }
 
@@ -70,7 +74,8 @@ if (-not (Get-Command python -ErrorAction SilentlyContinue)) {
   exit 1
 }
 
-python -c @'
+$pyRagCheck = Join-Path $env:TEMP "father_rag_check.py"
+@'
 mods = ["torch", "transformers", "sentence_transformers"]
 for name in mods:
     try:
@@ -78,7 +83,9 @@ for name in mods:
         print("OK ", name, getattr(module, "__version__", ""))
     except Exception as e:
         print("MISS", name, "-", str(e))
-'@
+'@ | Set-Content -Path $pyRagCheck -Encoding UTF8
+python $pyRagCheck
+Remove-Item $pyRagCheck -Force -ErrorAction SilentlyContinue
 
 Write-Host ""
 Write-Host "[RAG model folders]" -ForegroundColor Yellow
