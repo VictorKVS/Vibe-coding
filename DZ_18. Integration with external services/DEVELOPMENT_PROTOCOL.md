@@ -1196,3 +1196,42 @@ This reduces variables and avoids adding OpenPose/InstantID before their increme
 ### Next step
 
 Run `CHECK_PERSONA_RUNTIME.ps1`. If the current IP-Adapter node is registered and its existing model is visible, build a minimal identity smoke workflow before any new dependency installation.
+
+
+---
+
+## 23. Development log — 2026-09-20 — Persona runtime check blocked by stopped ComfyUI
+
+### Evidence
+
+`CHECK_PERSONA_RUNTIME.ps1` attempted to query the primary ComfyUI API at:
+
+```text
+http://127.0.0.1:8188
+```
+
+Result:
+
+```text
+[FAIL] ComfyUI runtime is not reachable at http://127.0.0.1:8188
+```
+
+### Interpretation
+
+This is not evidence of a broken Persona stack. It only shows that the primary ComfyUI runtime was not running at the time of the check.
+
+### Decision
+
+Decision: `NO CHANGE`.
+
+Do not install, repair or modify dependencies yet.
+
+### Next step
+
+Start the known primary ComfyUI source runtime from:
+
+```text
+G:\1\Прежде\1_izobraznie\ComfyUI
+```
+
+using the existing Python environment, verify port 8188, then rerun `CHECK_PERSONA_RUNTIME.ps1`.
