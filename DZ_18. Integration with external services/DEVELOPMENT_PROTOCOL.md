@@ -1624,3 +1624,86 @@ Run the Telegram recovery audit and review the published inventory. Then classif
 - obsolete/duplicate code.
 
 Only after that decide what is migrated into the current FATHER platform.
+
+
+---
+
+## 29. Development log — 2026-09-20 — First Persona Identity smoke passed
+
+### Execution evidence
+
+Two published execution records are now present.
+
+#### Cold execution
+
+Prompt:
+
+`e74a110a-2103-4c17-a2d8-8d48e7ea4044`
+
+Result:
+
+- status: `success`;
+- completed: `true`;
+- duration captured by runner: `382.12 s`;
+- ComfyUI console reported: `Prompt executed in 380.57 seconds`;
+- no nodes were served from cache;
+- 40 / 40 sampler steps completed;
+- output: `FATHER/persona/identity_smoke_bin_00001_.png`.
+
+This is the valid cold-run baseline for the recovered `.bin` IP-Adapter path.
+
+#### Warm/cached execution
+
+Prompt:
+
+`3a092546-fdeb-4383-ba6e-ab4775030da3`
+
+Result:
+
+- status: `success`;
+- completed: `true`;
+- runner duration: `2.01 s`;
+- all nodes `1..11` were reported under `execution_cached`;
+- output metadata points to the same `identity_smoke_bin_00001_.png`.
+
+This second record is a cache validation, not a second independent generation benchmark.
+
+### Runtime interpretation
+
+The live console confirms successful loading of:
+
+- SDXL text encoder;
+- CLIP Vision projection;
+- SDXL generation model;
+- VAE;
+- CUDA execution on the RTX 3060.
+
+The first runnable Persona Identity pipeline therefore passes the **execution gate**.
+
+### Quality gate status
+
+Execution success does not yet prove identity quality.
+
+The next gate requires visual comparison of:
+
+- `reference_face.jpg`;
+- `identity_smoke_bin_00001_.png`.
+
+### Change
+
+Added `PUBLISH_PERSONA_SMOKE_PREVIEW.ps1`.
+
+Because GitHub text connectors cannot reliably inspect binary PNG/JPEG repository files, the script:
+
+- builds a 1024×560 side-by-side JPEG preview of reference vs output;
+- records SHA-256, file sizes and dimensions;
+- converts the compact preview to Base64 text;
+- publishes only the Base64 preview and JSON manifest through the guarded evidence publisher.
+
+This allows remote engineering review of the actual visual result without publishing full model/runtime directories.
+
+### Decision
+
+Decision: `EXECUTION PASS / VISUAL QUALITY PENDING`.
+
+Do not start the safetensors challenger until the baseline image has passed or failed visual identity review.
