@@ -1,9 +1,10 @@
 param(
   [ValidateSet("3b","8b","14b")]
   [string]$Model = "3b",
-  [string]$Prompt = "Кратко объясни по-русски, чем Agent Zoo отличается от Model Zoo.",
+  [string]$Prompt = "",
+  [string]$PromptFile = "",
   [int]$Context = 4096,
-  [int]$Predict = 160,
+  [int]$Predict = 0,
   [int]$GpuLayers = 999
 )
 
@@ -34,12 +35,30 @@ function Find-LlamaCli {
 }
 
 $models = @{
-  "3b" = @{ name = "Ministral 3 3B Instruct Q4_K_M"; folder = "ministral-3b-instruct-q4" }
-  "8b" = @{ name = "Ministral 3 8B Instruct Q4_K_M"; folder = "ministral-8b-instruct-q4" }
-  "14b" = @{ name = "Ministral 3 14B Reasoning Q4_K_M"; folder = "ministral-14b-reasoning-q4" }
+  "3b" = @{ name = "Ministral 3 3B Instruct Q4_K_M"; folder = "ministral-3b-instruct-q4"; predict = 160 }
+  "8b" = @{ name = "Ministral 3 8B Instruct Q4_K_M"; folder = "ministral-8b-instruct-q4"; predict = 256 }
+  "14b" = @{ name = "Ministral 3 14B Reasoning Q4_K_M"; folder = "ministral-14b-reasoning-q4"; predict = 512 }
 }
 
 $spec = $models[$Model]
+
+if ($Predict -le 0) {
+  $Predict = $spec.predict
+}
+
+if ($PromptFile) {
+  if (-not (Test-Path $PromptFile)) {
+    throw "Prompt file not found: $PromptFile"
+  }
+  $Prompt = Get-Content -Raw -Encoding UTF8 $PromptFile
+}
+elseif (-not $Prompt) {
+  $defaultPromptFile = Join-Path $PSScriptRoot "benchmarks\prompts\smoke_ru.txt"
+  if (-not (Test-Path $defaultPromptFile)) {
+    throw "Default prompt file not found: $defaultPromptFile"
+  }
+  $Prompt = Get-Content -Raw -Encoding UTF8 $defaultPromptFile
+}
 $modelDir = Join-Path $PSScriptRoot ("models\" + $spec.folder)
 $gguf = Get-ChildItem $modelDir -File -Filter "*.gguf" -ErrorAction SilentlyContinue | Sort-Object Length -Descending | Select-Object -First 1
 
