@@ -1,0 +1,108 @@
+﻿[FOUND] CheckpointLoaderSimple
+  required ckpt_name: [{"value":["ip-adapter-plus-face_sdxl_vit-h.bin","juggernautXL_v8Rundiffusion.safetensors","sd_xl_base_1.0.safetensors"],"Count":3},{"tooltip":"The name of the checkpoint (model) to load."}]
+
+[FOUND] CLIPVisionLoader
+  required clip_name: {"value":["CLIP-ViT-H-14-laion2B-s32B-b79K.safetensors","ip-adapter-plus-face_sdxl_vit-h.bin","БУ\\CLIP-ViT-H-14-laion2B-s32B-b79K.safetensors"],"Count":3}
+
+[FOUND] IPAdapterModelLoader
+  required ipadapter_file: {"value":["ip-adapter-plus-face_sdxl_vit-h.bin","ip-adapter-plus-face_sdxl_vit-h.safetensors"],"Count":2}
+
+[FOUND] IPAdapterAdvanced
+  required model: "MODEL"
+  required ipadapter: "IPADAPTER"
+  required image: "IMAGE"
+  required weight: ["FLOAT",{"default":1.0,"min":-1,"max":5,"step":0.05}]
+  required weight_type: {"value":["linear","ease in","ease out","ease in-out","reverse in-out","weak input","weak output","weak middle","strong middle","style transfer","composition","strong style transfer","style and composition","style transfer precise","composition precise"],"Count":15}
+  required combine_embeds: {"value":["concat","add","subtract","average","norm average"],"Count":5}
+  required start_at: ["FLOAT",{"default":0.0,"min":0.0,"max":1.0,"step":0.001}]
+  required end_at: ["FLOAT",{"default":1.0,"min":0.0,"max":1.0,"step":0.001}]
+  required embeds_scaling: {"value":["V only","K+V","K+V w/ C penalty","K+mean(V) w/ C penalty"],"Count":4}
+  optional image_negative: "IMAGE"
+  optional attn_mask: "MASK"
+  optional clip_vision: "CLIP_VISION"
+
+[FOUND] IPAdapterUnifiedLoader
+  required model: "MODEL"
+  required preset: {"value":["LIGHT - SD1.5 only (low strength)","STANDARD (medium strength)","VIT-G (medium strength)","PLUS (high strength)","PLUS FACE (portraits)","FULL FACE - SD1.5 only (portraits stronger)"],"Count":6}
+  optional ipadapter: "IPADAPTER"
+
+[FOUND] IPAdapterUnifiedLoaderFaceID
+  required model: "MODEL"
+  required preset: {"value":["FACEID","FACEID PLUS - SD1.5 only","FACEID PLUS V2","FACEID PORTRAIT (style transfer)","FACEID PORTRAIT UNNORM - SDXL only (strong)"],"Count":5}
+  required lora_strength: ["FLOAT",{"default":0.6,"min":0,"max":1,"step":0.01}]
+  required provider: {"value":["CPU","CUDA","ROCM","DirectML","OpenVINO","CoreML"],"Count":6}
+  optional ipadapter: "IPADAPTER"
+
+[FOUND] IPAdapterFaceID
+  required model: "MODEL"
+  required ipadapter: "IPADAPTER"
+  required image: "IMAGE"
+  required weight: ["FLOAT",{"default":1.0,"min":-1,"max":3,"step":0.05}]
+  required weight_faceidv2: ["FLOAT",{"default":1.0,"min":-1,"max":5.0,"step":0.05}]
+  required weight_type: {"value":["linear","ease in","ease out","ease in-out","reverse in-out","weak input","weak output","weak middle","strong middle","style transfer","composition","strong style transfer","style and composition","style transfer precise","composition precise"],"Count":15}
+  required combine_embeds: {"value":["concat","add","subtract","average","norm average"],"Count":5}
+  required start_at: ["FLOAT",{"default":0.0,"min":0.0,"max":1.0,"step":0.001}]
+  required end_at: ["FLOAT",{"default":1.0,"min":0.0,"max":1.0,"step":0.001}]
+  required embeds_scaling: {"value":["V only","K+V","K+V w/ C penalty","K+mean(V) w/ C penalty"],"Count":4}
+  optional image_negative: "IMAGE"
+  optional attn_mask: "MASK"
+  optional clip_vision: "CLIP_VISION"
+  optional insightface: "INSIGHTFACE"
+
+[FOUND] IPAdapterInsightFaceLoader
+  required provider: {"value":["CPU","CUDA","ROCM"],"Count":3}
+  required model_name: {"value":["buffalo_l","antelopev2"],"Count":2}
+
+[FOUND] LoadImage
+  required image: [{"value":["example.png","reference_face.jpg"],"Count":2},{"image_upload":true}]
+
+[FOUND] CLIPTextEncode
+  required text: ["STRING",{"multiline":true,"dynamicPrompts":true,"tooltip":"The text to be encoded."}]
+  required clip: ["CLIP",{"tooltip":"The CLIP model used for encoding the text."}]
+
+[FOUND] EmptyLatentImage
+  required width: ["INT",{"default":512,"min":16,"max":16384,"step":8,"tooltip":"The width of the latent images in pixels."}]
+  required height: ["INT",{"default":512,"min":16,"max":16384,"step":8,"tooltip":"The height of the latent images in pixels."}]
+  required batch_size: ["INT",{"default":1,"min":1,"max":4096,"tooltip":"The number of latent images in the batch."}]
+
+[FOUND] KSampler
+  required model: ["MODEL",{"tooltip":"The model used for denoising the input latent."}]
+  required seed: ["INT",{"default":0,"min":0,"max":18446744073709551615,"control_after_generate":true,"tooltip":"The random seed used for creating the noise."}]
+  required steps: ["INT",{"default":20,"min":1,"max":10000,"tooltip":"The number of steps used in the denoising process."}]
+  required cfg: ["FLOAT",{"default":8.0,"min":0.0,"max":100.0,"step":0.1,"round":0.01,"tooltip":"The Classifier-Free Guidance scale balances creativity and adherence to the prompt. Higher values result in images more closely matching the prompt however too high values will negatively impact quality."}]
+  required sampler_name: [{"value":["euler","euler_cfg_pp","euler_ancestral","euler_ancestral_cfg_pp","heun","heunpp2","exp_heun_2_x0","exp_heun_2_x0_sde","dpm_2","dpm_2_ancestral","lms","dpm_fast","dpm_adaptive","dpmpp_2s_ancestral","dpmpp_2s_ancestral_cfg_pp","dpmpp_sde","dpmpp_sde_gpu","dpmpp_2m","dpmpp_2m_cfg_pp","dpmpp_2m_sde","dpmpp_2m_sde_gpu","dpmpp_2m_sde_heun","dpmpp_2m_sde_heun_gpu","dpmpp_3m_sde","dpmpp_3m_sde_gpu","ddpm","lcm","ipndm","ipndm_v","deis","res_multistep","res_multistep_cfg_pp","res_multistep_ancestral","res_multistep_ancestral_cfg_pp","gradient_estimation","gradient_estimation_cfg_pp","er_sde","seeds_2","seeds_3","sa_solver","sa_solver_pece","ddim","uni_pc","uni_pc_bh2"],"Count":44},{"tooltip":"The algorithm used when sampling, this can affect the quality, speed, and style of the generated output."}]
+  required scheduler: [{"value":["simple","sgm_uniform","karras","exponential","ddim_uniform","beta","normal","linear_quadratic","kl_optimal"],"Count":9},{"tooltip":"The scheduler controls how noise is gradually removed to form the image."}]
+  required positive: ["CONDITIONING",{"tooltip":"The conditioning describing the attributes you want to include in the image."}]
+  required negative: ["CONDITIONING",{"tooltip":"The conditioning describing the attributes you want to exclude from the image."}]
+  required latent_image: ["LATENT",{"tooltip":"The latent image to denoise."}]
+  required denoise: ["FLOAT",{"default":1.0,"min":0.0,"max":1.0,"step":0.01,"tooltip":"The amount of denoising applied, lower values will maintain the structure of the initial image allowing for image to image sampling."}]
+
+[FOUND] VAEDecode
+  required samples: ["LATENT",{"tooltip":"The latent to be decoded."}]
+  required vae: ["VAE",{"tooltip":"The VAE model used for decoding the latent."}]
+
+[FOUND] SaveImage
+  required images: ["IMAGE",{"tooltip":"The images to save."}]
+  required filename_prefix: ["STRING",{"default":"ComfyUI","tooltip":"The prefix for the file to save. This may include formatting information such as %date:yyyy-MM-dd% or %Empty Latent Image.width% to include values from nodes."}]
+
+[FOUND] ControlNetLoader
+  required control_net_name: {"value":[],"Count":0}
+
+[FOUND] ControlNetApplyAdvanced
+  required positive: "CONDITIONING"
+  required negative: "CONDITIONING"
+  required control_net: "CONTROL_NET"
+  required image: "IMAGE"
+  required strength: ["FLOAT",{"default":1.0,"min":0.0,"max":10.0,"step":0.01}]
+  required start_percent: ["FLOAT",{"default":0.0,"min":0.0,"max":1.0,"step":0.001}]
+  required end_percent: ["FLOAT",{"default":1.0,"min":0.0,"max":1.0,"step":0.001}]
+  optional vae: "VAE"
+
+[FOUND] OpenposePreprocessor
+  required image: "IMAGE"
+  optional detect_hand: [{"value":["enable","disable"],"Count":2},{"default":"enable"}]
+  optional detect_body: [{"value":["enable","disable"],"Count":2},{"default":"enable"}]
+  optional detect_face: [{"value":["enable","disable"],"Count":2},{"default":"enable"}]
+  optional resolution: ["INT",{"default":512,"min":64,"max":16384,"step":64}]
+  optional scale_stick_for_xinsr_cn: [{"value":["disable","enable"],"Count":2},{"default":"disable"}]
+
