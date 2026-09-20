@@ -184,4 +184,14 @@ if ($LASTEXITCODE -ne 0) {
 }
 
 Write-Host ""
+
+$publisher = Join-Path $repoRoot "PUBLISH_EVIDENCE.ps1"
+if (Test-Path -LiteralPath $publisher) {
+  Write-Host "[PUBLISH] Sending selected provenance evidence to GitHub..." -ForegroundColor Yellow
+  & $publisher -Paths @($outDir) -Message "evidence: publish persona provenance"
+} else {
+  Write-Host "[WARN] Evidence publisher not found. Files remain local only." -ForegroundColor DarkYellow
+}
+
+Write-Host ""
 Write-Host ("[done] Read-only provenance recovery complete. Evidence saved to: " + $outDir) -ForegroundColor Cyan
