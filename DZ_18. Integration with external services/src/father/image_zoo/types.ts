@@ -1,3 +1,19 @@
+export type ImageCapability =
+  | "portrait"
+  | "full_body"
+  | "fashion"
+  | "swimwear"
+  | "adult_artistic_nude"
+  | "anatomy_reference"
+  | "expression_sheet"
+  | "sticker_pack"
+  | "comic"
+  | "poster"
+  | "identity_consistency"
+  | "pose_control"
+  | "inpainting"
+  | "relighting";
+
 export type ImageModelKind =
   | "text_to_image"
   | "image_edit"
@@ -23,6 +39,7 @@ export interface ImageModelSpec {
   license: string;
   installed: boolean;
   enabledByDefault: boolean;
+  capabilities?: ImageCapability[];
   recommendedFor: string[];
   personaUse: string[];
   notes: string[];
