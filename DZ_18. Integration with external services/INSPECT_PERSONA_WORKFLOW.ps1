@@ -59,6 +59,8 @@ emit(f"[TYPE] {type(data).__name__}")
 if isinstance(data, dict):
     if all(isinstance(v, dict) and "class_type" in v for v in data.values()):
         nodes = data
+    elif "nodes" in data and isinstance(data["nodes"], dict):
+        nodes = data["nodes"]
     elif "nodes" in data and isinstance(data["nodes"], list):
         nodes = {str(n.get("id", i)): n for i, n in enumerate(data["nodes"])}
     else:
