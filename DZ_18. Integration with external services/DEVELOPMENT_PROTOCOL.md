@@ -1235,3 +1235,120 @@ G:\1\Прежде\1_izobraznie\ComfyUI
 ```
 
 using the existing Python environment, verify port 8188, then rerun `CHECK_PERSONA_RUNTIME.ps1`.
+
+
+---
+
+## 24. Development log — 2026-09-20 — Live ComfyUI persona runtime validated
+
+### Runtime result
+
+The primary ComfyUI runtime is reachable on `127.0.0.1:8188`.
+
+Validated live environment:
+
+- ComfyUI `0.16.3`;
+- Python `3.10.11`;
+- PyTorch `2.5.1+cu121`;
+- NVIDIA GeForce RTX 3060 12 GB;
+- approximately 11 GB VRAM free at idle during the check.
+
+### Required runtime nodes
+
+Registered:
+
+- `IPAdapterAdvanced`;
+- `ControlNetApplyAdvanced`;
+- `CheckpointLoaderSimple`;
+- `CLIPVisionLoader`;
+- `ControlNetLoader`.
+
+Not registered:
+
+- `InstantIDFaceAnalysis`.
+
+The runtime additionally exposes a rich current IP-Adapter stack including:
+
+- `IPAdapterFaceID`;
+- `IPAdapterUnifiedLoaderFaceID`;
+- `IPAdapterInsightFaceLoader`;
+- `IPAdapterPreciseComposition`;
+- `IPAdapterPreciseStyleTransfer`;
+- `IPAdapterRegionalConditioning`;
+- batch/tiled/weights/embeds variants.
+
+Pose preprocessors including `OpenposePreprocessor`, `DensePosePreprocessor`, MediaPipe face mesh and related pose nodes are registered.
+
+### Loader state
+
+`CheckpointLoaderSimple` exposes:
+
+- valid `sd_xl_base_1.0.safetensors`;
+- valid `juggernautXL_v8Rundiffusion.safetensors`;
+- an invalid/misplaced IP-Adapter-named file that must never be selected as a checkpoint.
+
+`CLIPVisionLoader` exposes:
+
+- valid CLIP ViT-H;
+- duplicate/backup entries;
+- an incorrectly placed IP-Adapter-named file that must never be selected as CLIP Vision.
+
+`IPAdapterModelLoader` exposes both:
+
+- `ip-adapter-plus-face_sdxl_vit-h.bin`;
+- `ip-adapter-plus-face_sdxl_vit-h.safetensors`.
+
+`ControlNetLoader` currently exposes no model choices.
+
+### Decision
+
+Decision: `IDENTITY MVP READY / POSE MODEL BLOCKED`.
+
+The live runtime is sufficient to build the first identity-preservation smoke test without any download.
+
+InstantID is not required for the first MVP because the current IP-Adapter stack already provides FaceID/InsightFace-capable nodes.
+
+Pose-controlled generation remains a second-stage task because no ControlNet model is currently exposed by `ControlNetLoader`.
+
+### Migration path
+
+Do not execute `studio_character_v1` unchanged.
+
+Create a reduced `studio_character_v2_identity_smoke` derived from the recovered workflow:
+
+```text
+SDXL Base
+  ↓
+CLIP Vision ViT-H
+  ↓
+existing IP-Adapter Plus Face
+  ↓
+reference image
+  ↓
+IPAdapterAdvanced
+  ↓
+KSampler
+  ↓
+VAE Decode
+  ↓
+SaveImage
+```
+
+Exclude for the first smoke:
+
+- `InstantIDFaceAnalysis`;
+- ControlNet/OpenPose model dependency.
+
+### Hygiene issue
+
+The active ComfyUI model directories contain duplicate/misplaced files that pollute loader choices.
+
+Decision: do not delete yet. After the first successful smoke, quarantine incorrect loader-path copies with hashes recorded so rollback remains possible.
+
+### Change
+
+Added `INSPECT_PERSONA_WORKFLOW.ps1` to print and normalize the exact recovered `studio_character_v1` node graph before generating the v2 migration.
+
+### Next step
+
+Inspect the historical node graph and inputs. Use the actual recovered wiring to build `studio_character_v2_identity_smoke` rather than inventing a new graph from memory.
