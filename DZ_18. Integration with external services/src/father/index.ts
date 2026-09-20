@@ -6,3 +6,4 @@ export * from "./model_zoo/types";
 export * from "./model_zoo/registry";
 export * from "./image_zoo/types";
 export * from "./image_zoo/registry";
+export * from "./model_zoo/router";
