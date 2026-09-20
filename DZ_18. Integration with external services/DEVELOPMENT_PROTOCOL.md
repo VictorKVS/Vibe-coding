@@ -1352,3 +1352,63 @@ Added `INSPECT_PERSONA_WORKFLOW.ps1` to print and normalize the exact recovered 
 ### Next step
 
 Inspect the historical node graph and inputs. Use the actual recovered wiring to build `studio_character_v2_identity_smoke` rather than inventing a new graph from memory.
+
+
+---
+
+## 25. Development log — 2026-09-20 — Evidence auto-publishing to GitHub
+
+### User requirement
+
+Generated diagnostic/evidence files that are useful for engineering analysis should be published to the active GitHub feature branch so they remain visible to the connected review workflow and are not trapped only on the local workstation.
+
+### Engineering decision
+
+Adopt controlled evidence publishing rather than unrestricted automatic `git add .`.
+
+Added `PUBLISH_EVIDENCE.ps1` with the following guardrails:
+
+- only files under `DZ_18. Integration with external services/benchmarks` are eligible;
+- only text/evidence extensions are auto-published: JSON, TXT, MD, CSV, YAML/YML;
+- files larger than 10 MB are skipped;
+- likely API keys/tokens/passwords/Bearer secrets are scanned and blocked;
+- models, images, binaries and runtime assets are not auto-published;
+- only explicitly selected evidence paths are staged/committed;
+- unrelated local/staged work is not intentionally included;
+- publishing occurs to the current branch;
+- a failed push does not delete local evidence or silently rewrite history.
+
+### Integrated scripts
+
+`INSPECT_PERSONA_WORKFLOW.ps1` now automatically publishes:
+
+- `benchmarks/persona_provenance/studio_character_v1.normalized.json`;
+- `benchmarks/persona_provenance/studio_character_v1.nodes.txt`.
+
+`RECOVER_PERSONA_PROVENANCE.ps1` now publishes eligible textual provenance evidence produced under:
+
+- `benchmarks/persona_provenance/`.
+
+### Operational rule
+
+From this point forward, new diagnostic scripts should follow the same pattern:
+
+```text
+generate evidence locally
+  ↓
+validate / redact / allowlist
+  ↓
+commit only evidence files
+  ↓
+push current feature branch
+  ↓
+analysis can read the evidence directly from GitHub
+```
+
+Do not auto-publish generated images, model weights, secrets, `.env`, raw credentials or large binary artifacts.
+
+### Decision
+
+Decision: `KEEP`.
+
+This becomes the standard evidence handoff mechanism for FATHER development.
