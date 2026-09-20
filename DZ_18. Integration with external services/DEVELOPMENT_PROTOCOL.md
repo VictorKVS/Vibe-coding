@@ -1134,3 +1134,65 @@ The script performs a read-only filesystem compatibility audit for the recovered
 ### Next step
 
 Run the compatibility audit. If the required active components are present, create a migrated `studio_character_v2` workflow using current model filenames and validate it with one controlled reference image before any new downloads.
+
+
+---
+
+## 22. Development log — 2026-09-20 — Persona workflow compatibility status
+
+### Compatibility result
+
+The recovered `studio_character_v1.json` is only partially compatible with the active ComfyUI runtime filesystem.
+
+Confirmed present:
+
+- `sd_xl_base_1.0.safetensors` — non-zero;
+- CLIP Vision ViT-H — non-zero;
+- `IPAdapterAdvanced` provider candidate via `ComfyUI_IPAdapter_plus`;
+- `ControlNetApplyAdvanced` provider candidate via the active ControlNet stack;
+- non-zero IP-Adapter Plus Face weights exist, including a large adapter file in the active image runtime.
+
+Confirmed missing or unresolved:
+
+- `controlnet-openpose-sdxl.safetensors` is not present;
+- no filesystem hint for a provider of `InstantIDFaceAnalysis`;
+- `web_hero_v1.json` references `ip-adapter-plus_sdxl_vit-h.bin`, which is not present by that exact name.
+
+### Important cleanup finding
+
+There are multiple duplicate/misplaced adapter/CLIP files across:
+
+- `models/checkpoints`;
+- `models/ipadapter`;
+- `models/clip_vision`;
+- a backup folder.
+
+Some are valid non-zero files, some are known-bad/misplaced historical copies.
+
+Decision: do not delete yet. First determine which exact files the live ComfyUI runtime exposes through `/object_info` and which nodes actually load.
+
+### Engineering decision
+
+Do not install OpenPose/InstantID yet.
+
+First test the live runtime itself. Filesystem presence is weaker evidence than successful runtime node registration.
+
+Added `CHECK_PERSONA_RUNTIME.ps1` to query the primary ComfyUI API and report:
+
+- whether ComfyUI is reachable;
+- whether `IPAdapterAdvanced`, `InstantIDFaceAnalysis`, `ControlNetApplyAdvanced` and core loader nodes are actually registered;
+- all runtime node names related to identity/pose;
+- model choices exposed by loader nodes where available.
+
+### Migration strategy
+
+Use two stages:
+
+1. **Identity MVP** — SDXL + CLIP Vision + existing IP-Adapter Face, no new downloads.
+2. **Pose-controlled Persona v2** — add/recover pose control only after identity MVP is proven.
+
+This reduces variables and avoids adding OpenPose/InstantID before their incremental value is measured.
+
+### Next step
+
+Run `CHECK_PERSONA_RUNTIME.ps1`. If the current IP-Adapter node is registered and its existing model is visible, build a minimal identity smoke workflow before any new dependency installation.
