@@ -113,4 +113,14 @@ if ($LASTEXITCODE -ne 0) {
 }
 
 Write-Host ""
+
+$publisher = Join-Path $repoRoot "PUBLISH_EVIDENCE.ps1"
+if (Test-Path -LiteralPath $publisher) {
+  Write-Host "[PUBLISH] Sending selected evidence files to GitHub..." -ForegroundColor Yellow
+  & $publisher -Paths @($outJson, $outTxt) -Message "evidence: publish persona workflow inspection"
+} else {
+  Write-Host "[WARN] Evidence publisher not found. Files remain local only." -ForegroundColor DarkYellow
+}
+
+Write-Host ""
 Write-Host "[done] Workflow inspection complete. No legacy/runtime files were modified." -ForegroundColor Cyan
