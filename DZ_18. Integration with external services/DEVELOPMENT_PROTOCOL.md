@@ -834,3 +834,77 @@ only then decide whether a new IP-Adapter download is necessary
 ```
 
 This is the current canonical path.
+
+
+---
+
+## 18. Development log — 2026-09-20 — Persona audit discovery failure
+
+### Task / hypothesis
+
+Run the read-only legacy persona audit to discover the previously working MindForge / AUTOMATIC1111 / ComfyUI identity pipeline.
+
+### Baseline
+
+The first execution printed only the audit header and final `[done]` line. No runtime root sections were emitted.
+
+### Root cause
+
+The original PowerShell script contained a hard-coded path with Cyrillic characters inside a UTF-8 source file. Windows PowerShell 5.1 is known in this project to misdecode UTF-8 script source without a BOM. As a result, every `Test-Path` check could evaluate against a corrupted path and silently skip all roots.
+
+A second engineering problem was also identified: the script treated "zero roots found" as a successful audit. This is unsafe diagnostic behavior because an empty result is materially different from "no interesting assets found."
+
+### Change
+
+`AUDIT_EXISTING_PERSONA.ps1` was changed to:
+
+- avoid hard-coding the Cyrillic parent directory;
+- discover the ASCII-named `1_izobraznie` root under `G:\1`;
+- print discovered roots and missing expected roots;
+- fail explicitly with a non-zero exit code if no image/runtime roots are found;
+- add a dedicated identity/model asset section for LoRA, IP-Adapter, InstantID, FaceID, ReActor, Headshot, Control/Pose and CLIP Vision artifacts;
+- remain read-only.
+
+### Evidence
+
+First run:
+
+```text
+FATHER Existing Persona Pipeline Audit
+======================================
+
+[done] Do not modify or delete anything yet.
+```
+
+Interpretation: the audit did not actually inspect any configured root.
+
+### Result
+
+Decision: `REVISE`.
+
+The audit script itself required correction before its output could be accepted as evidence about the legacy system.
+
+### Regression / side effects
+
+No project/runtime files are modified by the audit. The revised discovery adds lightweight directory enumeration under `G:\1` and recursive read-only inspection only after a valid runtime root is found.
+
+### What to improve
+
+Diagnostic scripts must distinguish:
+
+- target not found;
+- target found but empty;
+- target found with no matching assets;
+- successful evidence collection.
+
+### How to improve
+
+Adopt fail-loud discovery and explicit exit codes for all future inventory/diagnostic scripts.
+
+### Priority
+
+P0.
+
+### Next step
+
+Pull the corrected script, rerun the persona audit, preserve the log, then classify discovered assets/workflows as `KEEP / MIGRATE / RETIRE`.
