@@ -908,3 +908,81 @@ P0.
 ### Next step
 
 Pull the corrected script, rerun the persona audit, preserve the log, then classify discovered assets/workflows as `KEEP / MIGRATE / RETIRE`.
+
+
+---
+
+## 19. Development log — 2026-09-20 — Legacy persona audit produced first real evidence
+
+### Task / hypothesis
+
+Rerun the corrected persona audit and determine whether the old image stack already contains usable identity/persistence technology.
+
+### Evidence
+
+The corrected audit discovered four runtime roots:
+
+- legacy ComfyUI;
+- legacy AUTOMATIC1111;
+- active ComfyUI;
+- MindForge Studio.
+
+The legacy ComfyUI contains installed identity-related components including:
+
+- `ComfyUI_IPAdapter_plus`;
+- `ComfyUI_FaceAnalysis`;
+- `ComfyUI-ReActor`;
+- `ComfyUI_UltimateSDUpscale`;
+- AnimateDiff-related code.
+
+A previous output image named `BOOKCRAFT-lora-check_00001_.png` exists, proving that this legacy tree was used for at least one real generation/test workflow.
+
+Several model/LoRA files in the legacy tree are zero-length placeholders or incomplete files. Therefore file presence alone cannot be treated as evidence of a working model.
+
+### Interpretation
+
+The old stack is not empty and should not be replaced blindly.
+
+There is already a substantial identity toolchain candidate:
+
+```text
+reference / generated face
+  ↓
+FaceAnalysis / ReActor / IPAdapter candidate
+  ↓
+SDXL / SD generation
+  ↓
+upscale / refinement
+```
+
+However, the first audit output is too noisy to determine which exact identity strategy produced the earlier successful persona work. Plugin source files and examples dominate the listing.
+
+### Decision
+
+Decision: `KEEP FOR INVESTIGATION`.
+
+Do not download a new identity stack yet.
+
+The next audit must be evidence-focused and answer four questions:
+
+1. Which identity-related custom nodes/extensions are actually installed?
+2. Which non-zero model weights exist for those components?
+3. Which real workflow JSON/YAML files reference them?
+4. Which generated outputs can serve as proof of prior use?
+
+### Change
+
+Added `AUDIT_PERSONA_EVIDENCE.ps1`, a concise read-only evidence audit that reports:
+
+- identity/runtime components;
+- candidate identity/model weights with ZERO/NONZERO status;
+- workflow candidates;
+- recent generated outputs.
+
+### Priority
+
+P0.
+
+### Next step
+
+Run the concise evidence audit, preserve its log, then select one historical workflow/output pair for reproduction.
