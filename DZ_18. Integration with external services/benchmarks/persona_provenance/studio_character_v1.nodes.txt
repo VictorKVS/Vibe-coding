@@ -1,0 +1,5 @@
+[SOURCE] G:\1\Прежде\1_izobraznie\MindForge_Studio\workflows\studio_character_v1.json
+[TYPE] dict
+
+[NODE INVENTORY]
+NODE nodes: <unknown>
