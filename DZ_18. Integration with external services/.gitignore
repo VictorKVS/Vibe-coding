@@ -6,3 +6,12 @@ dist/
 *.log
 
 models/
+
+# FATHER / Python
+__pycache__/
+*.py[cod]
+
+# FATHER runtime volatile data
+runtime-data/logs/
+runtime-data/sessions/
+runtime-data/outputs/

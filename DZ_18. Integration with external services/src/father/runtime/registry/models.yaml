@@ -1,0 +1,51 @@
+﻿version: "0.1"
+
+models:
+
+  qwen3_embedding:
+    type: embedding
+    enabled: true
+    capabilities:
+      - knowledge.embed
+    load_policy: persistent
+    status: discovered
+
+  qwen3_reranker:
+    type: reranker
+    enabled: true
+    capabilities:
+      - knowledge.rerank
+    load_policy: persistent
+    status: discovered
+
+  local_llm:
+    type: llm
+    enabled: true
+    capabilities:
+      - text.generate
+    load_policy: persistent
+    status: unknown
+
+  faster_whisper:
+    type: stt
+    enabled: true
+    capabilities:
+      - speech.to_text
+    load_policy: on_demand
+    status: unknown
+
+  local_tts:
+    type: tts
+    enabled: true
+    capabilities:
+      - speech.synthesize
+    load_policy: on_demand
+    status: unknown
+
+  comfyui:
+    type: image
+    enabled: true
+    capabilities:
+      - image.generate
+    load_policy: on_demand
+    status: unknown

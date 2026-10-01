@@ -1,0 +1,25 @@
+﻿version: "0.1"
+
+agents:
+
+  alina:
+    enabled: true
+    role: universal_assistant
+
+    capabilities:
+      - text.generate
+      - speech.to_text
+      - speech.synthesize
+      - image.generate
+      - image.analyze
+      - knowledge.embed
+      - knowledge.rerank
+
+  makar:
+    enabled: true
+    role: frontend_creative_engineer
+
+    capabilities:
+      - text.generate
+      - image.generate
+      - image.analyze
