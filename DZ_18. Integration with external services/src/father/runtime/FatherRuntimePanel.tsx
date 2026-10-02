@@ -203,8 +203,8 @@ export function FatherRuntimePanel() {
     <section className="father-runtime">
       <div className="card father-runtime-head">
         <div>
-          <p className="eyebrow">FATHER CONTROL PLANE</p>
-          <h2>Multimodal Runtime</h2>
+          <p className="eyebrow">ALINA STUDIO ? FATHER CORE</p>
+          <h2>ALINA Multimodal Workspace</h2>
           <p>Model Zoo · Voice Zoo · Image Zoo · ALINA</p>
         </div>
 

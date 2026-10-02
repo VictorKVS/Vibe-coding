@@ -1336,3 +1336,32 @@ select:focus {
     grid-template-columns: 1fr;
   }
 }
+
+/* ==========================================================
+   ALINA STUDIO + FATHER CORE
+   ========================================================== */
+
+.alina-studio {
+  display: grid;
+  gap: 24px;
+}
+
+.alina-studio > .father-runtime {
+  position: relative;
+}
+
+.alina-studio > .father-runtime::after {
+  content: "FATHER CORE ONLINE";
+  position: absolute;
+  top: 18px;
+  right: 180px;
+  font-size: 10px;
+  letter-spacing: .14em;
+  opacity: .5;
+}
+
+@media (max-width: 900px) {
+  .alina-studio > .father-runtime::after {
+    display: none;
+  }
+}

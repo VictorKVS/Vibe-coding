@@ -8,12 +8,11 @@ import { createHeygenVideoJob, getHeygenHealth, getHeygenVideoJob, getRuntimeHea
 import { generateNewsletter, generatePodcast, type NewsletterOutput, type PodcastOutput } from "../content_generator/providers/llm-client";
 import { openAiTtsVoices, synthesizeOpenAiSpeech, type OpenAiTtsVoice } from "../content_generator/providers/tts-client";
 
-type Section = "studio" | "father" | "newsletter" | "podcast" | "avatar" | "storyboard" | "diagnostics";
+type Section = "studio" | "newsletter" | "podcast" | "avatar" | "storyboard" | "diagnostics";
 type VisualMode = "strontium" | "alina";
 
 const sections: Array<{ id: Section; label: string; description: string; icon: string }> = [
   { id: "studio", label: "AI Центр", description: "Control Model · RAG · Creative Studio", icon: "✦" },
-  { id: "father", label: "FATHER Runtime", description: "Model Zoo · Voice · Image · Vision", icon: "F" },
   { id: "newsletter", label: "Рассылки", description: "Текст, subject, preheader и CTA", icon: "▤" },
   { id: "podcast", label: "Подкасты", description: "Сценарий и голосовой профиль", icon: "◉" },
   { id: "avatar", label: "Видео-аватар", description: "Avatars / voices / provider API", icon: "▶" },
@@ -90,8 +89,15 @@ export function App() {
           </div>
         </header>
 
-        {section === "studio" && <StudioPanel onNavigate={setSection} visualMode={visualMode} />}
-        {section === "father" && <FatherRuntimePanel />}
+        {section === "studio" && (
+          <div className="alina-studio">
+            <FatherRuntimePanel />
+            <StudioPanel
+              onNavigate={setSection}
+              visualMode={visualMode}
+            />
+          </div>
+        )}
         {section === "newsletter" && <NewsletterPanel />}
         {section === "podcast" && <PodcastPanel />}
         {section === "avatar" && <AvatarPanel />}
