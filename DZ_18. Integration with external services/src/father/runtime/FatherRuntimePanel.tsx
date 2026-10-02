@@ -1,4 +1,4 @@
-﻿import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import {
   fatherChat,
@@ -190,7 +190,9 @@ export function FatherRuntimePanel() {
     setRecording(false);
   }
 
-  const services = [
+  const services: Array<
+    [string, string | undefined, string | undefined]
+  > = [
     ["LLM", health?.services.llm.status, health?.services.llm.model],
     ["VOICE IN", health?.services.stt.status, health?.services.stt.model],
     ["VOICE OUT", health?.services.tts.status, health?.services.tts.provider],
