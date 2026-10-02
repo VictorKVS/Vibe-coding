@@ -1,51 +1,56 @@
-﻿version: "0.1"
-
+version: '0.1'
 models:
-
   qwen3_embedding:
     type: embedding
     enabled: true
     capabilities:
-      - knowledge.embed
+    - knowledge.embed
     load_policy: persistent
     status: discovered
-
   qwen3_reranker:
     type: reranker
     enabled: true
     capabilities:
-      - knowledge.rerank
+    - knowledge.rerank
     load_policy: persistent
     status: discovered
-
   local_llm:
     type: llm
     enabled: true
     capabilities:
-      - text.generate
+    - text.generate
+    - image.analyze
     load_policy: persistent
-    status: unknown
-
+    status: ready
+    provider: ollama
+    model: qwen3-vl:8b-instruct-q4_K_M
+    endpoint: http://127.0.0.1:11434
   faster_whisper:
     type: stt
     enabled: true
     capabilities:
-      - speech.to_text
+    - speech.to_text
     load_policy: on_demand
-    status: unknown
-
+    status: ready
+    provider: faster-whisper
+    model: small
+    device: cpu
+    compute_type: int8
   local_tts:
     type: tts
     enabled: true
     capabilities:
-      - speech.synthesize
+    - speech.synthesize
     load_policy: on_demand
-    status: unknown
-
+    status: ready
+    provider: pyttsx3
   comfyui:
     type: image
     enabled: true
     capabilities:
-      - image.generate
+    - image.generate
     load_policy: on_demand
-    status: unknown
+    status: ready
+    provider: comfyui
+    endpoint: http://127.0.0.1:8188
+    checkpoint: realvisxlV50_v50LightningBakedvae.safetensors

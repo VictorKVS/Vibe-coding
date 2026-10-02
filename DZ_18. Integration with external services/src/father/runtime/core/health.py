@@ -1,4 +1,4 @@
-﻿from __future__ import annotations
+from __future__ import annotations
 
 import importlib.util
 import shutil
@@ -169,12 +169,13 @@ class FatherHealthScanner:
             module_exists("piper")
             or module_exists("piper_tts")
         )
+        windows_tts = module_exists("pyttsx3")
 
         if xtts:
             results.append(
                 HealthResult(
                     "local_tts",
-                    "INSTALLED",
+                    "READY",
                     "Coqui/XTTS module detected",
                 )
             )
@@ -182,8 +183,16 @@ class FatherHealthScanner:
             results.append(
                 HealthResult(
                     "local_tts",
-                    "INSTALLED",
+                    "READY",
                     "Piper module detected",
+                )
+            )
+        elif windows_tts:
+            results.append(
+                HealthResult(
+                    "local_tts",
+                    "READY",
+                    "Windows TTS / pyttsx3",
                 )
             )
         else:
@@ -191,7 +200,7 @@ class FatherHealthScanner:
                 HealthResult(
                     "local_tts",
                     "NOT INSTALLED",
-                    "XTTS/Piper not detected",
+                    "XTTS/Piper/pyttsx3 not detected",
                 )
             )
 
