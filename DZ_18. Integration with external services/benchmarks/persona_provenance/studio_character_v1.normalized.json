@@ -1,0 +1,66 @@
+{
+  "connections": [
+    {
+      "from": "checkpoint.model",
+      "to": "ipadapter.model"
+    },
+    {
+      "from": "ipadapter.output",
+      "to": "controlnet.model"
+    },
+    {
+      "from": "controlnet.output",
+      "to": "sampler.model"
+    }
+  ],
+  "description": "Генерация персонажей с консистентным лицом",
+  "name": "MindForge Studio Character",
+  "nodes": {
+    "checkpoint": {
+      "class_type": "CheckpointLoaderSimple",
+      "inputs": {
+        "ckpt_name": "sd_xl_base_1.0.safetensors"
+      }
+    },
+    "controlnet": {
+      "class_type": "ControlNetApplyAdvanced",
+      "inputs": {
+        "control_net": "controlnet-openpose-sdxl.safetensors",
+        "end_percent": 0.85,
+        "start_percent": 0.0,
+        "strength": 0.65
+      }
+    },
+    "instantid": {
+      "class_type": "InstantIDFaceAnalysis",
+      "inputs": {
+        "model": "antelopev2",
+        "provider": "CUDA"
+      }
+    },
+    "ipadapter": {
+      "class_type": "IPAdapterAdvanced",
+      "inputs": {
+        "clip_vision": "CLIP-ViT-H-14-laion2B-s32B-b79K.safetensors",
+        "combine_embeds": "concat",
+        "embeds_scaling": "V only",
+        "end_at": 1.0,
+        "ipadapter_file": "ip-adapter-plus-face_sdxl_vit-h.bin",
+        "start_at": 0.0,
+        "weight": 0.45,
+        "weight_type": "linear"
+      }
+    },
+    "sampler": {
+      "class_type": "KSampler",
+      "inputs": {
+        "cfg": 7.0,
+        "denoise": 1.0,
+        "sampler_name": "dpmpp_2m",
+        "scheduler": "karras",
+        "steps": 40
+      }
+    }
+  },
+  "version": "1.0"
+}

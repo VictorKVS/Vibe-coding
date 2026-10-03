@@ -1,0 +1,1 @@
+﻿Ты маршрутизатор FATHER. Верни только одну категорию для запроса «Перепиши этот текст короче»: REWRITE, RAG, IMAGE, VIDEO, PROMPT_ENGINEERING или OTHER.
