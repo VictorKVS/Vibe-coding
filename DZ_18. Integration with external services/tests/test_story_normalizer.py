@@ -429,20 +429,29 @@ def test_normalizer_repairs_scene_event_conflict():
 
     assert (
         event.scene_id
-        == "SCENE-002"
+        == "SCENE-001"
+    )
+
+    scene1 = next(
+        scene
+        for scene in result.project.scenes
+        if scene.scene_id == "SCENE-001"
     )
 
     scene2 = next(
         scene
-        for scene
-        in result.project.scenes
-        if scene.scene_id
-        == "SCENE-002"
+        for scene in result.project.scenes
+        if scene.scene_id == "SCENE-002"
     )
 
     assert (
-        "EVT-001"
-        in scene2.event_ids
+        scene1.event_ids
+        == ["EVT-001"]
+    )
+
+    assert (
+        scene2.event_ids
+        == []
     )
 
     repairs = result.report[
@@ -450,22 +459,13 @@ def test_normalizer_repairs_scene_event_conflict():
     ]
 
     assert any(
-        item.get(
-            "event_id"
-        )
-        == "EVT-001"
-        and item.get(
-            "repair"
-        )
-        == "event_scene_conflict"
-        and item.get(
-            "from"
-        )
-        == "SCENE-001"
-        and item.get(
-            "to"
-        )
+        item.get("event_id") == "EVT-001"
+        and item.get("repair")
+        == "scene_membership_conflict"
+        and item.get("from")
         == "SCENE-002"
+        and item.get("to")
+        == "SCENE-001"
         for item in repairs
     )
 

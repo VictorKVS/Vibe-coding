@@ -692,7 +692,7 @@ def _canonicalize_scene_event_links(
             ):
 
                 resolved_scene = (
-                    listed_scene
+                    explicit_scene
                 )
 
                 repairs.append(
@@ -702,20 +702,20 @@ def _canonicalize_scene_event_links(
                         ),
 
                         "repair": (
-                            "event_scene_conflict"
+                            "scene_membership_conflict"
                         ),
 
                         "from": (
-                            explicit_scene
-                        ),
-
-                        "to": (
                             listed_scene
                         ),
 
+                        "to": (
+                            explicit_scene
+                        ),
+
                         "reason": (
-                            "Unique Scene.event_ids membership "
-                            "overrides conflicting Event.scene_id"
+                            "Explicit Event.scene_id is authoritative; "
+                            "Scene.event_ids is rebuilt as a derived index"
                         ),
                     }
                 )
