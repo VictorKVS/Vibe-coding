@@ -1,4 +1,4 @@
-﻿from father.runtime.story.extractor import (
+from father.runtime.story.extractor import (
     StoryExtractor,
     build_extraction_prompt,
     parse_json_object,
@@ -135,4 +135,48 @@ def test_run_extract_imports():
 
     assert callable(
         run_extract_main
+    )
+
+
+
+def test_parse_json_object_prefers_final_story_payload():
+
+    raw = """
+PROMPT ECHO
+
+{
+  "project": {
+    "project_id": "PROMPT-EXAMPLE"
+  },
+  "findings": []
+}
+
+MODEL REASONING
+
+The final answer follows.
+
+{
+  "project": {
+    "project_id": "STORY-REAL"
+  },
+  "findings": [
+    {
+      "origin": "canon"
+    }
+  ]
+}
+"""
+
+    result = parse_json_object(
+        raw
+    )
+
+    assert (
+        result["project"]["project_id"]
+        == "STORY-REAL"
+    )
+
+    assert (
+        result["findings"][0]["origin"]
+        == "canon"
     )

@@ -1,4 +1,4 @@
-﻿from __future__ import annotations
+from __future__ import annotations
 
 import json
 from dataclasses import dataclass
@@ -68,35 +68,82 @@ def _validate_result(
 def parse_json_object(
     raw: str,
 ) -> Dict[str, Any]:
+    """
+    Extract the final valid JSON object from model output.
+
+    llama.cpp may return:
+    - echoed prompt text,
+    - reasoning text,
+    - Markdown fences,
+    - example JSON from the prompt,
+    - final assistant JSON.
+
+    We therefore scan all JSON-object starts and prefer
+    the LAST object matching the StoryExtractionResult
+    top-level contract.
+    """
 
     text = raw.strip()
 
-    if text.startswith("```"):
-        lines = text.splitlines()
+    decoder = json.JSONDecoder()
 
-        if lines:
-            lines = lines[1:]
+    generic_candidates = []
+    story_candidates = []
 
-        if (
-            lines
-            and lines[-1].strip().startswith("```")
-        ):
-            lines = lines[:-1]
+    cursor = 0
 
-        text = "\n".join(
-            lines
-        ).strip()
-
-    first = text.find("{")
-    last = text.rfind("}")
-
-    if first < 0 or last < first:
-        raise ValueError(
-            "LLM response contains no JSON object."
+    while True:
+        start = text.find(
+            "{",
+            cursor,
         )
 
-    return json.loads(
-        text[first:last + 1]
+        if start < 0:
+            break
+
+        try:
+            value, _end = decoder.raw_decode(
+                text[start:]
+            )
+
+        except json.JSONDecodeError:
+            cursor = start + 1
+            continue
+
+        if isinstance(
+            value,
+            dict,
+        ):
+            generic_candidates.append(
+                value
+            )
+
+            project = value.get(
+                "project"
+            )
+
+            findings = value.get(
+                "findings"
+            )
+
+            if (
+                isinstance(project, dict)
+                and isinstance(findings, list)
+            ):
+                story_candidates.append(
+                    value
+                )
+
+        cursor = start + 1
+
+    if story_candidates:
+        return story_candidates[-1]
+
+    if generic_candidates:
+        return generic_candidates[-1]
+
+    raise ValueError(
+        "LLM response contains no valid JSON object."
     )
 
 
