@@ -1,4 +1,4 @@
-﻿from __future__ import annotations
+from __future__ import annotations
 
 import os
 import shutil
@@ -125,6 +125,8 @@ class LlamaCppStoryProvider:
         prompt: str,
         max_tokens: Optional[int] = None,
         temperature: Optional[float] = None,
+        json_schema_file: Optional[Path] = None,
+        reasoning: bool = True,
     ) -> str:
 
         token_budget = (
@@ -178,9 +180,39 @@ class LlamaCppStoryProvider:
 
             "--single-turn",
 
-            "-p",
-            prompt,
+            "--no-display-prompt",
+
+            "--color",
+            "off",
         ]
+
+        if not reasoning:
+            args.extend(
+                [
+                    "--reasoning",
+                    "off",
+
+                    "--reasoning-budget",
+                    "0",
+                ]
+            )
+
+        if json_schema_file is not None:
+            args.extend(
+                [
+                    "--json-schema-file",
+                    str(
+                        json_schema_file
+                    ),
+                ]
+            )
+
+        args.extend(
+            [
+                "-p",
+                prompt,
+            ]
+        )
 
         completed = subprocess.run(
             args,
