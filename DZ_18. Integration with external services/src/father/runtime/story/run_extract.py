@@ -1,4 +1,4 @@
-﻿from __future__ import annotations
+from __future__ import annotations
 
 import argparse
 from pathlib import Path
@@ -92,11 +92,46 @@ def main() -> int:
         generate=provider.generate
     )
 
-    result = extractor.extract(
-        source_text=source_text,
-        project_id=args.project_id,
-        title=args.title,
-    )
+    try:
+        result = extractor.extract(
+            source_text=source_text,
+            project_id=args.project_id,
+            title=args.title,
+        )
+
+    except Exception:
+        raw = extractor.last_raw_response
+
+        if raw:
+            debug_dir = (
+                Path(__file__)
+                .resolve()
+                .parents[4]
+                / "runtime-data"
+                / "story"
+                / "debug"
+            )
+
+            debug_dir.mkdir(
+                parents=True,
+                exist_ok=True,
+            )
+
+            debug_file = (
+                debug_dir
+                / "last-story-model-output.txt"
+            )
+
+            debug_file.write_text(
+                raw,
+                encoding="utf-8",
+            )
+
+            print(
+                f"Raw model output: {debug_file}"
+            )
+
+        raise
 
     target = save_extraction_draft(
         result

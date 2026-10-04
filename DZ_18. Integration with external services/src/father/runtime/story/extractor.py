@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import json
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Any, Callable, Dict, List, Literal
 
 from pydantic import BaseModel, Field
@@ -65,34 +65,148 @@ def _validate_result(
     )
 
 
+def _story_payload_score(
+    value: Dict[str, Any],
+) -> int:
+    """
+    Rank Story JSON candidates by useful extracted content.
+
+    A prompt echo or placeholder structure should score
+    much lower than a real extraction.
+    """
+
+    project = value.get(
+        "project"
+    )
+
+    if not isinstance(
+        project,
+        dict,
+    ):
+        return -1
+
+    score = 0
+
+    project_id = str(
+        project.get(
+            "project_id",
+            "",
+        )
+    ).strip()
+
+    title = str(
+        project.get(
+            "title",
+            "",
+        )
+    ).strip()
+
+    premise = str(
+        project.get(
+            "premise",
+            "",
+        )
+    ).strip()
+
+    if (
+        project_id
+        and project_id != "..."
+    ):
+        score += 2
+
+    if (
+        title
+        and title != "..."
+    ):
+        score += 2
+
+    if (
+        premise
+        and premise != "..."
+    ):
+        score += 5
+
+    weighted_lists = {
+        "genre": 1,
+        "skeleton": 8,
+        "characters": 12,
+        "locations": 10,
+        "scenes": 12,
+        "events": 8,
+        "relationships": 8,
+        "proposals": 5,
+    }
+
+    for key, weight in weighted_lists.items():
+        value_list = project.get(
+            key,
+            []
+        )
+
+        if isinstance(
+            value_list,
+            list,
+        ):
+            score += (
+                len(value_list)
+                * weight
+            )
+
+    findings = value.get(
+        "findings",
+        []
+    )
+
+    if isinstance(
+        findings,
+        list,
+    ):
+        score += (
+            len(findings)
+            * 4
+        )
+
+    canon = project.get(
+        "canon"
+    )
+
+    if (
+        isinstance(canon, dict)
+        and canon
+    ):
+        score += 5
+
+    return score
+
+
 def parse_json_object(
     raw: str,
 ) -> Dict[str, Any]:
     """
-    Extract the final valid JSON object from model output.
+    Extract the best Story JSON object from llama.cpp output.
 
-    llama.cpp may return:
-    - echoed prompt text,
-    - reasoning text,
-    - Markdown fences,
-    - example JSON from the prompt,
-    - final assistant JSON.
+    llama.cpp output may contain:
+    - prompt echo;
+    - reasoning;
+    - JSON examples;
+    - one or more candidate objects;
+    - final answer.
 
-    We therefore scan all JSON-object starts and prefer
-    the LAST object matching the StoryExtractionResult
-    top-level contract.
+    We scan all objects and select the most information-rich
+    Story payload instead of blindly choosing the last object.
     """
 
     text = raw.strip()
 
     decoder = json.JSONDecoder()
 
-    generic_candidates = []
     story_candidates = []
+    generic_candidates = []
 
     cursor = 0
 
     while True:
+
         start = text.find(
             "{",
             cursor,
@@ -137,7 +251,10 @@ def parse_json_object(
         cursor = start + 1
 
     if story_candidates:
-        return story_candidates[-1]
+        return max(
+            story_candidates,
+            key=_story_payload_score,
+        )
 
     if generic_candidates:
         return generic_candidates[-1]
@@ -301,6 +418,11 @@ PROP-001
 class StoryExtractor:
     generate: Callable[[str], str]
 
+    last_raw_response: str = field(
+        default="",
+        init=False,
+    )
+
     def extract(
         self,
         source_text: str,
@@ -322,6 +444,8 @@ class StoryExtractor:
         raw = self.generate(
             prompt
         )
+
+        self.last_raw_response = raw
 
         payload = parse_json_object(
             raw
@@ -345,5 +469,24 @@ class StoryExtractor:
 
         if not result.project.title:
             result.project.title = title
+
+        meaningful_items = sum(
+            [
+                len(result.project.skeleton),
+                len(result.project.characters),
+                len(result.project.locations),
+                len(result.project.scenes),
+                len(result.project.events),
+                len(result.project.relationships),
+                len(result.project.proposals),
+                len(result.findings),
+            ]
+        )
+
+        if meaningful_items == 0:
+            raise ValueError(
+                "Story extraction is structurally valid "
+                "but contains no extracted knowledge."
+            )
 
         return result
