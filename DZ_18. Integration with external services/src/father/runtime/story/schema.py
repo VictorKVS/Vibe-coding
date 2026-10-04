@@ -1,4 +1,4 @@
-﻿from __future__ import annotations
+from __future__ import annotations
 
 from typing import Dict, List, Literal, Optional
 
@@ -186,6 +186,8 @@ class LocationCard(BaseModel):
     location_id: str
     name: str
 
+    description: Optional[str] = None
+
     purpose: Optional[str] = None
     architecture: Optional[str] = None
     atmosphere: Optional[str] = None
@@ -256,6 +258,10 @@ class SceneCard(BaseModel):
     location_id: Optional[str] = None
 
     character_ids: List[str] = Field(
+        default_factory=list
+    )
+
+    event_ids: List[str] = Field(
         default_factory=list
     )
 
@@ -343,6 +349,12 @@ class RelationshipState(BaseModel):
     target_character_id: str
 
     relationship_type: str
+
+    description: Optional[str] = None
+
+    evidence: List[SourceEvidence] = Field(
+        default_factory=list
+    )
 
     trust: Optional[float] = None
     fear: Optional[float] = None
