@@ -1,29 +1,87 @@
-﻿import type { ReactNode } from "react";
+import type { ReactNode } from "react";
+
+export type CreativeTarget =
+  | "studio"
+  | "newsletter"
+  | "podcast"
+  | "avatar"
+  | "storyboard"
+  | "diagnostics";
 
 type CreativeProduct = {
   icon: string;
   title: string;
   description: string;
   status: string;
+  target: CreativeTarget;
 };
 
 const products: CreativeProduct[] = [
-  { icon: "▤", title: "Книги", description: "Идея → исследование → главы → редактура → книга", status: "READY" },
-  { icon: "◫", title: "Сценарии", description: "Сюжет → сцены → диалоги → storyboard", status: "READY" },
-  { icon: "◇", title: "Изображения", description: "Персонажи → сцены → иллюстрации → consistency", status: "IMAGE ZOO" },
-  { icon: "◉", title: "Подкасты", description: "Сценарий → голос → аудио → публикация", status: "TTS" },
-  { icon: "▶", title: "Видео", description: "Сценарий → avatar → voice → video", status: "VIDEO API" },
-  { icon: "◎", title: "AI-аватар", description: "Персона → голос → мимика → цифровой ведущий", status: "AVATAR" },
-  { icon: "⌘", title: "Сайты", description: "Концепция → UI → frontend → публикация", status: "MAKAR" },
-  { icon: "◆", title: "Игры / Quest", description: "Мир → состояния → выбор → интерактивный продукт", status: "STORY ENGINE" },
+  {
+    icon: "▤",
+    title: "Книги",
+    description: "Идея → исследование → главы → редактура → книга",
+    status: "STORY ENGINE",
+    target: "storyboard",
+  },
+  {
+    icon: "◫",
+    title: "Сценарии",
+    description: "Сюжет → сцены → диалоги → storyboard",
+    status: "STORY ENGINE",
+    target: "storyboard",
+  },
+  {
+    icon: "◇",
+    title: "Изображения",
+    description: "Персонажи → сцены → иллюстрации → consistency",
+    status: "IMAGE ZOO",
+    target: "studio",
+  },
+  {
+    icon: "◉",
+    title: "Подкасты",
+    description: "Сценарий → голос → аудио → публикация",
+    status: "TTS",
+    target: "podcast",
+  },
+  {
+    icon: "▶",
+    title: "Видео",
+    description: "Сценарий → avatar → voice → video",
+    status: "VIDEO API",
+    target: "avatar",
+  },
+  {
+    icon: "◎",
+    title: "AI-аватар",
+    description: "Персона → голос → мимика → цифровой ведущий",
+    status: "AVATAR",
+    target: "avatar",
+  },
+  {
+    icon: "⌘",
+    title: "Рассылки",
+    description: "Brief → LLM → structured email → delivery",
+    status: "LLM",
+    target: "newsletter",
+  },
+  {
+    icon: "◆",
+    title: "FATHER Runtime",
+    description: "Models → agents → routing → traces → diagnostics",
+    status: "RUNTIME",
+    target: "studio",
+  },
 ];
 
 type Props = {
   children?: ReactNode;
   onOpenRuntime?: () => void;
+  onNavigate?: (target: CreativeTarget) => void;
 };
 
-export function CreativeStudioShell({ children, onOpenRuntime }: Props) {
+export function CreativeStudioShell({ children, onOpenRuntime, onNavigate }: Props) {
   return (
     <section className="bookcraft-shell">
       <header className="bookcraft-topbar">
@@ -61,7 +119,7 @@ export function CreativeStudioShell({ children, onOpenRuntime }: Props) {
           </p>
 
           <div className="bookcraft-actions">
-            <button className="bookcraft-primary">
+            <button className="bookcraft-primary" onClick={() => onNavigate?.("studio")}>
               Создать с Алиной
             </button>
 
@@ -117,7 +175,19 @@ export function CreativeStudioShell({ children, onOpenRuntime }: Props) {
 
       <div className="creative-products">
         {products.map((product) => (
-          <article className="creative-product" key={product.title}>
+          <article
+            className="creative-product"
+            key={product.title}
+            role="button"
+            tabIndex={0}
+            onClick={() => onNavigate?.(product.target)}
+            onKeyDown={(event) => {
+              if (event.key === "Enter" || event.key === " ") {
+                event.preventDefault();
+                onNavigate?.(product.target);
+              }
+            }}
+          >
             <div className="creative-product-head">
               <span className="creative-product-icon">
                 {product.icon}

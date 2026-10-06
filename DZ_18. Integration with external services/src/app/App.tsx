@@ -109,6 +109,7 @@ export function App() {
         {section === "bookcraft" && (
           <CreativeStudioShell
             onOpenRuntime={() => setSection("studio")}
+            onNavigate={setSection}
           />
         )}
         {section === "studio" && (

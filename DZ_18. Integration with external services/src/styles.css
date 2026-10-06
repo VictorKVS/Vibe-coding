@@ -1864,3 +1864,28 @@ select:focus {
     display: none;
   }
 }
+
+/* BOOKCRAFT interactive factory cards */
+
+.creative-product[role="button"] {
+  cursor: pointer;
+  user-select: none;
+}
+
+.creative-product[role="button"]:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 3px;
+}
+
+.creative-product[role="button"]::after {
+  content: "ОТКРЫТЬ →";
+  display: block;
+  margin-top: 12px;
+  color: var(--muted);
+  font-size: 7px;
+  letter-spacing: .12em;
+}
+
+.creative-product[role="button"]:hover::after {
+  color: var(--text);
+}
