@@ -5,8 +5,23 @@ import { planDemoStoryboard } from "../content_generator/storyboard/planner";
 import type { PersonaSpec } from "../content_generator/personas/types";
 import type { AvatarDto, VoiceDto } from "../content_generator/providers/types";
 import { createHeygenVideoJob, getHeygenHealth, getHeygenVideoJob, getRuntimeHealth, loadHeygenCatalog, type HeygenVideoJob, type RuntimeHealth } from "../content_generator/providers/heygen-client";
+import {
+  getDidHealth,
+  loadDidCatalog,
+} from "../content_generator/providers/did-client";
 import { generateNewsletter, generatePodcast, type NewsletterOutput, type PodcastOutput } from "../content_generator/providers/llm-client";
-import { openAiTtsVoices, synthesizeOpenAiSpeech, type OpenAiTtsVoice } from "../content_generator/providers/tts-client";
+import {
+  getAnamHealth,
+  loadAnamCatalog,
+} from "../content_generator/providers/anam-client";
+import {
+  localTtsVoices,
+  openAiTtsVoices,
+  synthesizeLocalSpeech,
+  synthesizeOpenAiSpeech,
+  type LocalTtsVoice,
+  type OpenAiTtsVoice,
+} from "../content_generator/providers/tts-client";
 
 type Section = "studio" | "newsletter" | "podcast" | "avatar" | "storyboard" | "diagnostics";
 type VisualMode = "strontium" | "alina";
@@ -22,7 +37,7 @@ const sections: Array<{ id: Section; label: string; description: string; icon: s
 
 export function App() {
   const [section, setSection] = useState<Section>("studio");
-  const [visualMode, setVisualMode] = useState<VisualMode>("strontium");
+  const [visualMode, setVisualMode] = useState<VisualMode>("alina");
 
   return (
     <div className={`app-shell theme-${visualMode}`}>
@@ -100,7 +115,13 @@ export function App() {
         )}
         {section === "newsletter" && <NewsletterPanel />}
         {section === "podcast" && <PodcastPanel />}
-        {section === "avatar" && <AvatarPanel />}
+        {section === "avatar" && (
+          <div className="avatar-page">
+            <DidCatalogPanel />
+            <AnamCatalogPanel />
+            <AvatarPanel />
+          </div>
+        )}
         {section === "storyboard" && <StoryboardPanel />}
         {section === "diagnostics" && <DiagnosticsPanel />}
       </main>
@@ -193,6 +214,7 @@ function StudioPanel({
         <PanelHeader title="Безопасность" text="Server-side providers и закрытые secrets." />
         <SecurityRow label="OpenAI key" ready={Boolean(health?.openai.configured)} />
         <SecurityRow label="HeyGen key" ready={Boolean(health?.heygen.configured)} />
+        <SecurityRow label="Local Silero TTS" ready={Boolean(health?.silero.configured)} />
         <SecurityRow label="Browser secrets" ready />
         <SecurityRow label="Provider DTO boundary" ready />
         <SecurityRow label="Bounded polling" ready />
@@ -278,70 +300,521 @@ function PanelHeader({ title, text }: { title: string; text: string }) {
 }
 
 function NewsletterPanel() {
-  const [topic, setTopic] = useState("Новые возможности FATHER Content Generator");
-  const [audience, setAudience] = useState("Специалисты и пользователи продукта");
-  const [tone, setTone] = useState("professional");
-  const [result, setResult] = useState<NewsletterOutput | null>(null);
-  const [meta, setMeta] = useState("");
-  const [error, setError] = useState("");
-  const [loading, setLoading] = useState(false);
+  const demoRecipients = [
+    {
+      name: "Анна",
+      email: "anna@demo.example",
+      segment: "Product",
+    },
+    {
+      name: "Иван",
+      email: "ivan@demo.example",
+      segment: "IT",
+    },
+    {
+      name: "Мария",
+      email: "maria@demo.example",
+      segment: "HR",
+    },
+    {
+      name: "Алексей",
+      email: "alexey@demo.example",
+      segment: "Development",
+    },
+    {
+      name: "Елена",
+      email: "elena@demo.example",
+      segment: "Analytics",
+    },
+    {
+      name: "Максим",
+      email: "maxim@demo.example",
+      segment: "Security",
+    },
+  ];
+
+  const [provider, setProvider] =
+    useState<"local" | "gigachat" | "openai">(
+      "local"
+    );
+
+  const [campaignMode, setCampaignMode] =
+    useState<"individual" | "bulk">(
+      "bulk"
+    );
+
+  const [topic, setTopic] = useState(
+    "Запуск нового AI-сервиса FATHER"
+  );
+
+  const [audience, setAudience] =
+    useState(
+      "ИТ-специалисты и разработчики"
+    );
+
+  const [goal, setGoal] =
+    useState(
+      "Рассказать о запуске и пригласить протестировать сервис"
+    );
+
+  const [tone, setTone] =
+    useState("professional");
+
+  const [individualEmail, setIndividualEmail] =
+    useState(
+      "test@demo.example"
+    );
+
+  const [selectedEmails, setSelectedEmails] =
+    useState<string[]>(
+      demoRecipients.map(
+        (item) => item.email
+      )
+    );
+
+  const [result, setResult] =
+    useState<NewsletterOutput | null>(
+      null
+    );
+
+  const [meta, setMeta] =
+    useState("");
+
+  const [error, setError] =
+    useState("");
+
+  const [loading, setLoading] =
+    useState(false);
+
+  const [queueReady, setQueueReady] =
+    useState(false);
+
+
+  function toggleRecipient(
+    email: string
+  ) {
+    setSelectedEmails(
+      (current) =>
+        current.includes(email)
+          ? current.filter(
+              (item) =>
+                item !== email
+            )
+          : [
+              ...current,
+              email,
+            ]
+    );
+
+    setQueueReady(false);
+  }
+
 
   async function generate() {
     setLoading(true);
     setError("");
+    setQueueReady(false);
+
     try {
-      const response = await generateNewsletter({
-        topic,
-        audience,
-        tone,
-        factualConstraints: [],
-      });
-      setResult(response.data);
-      setMeta(`${response.provider} · ${response.model} · ${response.promptId}@${response.promptVersion}`);
-    } catch (caught) {
-      setError(caught instanceof Error ? caught.message : "Generation failed");
-    } finally {
+      const recipientCount =
+        campaignMode === "bulk"
+          ? selectedEmails.length
+          : 1;
+
+      const response =
+        await generateNewsletter({
+          provider,
+          topic,
+          audience,
+          tone,
+          goal,
+          campaignMode,
+          recipientCount,
+
+          personalization:
+            campaignMode === "bulk"
+              ? "Use {{name}} only when a personalized greeting improves the email."
+              : "Write for one recipient without inventing personal details.",
+
+          factualConstraints: [
+            "Do not invent prices, dates, statistics or links.",
+            "The campaign recipient list is demonstration data.",
+          ],
+        });
+
+      setResult(
+        response.data
+      );
+
+      setMeta(
+        `${response.provider} · ${response.model} · ${response.promptId}@${response.promptVersion}`
+      );
+    }
+    catch (caught) {
+      setError(
+        caught instanceof Error
+          ? caught.message
+          : "Generation failed"
+      );
+    }
+    finally {
       setLoading(false);
     }
   }
 
+
+  const deliveryCount =
+    campaignMode === "bulk"
+      ? selectedEmails.length
+      : individualEmail.trim()
+        ? 1
+        : 0;
+
+
   return (
     <section className="workspace">
       <div className="card controls">
-        <PanelHeader title="Newsletter brief" text="Versioned prompt + server-side LLM provider + structured output." />
+        <PanelHeader
+          title="Newsletter Factory"
+          text="GigaChat/OpenAI · individual/bulk campaign · structured send-ready email."
+        />
+
         <label>
-          Тема
-          <textarea value={topic} onChange={(e) => setTopic(e.target.value)} />
-        </label>
-        <label>
-          Аудитория
-          <input value={audience} onChange={(e) => setAudience(e.target.value)} />
-        </label>
-        <label>
-          Тон
-          <select value={tone} onChange={(e) => setTone(e.target.value)}>
-            <option value="professional">Профессиональный</option>
-            <option value="friendly">Дружелюбный</option>
-            <option value="expert">Экспертный</option>
+          LLM provider
+          <select
+            value={provider}
+            onChange={(e) =>
+              setProvider(
+                e.target.value as
+                  | "local"
+                  | "gigachat"
+                  | "openai"
+              )
+            }
+          >
+            <option value="local">
+              Local LLM ? Ministral 8B
+            </option>
+            <option value="gigachat">
+              GigaChat · fast
+            </option>
+            <option value="openai">
+              OpenAI
+            </option>
           </select>
         </label>
-        {error && <div className="provider-state warning"><strong>LLM unavailable</strong><span>{error}</span></div>}
-        <button className="primary" disabled={loading} onClick={() => void generate()}>
-          {loading ? "Генерация..." : "Сгенерировать рассылку"}
+
+        <label>
+          Режим рассылки
+          <select
+            value={campaignMode}
+            onChange={(e) => {
+              setCampaignMode(
+                e.target.value as
+                  | "individual"
+                  | "bulk"
+              );
+              setQueueReady(false);
+            }}
+          >
+            <option value="bulk">
+              По базе
+            </option>
+            <option value="individual">
+              Индивидуально
+            </option>
+          </select>
+        </label>
+
+        {campaignMode === "individual" ? (
+          <label>
+            Email получателя
+            <input
+              value={individualEmail}
+              onChange={(e) => {
+                setIndividualEmail(
+                  e.target.value
+                );
+                setQueueReady(false);
+              }}
+            />
+          </label>
+        ) : (
+          <div className="recipient-demo">
+            <small>
+              DEMO / SYNTHETIC RECIPIENT DATABASE
+            </small>
+
+            {demoRecipients.map(
+              (recipient) => (
+                <label
+                  className="recipient-row"
+                  key={recipient.email}
+                >
+                  <input
+                    type="checkbox"
+                    checked={
+                      selectedEmails.includes(
+                        recipient.email
+                      )
+                    }
+                    onChange={() =>
+                      toggleRecipient(
+                        recipient.email
+                      )
+                    }
+                  />
+
+                  <span>
+                    <strong>
+                      {recipient.name}
+                    </strong>
+
+                    <small>
+                      {recipient.email}
+                      {" · "}
+                      {recipient.segment}
+                    </small>
+                  </span>
+                </label>
+              )
+            )}
+          </div>
+        )}
+
+        <label>
+          Тема
+          <textarea
+            value={topic}
+            onChange={(e) =>
+              setTopic(
+                e.target.value
+              )
+            }
+          />
+        </label>
+
+        <label>
+          Аудитория
+          <input
+            value={audience}
+            onChange={(e) =>
+              setAudience(
+                e.target.value
+              )
+            }
+          />
+        </label>
+
+        <label>
+          Цель
+          <textarea
+            value={goal}
+            onChange={(e) =>
+              setGoal(
+                e.target.value
+              )
+            }
+          />
+        </label>
+
+        <label>
+          Тон
+          <select
+            value={tone}
+            onChange={(e) =>
+              setTone(
+                e.target.value
+              )
+            }
+          >
+            <option value="professional">
+              Профессиональный
+            </option>
+
+            <option value="friendly">
+              Дружелюбный
+            </option>
+
+            <option value="expert">
+              Экспертный
+            </option>
+          </select>
+        </label>
+
+        {error && (
+          <div className="provider-state warning">
+            <strong>
+              LLM unavailable
+            </strong>
+
+            <span>
+              {error}
+            </span>
+          </div>
+        )}
+
+        <button
+          className="primary"
+          disabled={
+            loading ||
+            deliveryCount === 0
+          }
+          onClick={() =>
+            void generate()
+          }
+        >
+          {loading
+            ? "Генерация..."
+            : "Сгенерировать рассылку"}
         </button>
       </div>
 
+
       <div className="card preview">
-        <PanelHeader title="Newsletter output" text={meta || "Результат появится после server-side generation."} />
+        <PanelHeader
+          title="Готовая рассылка"
+          text={
+            meta ||
+            "После генерации здесь появится готовое письмо."
+          }
+        />
+
         {result ? (
           <div className="result-stack">
-            <Result label="Subject" value={result.subject} />
-            <Result label="Preheader" value={result.preheader} />
-            <Result label="Body" value={result.body} />
-            <Result label="CTA" value={result.cta} />
-            <Result label="Image brief" value={result.imageBrief} />
+            <div className="newsletter-summary">
+              <Metric
+                title="Режим"
+                value={
+                  campaignMode ===
+                  "bulk"
+                    ? "По базе"
+                    : "Individual"
+                }
+              />
+
+              <Metric
+                title="Получатели"
+                value={String(
+                  deliveryCount
+                )}
+              />
+
+              <Metric
+                title="LLM"
+                value={
+                  provider ===
+                  "local"
+                    ? "Local LLM"
+                    : provider ===
+                        "gigachat"
+                      ? "GigaChat"
+                      : "OpenAI"
+                }
+              />
+            </div>
+
+            <Result
+              label="Subject"
+              value={result.subject}
+            />
+
+            <Result
+              label="Preheader"
+              value={result.preheader}
+            />
+
+            <Result
+              label="Полный текст письма"
+              value={result.body}
+            />
+
+            <Result
+              label="CTA"
+              value={result.cta}
+            />
+
+            <Result
+              label="Image brief"
+              value={result.imageBrief}
+            />
+
+            <div className="result">
+              <small>
+                Delivery audience
+              </small>
+
+              {campaignMode === "bulk"
+                ? demoRecipients
+                    .filter(
+                      (item) =>
+                        selectedEmails.includes(
+                          item.email
+                        )
+                    )
+                    .map(
+                      (item) => (
+                        <div
+                          key={item.email}
+                          className="delivery-line"
+                        >
+                          <span>
+                            {item.name}
+                            {" · "}
+                            {item.email}
+                          </span>
+
+                          <b>
+                            {queueReady
+                              ? "READY"
+                              : "SELECTED"}
+                          </b>
+                        </div>
+                      )
+                    )
+                : (
+                    <div className="delivery-line">
+                      <span>
+                        {individualEmail}
+                      </span>
+
+                      <b>
+                        {queueReady
+                          ? "READY"
+                          : "SELECTED"}
+                      </b>
+                    </div>
+                  )}
+            </div>
+
+            <button
+              className="primary secondary-action"
+              onClick={() =>
+                setQueueReady(true)
+              }
+            >
+              Сформировать очередь отправки
+            </button>
+
+            {queueReady && (
+              <div className="provider-state">
+                <strong>
+                  DELIVERY QUEUE READY
+                </strong>
+
+                <span>
+                  {deliveryCount}
+                  {" "}
+                  recipient(s) · DEMO database · actual Gmail delivery is a separate provider step
+                </span>
+              </div>
+            )}
           </div>
-        ) : <EmptyState text="Заполните brief и запустите генерацию." />}
+        ) : (
+          <EmptyState
+            text="Заполните brief и запустите генерацию."
+          />
+        )}
       </div>
     </section>
   );
@@ -355,7 +828,9 @@ function PodcastPanel() {
   const [meta, setMeta] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [ttsProvider, setTtsProvider] = useState<"local" | "openai">("local");
   const [ttsVoice, setTtsVoice] = useState<OpenAiTtsVoice>("marin");
+  const [localTtsVoice, setLocalTtsVoice] = useState<LocalTtsVoice>("xenia");
   const [ttsLoading, setTtsLoading] = useState(false);
   const [ttsError, setTtsError] = useState("");
   const [audioUrl, setAudioUrl] = useState("");
@@ -387,18 +862,36 @@ function PodcastPanel() {
 
   async function synthesize() {
     if (!result) return;
+
     setTtsLoading(true);
     setTtsError("");
 
     try {
-      const blob = await synthesizeOpenAiSpeech({
-        text: result.script,
-        voice: ttsVoice,
-        instructions: result.voiceDirection || "Speak clearly and naturally.",
-      });
+      const blob =
+        ttsProvider === "local"
+          ? await synthesizeLocalSpeech({
+              text: result.script,
+              voice: localTtsVoice,
+            })
+          : await synthesizeOpenAiSpeech({
+              text: result.script,
+              voice: ttsVoice,
+              instructions:
+                result.voiceDirection ||
+                "Speak clearly and naturally.",
+            });
+
+      if (audioUrl) {
+        URL.revokeObjectURL(audioUrl);
+      }
+
       setAudioUrl(URL.createObjectURL(blob));
     } catch (caught) {
-      setTtsError(caught instanceof Error ? caught.message : "TTS failed");
+      setTtsError(
+        caught instanceof Error
+          ? caught.message
+          : "TTS failed"
+      );
     } finally {
       setTtsLoading(false);
     }
@@ -452,12 +945,384 @@ function PodcastPanel() {
             <Result label="Voice direction" value={result.voiceDirection} />
             {audioUrl && (
               <div className="result">
-                <small>AI-generated voice · OpenAI TTS · {ttsVoice}</small>
+                <small>
+                  AI-generated voice ?{" "}
+                  {ttsProvider === "local"
+                    ? `Local Silero ? ${localTtsVoice}`
+                    : `OpenAI TTS ? ${ttsVoice}`}
+                </small>
                 <audio className="media-player" controls src={audioUrl} />
               </div>
             )}
           </div>
         ) : <EmptyState text="Сценарий ещё не сформирован." />}
+      </div>
+    </section>
+  );
+}
+
+function DidCatalogPanel() {
+  const [configured, setConfigured] =
+    useState<boolean | null>(null);
+
+  const [connected, setConnected] =
+    useState(false);
+
+  const [presenters, setPresenters] =
+    useState<AvatarDto[]>([]);
+
+  const [voices, setVoices] =
+    useState<VoiceDto[]>([]);
+
+  const [loading, setLoading] =
+    useState(false);
+
+  const [error, setError] =
+    useState("");
+
+  useEffect(() => {
+    void getDidHealth()
+      .then((health) => {
+        setConfigured(
+          health.configured
+        );
+      })
+      .catch(() => {
+        setConfigured(false);
+      });
+  }, []);
+
+  async function loadCatalog() {
+    setLoading(true);
+    setError("");
+    setConnected(false);
+
+    try {
+      const health =
+        await getDidHealth();
+
+      setConfigured(
+        health.configured
+      );
+
+      if (!health.configured) {
+        throw new Error(
+          "DID_API_KEY is not configured."
+        );
+      }
+
+      const catalog =
+        await loadDidCatalog();
+
+      setPresenters(
+        catalog.presenters
+      );
+
+      setVoices(
+        catalog.voices
+      );
+
+      setConnected(true);
+    }
+    catch (caught) {
+      setError(
+        caught instanceof Error
+          ? caught.message
+          : "D-ID request failed"
+      );
+    }
+    finally {
+      setLoading(false);
+    }
+  }
+
+  return (
+    <section className="workspace">
+      <div className="card controls">
+        <PanelHeader
+          title="D-ID External API"
+          text="Real external provider integration for the DZ-18 Video Avatar requirement."
+        />
+
+        <div className="provider-state">
+          <strong>
+            {connected
+              ? "D-ID API CONNECTED"
+              : configured
+                ? "D-ID configured"
+                : configured === false
+                  ? "D-ID key not configured"
+                  : "Checking D-ID..."}
+          </strong>
+
+          <span>
+            {error ||
+              "GET /clips/presenters + GET /tts/voices"}
+          </span>
+        </div>
+
+        <button
+          className="primary"
+          disabled={loading}
+          onClick={() =>
+            void loadCatalog()
+          }
+        >
+          {loading
+            ? "Loading D-ID API..."
+            : "Load real Presenters + Voices"}
+        </button>
+
+        {connected && (
+          <div className="metrics-row">
+            <Metric
+              title="Presenters"
+              value={String(
+                presenters.length
+              )}
+            />
+
+            <Metric
+              title="Voices"
+              value={String(
+                voices.length
+              )}
+            />
+
+            <Metric
+              title="Provider"
+              value="D-ID"
+            />
+          </div>
+        )}
+      </div>
+
+      <div className="card preview">
+        <PanelHeader
+          title="Live D-ID catalog"
+          text="The values below are loaded through our backend from the external D-ID API."
+        />
+
+        <div className="two-columns catalog-grid">
+          <CatalogColumn
+            title={`D-ID Presenters (${presenters.length})`}
+            items={presenters
+              .slice(0, 12)
+              .map((item) => ({
+                id: item.id,
+                name: item.name,
+                meta:
+                  "D-ID presenter",
+              }))}
+          />
+
+          <CatalogColumn
+            title={`D-ID Voices (${voices.length})`}
+            items={voices
+              .slice(0, 12)
+              .map((item) => ({
+                id: item.id,
+                name: item.name,
+                meta:
+                  [
+                    item.language,
+                    item.gender,
+                  ]
+                    .filter(Boolean)
+                    .join(" ? ") ||
+                  "D-ID voice",
+              }))}
+          />
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function AnamCatalogPanel() {
+  const [configured, setConfigured] =
+    useState<boolean | null>(null);
+
+  const [connected, setConnected] =
+    useState(false);
+
+  const [avatars, setAvatars] =
+    useState<AvatarDto[]>([]);
+
+  const [voices, setVoices] =
+    useState<VoiceDto[]>([]);
+
+  const [loading, setLoading] =
+    useState(false);
+
+  const [error, setError] =
+    useState("");
+
+  useEffect(() => {
+    void getAnamHealth()
+      .then((health) => {
+        setConfigured(
+          health.configured
+        );
+      })
+      .catch(() => {
+        setConfigured(false);
+      });
+  }, []);
+
+  async function loadCatalog() {
+    setLoading(true);
+    setError("");
+    setConnected(false);
+
+    try {
+      const health =
+        await getAnamHealth();
+
+      setConfigured(
+        health.configured
+      );
+
+      if (!health.configured) {
+        throw new Error(
+          "ANAM_API_KEY is not configured."
+        );
+      }
+
+      const catalog =
+        await loadAnamCatalog();
+
+      setAvatars(
+        catalog.avatars
+      );
+
+      setVoices(
+        catalog.voices
+      );
+
+      setConnected(true);
+    }
+    catch (caught) {
+      setError(
+        caught instanceof Error
+          ? caught.message
+          : "Anam request failed"
+      );
+    }
+    finally {
+      setLoading(false);
+    }
+  }
+
+  return (
+    <section className="workspace anam-catalog">
+      <div className="card controls">
+        <PanelHeader
+          title="Anam External Video Avatar API"
+          text="Live external integration: avatars and voices are loaded from Anam API."
+        />
+
+        <div
+          className={
+            connected
+              ? "provider-state anam-connected"
+              : "provider-state warning"
+          }
+        >
+          <strong>
+            {connected
+              ? "ANAM API CONNECTED"
+              : configured
+                ? "Anam API key ready"
+                : configured === false
+                  ? "Anam API not configured"
+                  : "Checking Anam API..."}
+          </strong>
+
+          <span>
+            {error ||
+              "GET /v1/avatars + GET /v1/voices"}
+          </span>
+        </div>
+
+        <button
+          className="primary"
+          disabled={loading}
+          onClick={() =>
+            void loadCatalog()
+          }
+        >
+          {loading
+            ? "Loading external API..."
+            : "Load real Avatars + Voices"}
+        </button>
+
+        {connected && (
+          <div className="metrics-row">
+            <Metric
+              title="Avatars"
+              value={String(
+                avatars.length
+              )}
+            />
+
+            <Metric
+              title="Voices"
+              value={String(
+                voices.length
+              )}
+            />
+
+            <Metric
+              title="Provider"
+              value="ANAM"
+            />
+          </div>
+        )}
+      </div>
+
+      <div className="card preview">
+        <PanelHeader
+          title="Live Anam catalog"
+          text="Real provider data received through the FATHER backend. API key never reaches the browser."
+        />
+
+        {!connected ? (
+          <EmptyState
+            text="Load the external Anam catalog to show real avatars and voices."
+          />
+        ) : (
+          <div className="two-columns catalog-grid">
+            <CatalogColumn
+              title={`Anam Avatars (${avatars.length})`}
+              items={avatars
+                .slice(0, 12)
+                .map((item) => ({
+                  id: item.id,
+                  name: item.name,
+                  meta: "Anam avatar",
+                }))}
+            />
+
+            <CatalogColumn
+              title={`Anam Voices (${voices.length})`}
+              items={voices
+                .slice(0, 12)
+                .map((item) => ({
+                  id: item.id,
+                  name: item.name,
+                  meta:
+                    [
+                      item.language,
+                      item.gender,
+                    ]
+                      .filter(Boolean)
+                      .join(" ? ") ||
+                    "Anam voice",
+                }))}
+            />
+          </div>
+        )}
       </div>
     </section>
   );

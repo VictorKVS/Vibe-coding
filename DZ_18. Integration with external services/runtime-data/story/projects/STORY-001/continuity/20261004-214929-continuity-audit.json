@@ -1,0 +1,27 @@
+{
+  "project_id": "STORY-001",
+  "rules_checked": [
+    "PROJECT_ID_MATCH",
+    "TIMELINE_MATCH",
+    "TRANSITION_ORDER",
+    "EVENT_TRANSITION_MATCH",
+    "KNOWLEDGE_REFERENCE",
+    "KNOWLEDGE_SOURCE_EVENT",
+    "KNOWLEDGE_AFTER_SOURCE",
+    "KNOWLEDGE_NOT_BEFORE_SOURCE",
+    "SECRET_BOUNDARY",
+    "CHARACTER_KNOWLEDGE_REFERENCE",
+    "UNRESOLVED_SECRET_REFERENCE",
+    "CHARACTER_STATE_CHAIN"
+  ],
+  "violations": [],
+  "report": {
+    "mode": "deterministic",
+    "llm_used": false,
+    "rules_checked": 12,
+    "violations": 0,
+    "errors": 0,
+    "warnings": 0,
+    "passed": true
+  }
+}

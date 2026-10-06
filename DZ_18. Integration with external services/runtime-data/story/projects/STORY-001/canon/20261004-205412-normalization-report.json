@@ -1,0 +1,26 @@
+{
+  "project_id": "STORY-001",
+  "mode": "deterministic",
+  "llm_used": false,
+  "counts": {
+    "characters": 3,
+    "locations": 3,
+    "scenes": 3,
+    "events": 12,
+    "relationships": 3,
+    "evidence": 22,
+    "proposals": 0
+  },
+  "warnings": [],
+  "dropped_warning_noise": [
+    "/n"
+  ],
+  "required_evidence_missing": 0,
+  "attached_evidence": 22,
+  "unmapped_evidence_ids": [],
+  "consistency_errors": [],
+  "inputs": {
+    "facts": "G:\\1\\Vibe coding\\Vibe-coding-router\\DZ_18. Integration with external services\\runtime-data\\story\\projects\\STORY-001\\facts\\20261004-174229-facts.json",
+    "provenance": "G:\\1\\Vibe coding\\Vibe-coding-router\\DZ_18. Integration with external services\\runtime-data\\story\\projects\\STORY-001\\provenance\\20261004-204757-provenance.json"
+  }
+}

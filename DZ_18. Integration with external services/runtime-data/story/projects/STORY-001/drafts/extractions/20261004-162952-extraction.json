@@ -1,0 +1,48 @@
+{
+  "project": {
+    "project_id": "STORY-001",
+    "title": "FATHER Story Smoke 001",
+    "genre": [
+      "sci-fi",
+      "thriller",
+      "drama"
+    ],
+    "premise": "A systems engineer races against time to prevent a reactor cooling failure, navigating conflicting information and authority.",
+    "target_products": [
+      "novel",
+      "comic"
+    ],
+    "style": {
+      "narrative_distance": 0.5,
+      "sentence_rhythm": 0.5,
+      "dialogue_density": 0.5,
+      "description_density": 0.5,
+      "technical_detail": 0.5,
+      "psychological_depth": 0.5,
+      "visuality": 0.5,
+      "action": 0.5,
+      "humor": 0.0,
+      "darkness": 0.0,
+      "romance": 0.0,
+      "eroticism": 0.0,
+      "reference_notes": []
+    },
+    "skeleton": [],
+    "characters": [],
+    "locations": [],
+    "scenes": [],
+    "events": [],
+    "relationships": [],
+    "canon": {
+      "scene_id": null,
+      "characters": {},
+      "locations": {},
+      "world": {},
+      "active_props": {},
+      "unresolved_secrets": []
+    },
+    "proposals": []
+  },
+  "findings": [],
+  "warnings": []
+}

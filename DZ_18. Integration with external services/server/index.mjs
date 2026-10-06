@@ -1,4 +1,13 @@
 import "dotenv/config";
+import {
+  generateGigaStructured,
+  gigachatHealth,
+} from "./providers/gigachat.mjs";
+import {
+  anamHealth,
+  listAnamAvatars,
+  listAnamVoices,
+} from "./providers/anam.mjs";
 import { createServer } from "node:http";
 import { readFile, stat } from "node:fs/promises";
 import { extname, join, normalize } from "node:path";
@@ -11,8 +20,18 @@ import {
   listHeygenAvatars,
   listHeygenVoices,
 } from "./providers/heygen.mjs";
+import {
+  didHealth,
+  listDidPresenters,
+  listDidVoices,
+} from "./providers/did.mjs";
 import { generateStructured, openaiHealth, synthesizeSpeech } from "./providers/openai.mjs";
+import { sileroHealth, synthesizeLocalSpeech } from "./providers/silero.mjs";
 import { getPrompt } from "./prompts/registry.mjs";
+import {
+  generateLocalStructured,
+  localLlmHealth,
+} from "./providers/local_llm.mjs";
 
 const rootDir = fileURLToPath(new URL("../", import.meta.url));
 const distDir = join(rootDir, "dist");
@@ -25,13 +44,92 @@ const server = createServer(async (req, res) => {
 
     const url = new URL(req.url, `http://${req.headers.host || "localhost"}`);
 
+    if (url.pathname === "/api/anam/health") {
+      return sendJson(
+        res,
+        200,
+        anamHealth()
+      );
+    }
+
+    if (url.pathname === "/api/anam/avatars") {
+      const avatars =
+        await listAnamAvatars();
+
+      return sendJson(
+        res,
+        200,
+        {
+          provider: "anam",
+          count: avatars.length,
+          avatars,
+        }
+      );
+    }
+
+    if (url.pathname === "/api/anam/voices") {
+      const voices =
+        await listAnamVoices();
+
+      return sendJson(
+        res,
+        200,
+        {
+          provider: "anam",
+          count: voices.length,
+          voices,
+        }
+      );
+    }
+
     if (url.pathname === "/api/health") {
       return sendJson(res, 200, {
         ok: true,
         app: "father-content-generator-dz18",
+        localLlm: localLlmHealth(),
+        gigachat: gigachatHealth(),
         heygen: await heygenHealth(),
         openai: await openaiHealth(),
+        silero: await sileroHealth(),
       });
+    }
+
+    if (url.pathname === "/api/did/health") {
+      return sendJson(
+        res,
+        200,
+        didHealth()
+      );
+    }
+
+    if (url.pathname === "/api/did/presenters") {
+      const presenters =
+        await listDidPresenters();
+
+      return sendJson(
+        res,
+        200,
+        {
+          provider: "d-id",
+          count: presenters.length,
+          presenters,
+        }
+      );
+    }
+
+    if (url.pathname === "/api/did/voices") {
+      const voices =
+        await listDidVoices();
+
+      return sendJson(
+        res,
+        200,
+        {
+          provider: "d-id",
+          count: voices.length,
+          voices,
+        }
+      );
     }
 
     if (url.pathname === "/api/heygen/avatars") {
@@ -75,33 +173,101 @@ const server = createServer(async (req, res) => {
 
     if (req.method === "POST" && url.pathname === "/api/generate/newsletter") {
       const input = await readJson(req);
-      const result = await generateStructured({
-        prompt: getPrompt("newsletter"),
-        input,
-      });
-      return sendJson(res, 200, result);
+
+      const requestedProvider =
+        input.provider ||
+        process.env.NEWSLETTER_LLM_PROVIDER ||
+        process.env.CONTENT_LLM_PROVIDER ||
+        "local";
+
+      const {
+        provider: _provider,
+        ...modelInput
+      } = input;
+
+      let result;
+
+      if (requestedProvider === "local") {
+        result = await generateLocalStructured({
+          prompt: getPrompt("newsletter"),
+          input: modelInput,
+          kind: "newsletter",
+        });
+      }
+      else if (requestedProvider === "gigachat") {
+        result = await generateGigaStructured({
+          prompt: getPrompt("newsletter"),
+          input: modelInput,
+        });
+      }
+      else {
+        result = await generateStructured({
+          prompt: getPrompt("newsletter"),
+          input: modelInput,
+        });
+      }
+
+      return sendJson(
+        res,
+        200,
+        result
+      );
     }
 
     if (req.method === "POST" && url.pathname === "/api/generate/podcast") {
       const input = await readJson(req);
-      const result = await generateStructured({
-        prompt: getPrompt("podcast"),
-        input,
-      });
-      return sendJson(res, 200, result);
+
+      const requestedProvider =
+        input.provider ||
+        process.env.PODCAST_LLM_PROVIDER ||
+        process.env.CONTENT_LLM_PROVIDER ||
+        "local";
+
+      const {
+        provider: _provider,
+        ...modelInput
+      } = input;
+
+      let result;
+
+      if (requestedProvider === "local") {
+        result = await generateLocalStructured({
+          prompt: getPrompt("podcast"),
+          input: modelInput,
+          kind: "podcast",
+        });
+      }
+      else if (requestedProvider === "gigachat") {
+        result = await generateGigaStructured({
+          prompt: getPrompt("podcast"),
+          input: modelInput,
+        });
+      }
+      else {
+        result = await generateStructured({
+          prompt: getPrompt("podcast"),
+          input: modelInput,
+        });
+      }
+
+      return sendJson(
+        res,
+        200,
+        result
+      );
     }
 
 
-    if (req.method === "POST" && url.pathname === "/api/tts/openai") {
+    if (req.method === "POST" && url.pathname === "/api/tts/local") {
       const input = await readJson(req);
-      const result = await synthesizeSpeech({
+      const result = await synthesizeLocalSpeech({
         input: input.input,
         voice: input.voice,
-        instructions: input.instructions,
       });
       return sendBinary(res, 200, result.audio, {
         "Content-Type": result.contentType,
         "X-AI-Generated": "true",
+        "X-TTS-Provider": result.provider,
         "X-TTS-Model": result.model,
         "X-TTS-Voice": result.voice,
       });

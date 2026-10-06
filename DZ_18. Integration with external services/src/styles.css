@@ -1365,3 +1365,139 @@ select:focus {
     display: none;
   }
 }
+
+.father-runtime input[type="file"] {
+  width: 100%;
+  margin-bottom: 12px;
+}
+
+.father-file-name {
+  margin-top: 10px;
+  font-size: 12px;
+  opacity: .7;
+  overflow-wrap: anywhere;
+}
+
+/* ==========================================================
+   ANAM EXTERNAL API
+   ========================================================== */
+
+.avatar-page {
+  display: grid;
+  gap: 16px;
+}
+
+.anam-catalog {
+  margin-bottom: 4px;
+}
+
+.anam-connected {
+  border-color:
+    color-mix(
+      in srgb,
+      var(--success) 55%,
+      transparent
+    );
+
+  background:
+    color-mix(
+      in srgb,
+      var(--success) 8%,
+      var(--panel-soft)
+    );
+}
+
+.anam-connected strong {
+  color: var(--success);
+}
+
+.anam-connected strong::before {
+  content: "●";
+  margin-right: 7px;
+  text-shadow:
+    0 0 9px var(--success);
+}
+
+
+
+/* ==========================================================
+   NEWSLETTER FACTORY V2
+   ========================================================== */
+
+.recipient-demo {
+  display: grid;
+  gap: 6px;
+  margin: 4px 0 8px;
+  padding: 10px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--panel-soft);
+}
+
+.recipient-demo > small {
+  color: var(--muted);
+  font-size: 7px;
+  letter-spacing: .08em;
+}
+
+.recipient-row {
+  display: flex !important;
+  flex-direction: row !important;
+  align-items: center;
+  gap: 9px;
+  padding: 7px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+}
+
+.recipient-row input {
+  width: auto;
+  margin: 0;
+}
+
+.recipient-row span {
+  display: grid;
+  gap: 2px;
+}
+
+.recipient-row strong {
+  font-size: 9px;
+}
+
+.recipient-row small {
+  color: var(--muted);
+  font-size: 7px;
+}
+
+.newsletter-summary {
+  display: grid;
+  grid-template-columns:
+    repeat(3, minmax(0, 1fr));
+  gap: 7px;
+}
+
+.delivery-line {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 6px 0;
+  border-bottom: 1px solid var(--line);
+  font-size: 8px;
+}
+
+.delivery-line:last-child {
+  border-bottom: 0;
+}
+
+.delivery-line b {
+  color: var(--success);
+  font-size: 7px;
+  letter-spacing: .06em;
+}
+
+@media (max-width: 700px) {
+  .newsletter-summary {
+    grid-template-columns: 1fr;
+  }
+}

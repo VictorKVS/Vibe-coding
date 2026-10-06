@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 
 import {
+  fatherAnalyzeImage,
   fatherChat,
   fatherGenerateImage,
   fatherSpeak,
@@ -29,6 +30,11 @@ export function FatherRuntimePanel() {
   );
 
   const [imageUrl, setImageUrl] = useState("");
+  const [visionFile, setVisionFile] = useState<File | null>(null);
+  const [visionPrompt, setVisionPrompt] = useState(
+    "????????????? ???????????. ????? ?????? ???????, ?????, ????????? ? ????????."
+  );
+  const [visionAnswer, setVisionAnswer] = useState("");
   const [audioUrl, setAudioUrl] = useState("");
   const [busy, setBusy] = useState("");
   const [error, setError] = useState("");
@@ -120,6 +126,30 @@ export function FatherRuntimePanel() {
         caught instanceof Error
           ? caught.message
           : "Image generation failed"
+      );
+    } finally {
+      setBusy("");
+    }
+  }
+
+  async function analyzeVisionImage() {
+    if (!visionFile) return;
+
+    setBusy("vision");
+    setError("");
+
+    try {
+      const result = await fatherAnalyzeImage(
+        visionFile,
+        visionPrompt,
+      );
+
+      setVisionAnswer(result.answer);
+    } catch (caught) {
+      setError(
+        caught instanceof Error
+          ? caught.message
+          : "Vision analysis failed"
       );
     } finally {
       setBusy("");
@@ -325,6 +355,58 @@ export function FatherRuntimePanel() {
               src={imageUrl}
               alt="FATHER generated"
             />
+          )}
+        </section>
+        <section className="card">
+          <h2>ALINA Vision</h2>
+
+          <p>
+            Qwen3-VL ? ????????? ?????? ???????????
+          </p>
+
+          <input
+            type="file"
+            accept="image/*"
+            onChange={(event) =>
+              setVisionFile(
+                event.target.files?.[0] ?? null
+              )
+            }
+          />
+
+          <textarea
+            rows={5}
+            value={visionPrompt}
+            onChange={(event) =>
+              setVisionPrompt(event.target.value)
+            }
+          />
+
+          <button
+            className="primary"
+            disabled={
+              busy === "vision" || !visionFile
+            }
+            onClick={() =>
+              void analyzeVisionImage()
+            }
+          >
+            {busy === "vision"
+              ? "??????..."
+              : "???????????????? ???????????"}
+          </button>
+
+          {visionFile && (
+            <p className="father-file-name">
+              ????: {visionFile.name}
+            </p>
+          )}
+
+          {visionAnswer && (
+            <div className="father-answer">
+              <strong>ALINA VISION</strong>
+              <p>{visionAnswer}</p>
+            </div>
           )}
         </section>
       </div>

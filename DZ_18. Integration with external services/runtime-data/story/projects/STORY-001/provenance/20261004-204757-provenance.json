@@ -1,0 +1,249 @@
+{
+  "project_id": "STORY-001",
+  "evidence": [
+    {
+      "evidence_id": "EVID-001",
+      "entity_type": "character",
+      "entity_id": "CHAR-ANDREY-001",
+      "field_path": "identity",
+      "value_summary": "Andrey is a systems engineer.",
+      "origin": "canon",
+      "source_fragment": "Andrey was forty-two years old. He was a systems engineer.",
+      "confidence": 1.0,
+      "rationale": "Direct explicit statement about Andrey's identity and role."
+    },
+    {
+      "evidence_id": "EVID-002",
+      "entity_type": "character",
+      "entity_id": "CHAR-ANDREY-001",
+      "field_path": "age",
+      "value_summary": "Andrey is 42 years old.",
+      "origin": "canon",
+      "source_fragment": "Andrey was forty-two years old.",
+      "confidence": 1.0,
+      "rationale": "Direct explicit statement about Andrey's age."
+    },
+    {
+      "evidence_id": "EVID-003",
+      "entity_type": "character",
+      "entity_id": "CHAR-LIRA-001",
+      "field_path": "identity",
+      "value_summary": "Lira is a blue female hologram.",
+      "origin": "canon",
+      "source_fragment": "A blue female hologram appeared above the damaged terminal. My name is Lira, she said.",
+      "confidence": 1.0,
+      "rationale": "Direct explicit statement about Lira's identity and appearance."
+    },
+    {
+      "evidence_id": "EVID-004",
+      "entity_type": "character",
+      "entity_id": "CHAR-MARINA-001",
+      "field_path": "identity",
+      "value_summary": "Marina is the security chief.",
+      "origin": "canon",
+      "source_fragment": "In the next corridor he found Marina, the security chief.",
+      "confidence": 1.0,
+      "rationale": "Direct explicit statement about Marina's identity and role."
+    },
+    {
+      "evidence_id": "EVID-005",
+      "entity_type": "location",
+      "entity_id": "LOC-LAB-001",
+      "field_path": "description",
+      "value_summary": "Laboratory Block Four is a narrow, concrete, almost dark corridor with red emergency lamps.",
+      "origin": "canon",
+      "source_fragment": "He entered Laboratory Block Four at 02:17. The corridor was narrow, concrete and almost dark. Red emergency lamps flashed above the sealed doors.",
+      "confidence": 1.0,
+      "rationale": "Direct explicit description of the laboratory."
+    },
+    {
+      "evidence_id": "EVID-006",
+      "entity_type": "location",
+      "entity_id": "LOC-REACTOR-001",
+      "field_path": "description",
+      "value_summary": "The reactor door is locked.",
+      "origin": "canon",
+      "source_fragment": "Andrey looked at the locked reactor door, then checked the terminal logs instead of arguing with her.",
+      "confidence": 1.0,
+      "rationale": "Direct explicit statement about the reactor door being locked."
+    },
+    {
+      "evidence_id": "EVID-007",
+      "entity_type": "location",
+      "entity_id": "LOC-TERMINAL-001",
+      "field_path": "description",
+      "value_summary": "The terminal is damaged.",
+      "origin": "canon",
+      "source_fragment": "A blue female hologram appeared above the damaged terminal.",
+      "confidence": 1.0,
+      "rationale": "Direct explicit statement about the terminal being damaged."
+    },
+    {
+      "evidence_id": "EVID-008",
+      "entity_type": "event",
+      "entity_id": "EVT-001",
+      "field_path": "event",
+      "value_summary": "Andrey enters Laboratory Block Four at 02:17.",
+      "origin": "canon",
+      "source_fragment": "He entered Laboratory Block Four at 02:17.",
+      "confidence": 1.0,
+      "rationale": "Direct explicit statement about the event."
+    },
+    {
+      "evidence_id": "EVID-009",
+      "entity_type": "event",
+      "entity_id": "EVT-002",
+      "field_path": "event",
+      "value_summary": "Andrey observes the narrow, concrete, and almost dark corridor with red emergency lamps.",
+      "origin": "canon",
+      "source_fragment": "The corridor was narrow, concrete and almost dark. Red emergency lamps flashed above the sealed doors.",
+      "confidence": 1.0,
+      "rationale": "Direct explicit description of the event."
+    },
+    {
+      "evidence_id": "EVID-010",
+      "entity_type": "event",
+      "entity_id": "EVT-003",
+      "field_path": "event",
+      "value_summary": "A blue female hologram named Lira appears above the damaged terminal.",
+      "origin": "canon",
+      "source_fragment": "A blue female hologram appeared above the damaged terminal. My name is Lira, she said.",
+      "confidence": 1.0,
+      "rationale": "Direct explicit statement about the event."
+    },
+    {
+      "evidence_id": "EVID-011",
+      "entity_type": "event",
+      "entity_id": "EVT-004",
+      "field_path": "event",
+      "value_summary": "Andrey asks Lira who started the reactor.",
+      "origin": "canon",
+      "source_fragment": "Who started the reactor? Andrey asked.",
+      "confidence": 1.0,
+      "rationale": "Direct explicit statement about the event."
+    },
+    {
+      "evidence_id": "EVID-012",
+      "entity_type": "event",
+      "entity_id": "EVT-005",
+      "field_path": "event",
+      "value_summary": "Lira states she cannot answer the question yet.",
+      "origin": "canon",
+      "source_fragment": "I cannot answer that question yet.",
+      "confidence": 1.0,
+      "rationale": "Direct explicit statement about the event."
+    },
+    {
+      "evidence_id": "EVID-013",
+      "entity_type": "event",
+      "entity_id": "EVT-006",
+      "field_path": "event",
+      "value_summary": "Andrey checks the terminal logs instead of arguing with Lira.",
+      "origin": "canon",
+      "source_fragment": "Andrey looked at the locked reactor door, then checked the terminal logs instead of arguing with her.",
+      "confidence": 1.0,
+      "rationale": "Direct explicit statement about the event."
+    },
+    {
+      "evidence_id": "EVID-014",
+      "entity_type": "event",
+      "entity_id": "EVT-007",
+      "field_path": "event",
+      "value_summary": "A warning appears on the screen: REACTOR COOLING FAILURE.",
+      "origin": "canon",
+      "source_fragment": "A warning appeared on the screen: REACTOR COOLING FAILURE.",
+      "confidence": 1.0,
+      "rationale": "Direct explicit statement about the event."
+    },
+    {
+      "evidence_id": "EVID-015",
+      "entity_type": "event",
+      "entity_id": "EVT-008",
+      "field_path": "event",
+      "value_summary": "Lira tells Andrey he has less than twelve minutes before automatic containment seals the lower level.",
+      "origin": "canon",
+      "source_fragment": "Lira told him that he had less than twelve minutes before automatic containment would seal the lower level.",
+      "confidence": 1.0,
+      "rationale": "Direct explicit statement about the event."
+    },
+    {
+      "evidence_id": "EVID-016",
+      "entity_type": "event",
+      "entity_id": "EVT-009",
+      "field_path": "event",
+      "value_summary": "Andrey decides to follow Lira's instructions despite not trusting her.",
+      "origin": "canon",
+      "source_fragment": "Andrey did not trust her, but he decided to follow her instructions because the temperature readings confirmed part of her warning.",
+      "confidence": 1.0,
+      "rationale": "Direct explicit statement about the event."
+    },
+    {
+      "evidence_id": "EVID-017",
+      "entity_type": "event",
+      "entity_id": "EVT-010",
+      "field_path": "event",
+      "value_summary": "Andrey finds Marina, the security chief, in the next corridor.",
+      "origin": "canon",
+      "source_fragment": "In the next corridor he found Marina, the security chief.",
+      "confidence": 1.0,
+      "rationale": "Direct explicit statement about the event."
+    },
+    {
+      "evidence_id": "EVID-018",
+      "entity_type": "event",
+      "entity_id": "EVT-011",
+      "field_path": "event",
+      "value_summary": "Marina tells Andrey that Lira must be disconnected immediately.",
+      "origin": "canon",
+      "source_fragment": "Marina told him that Lira must be disconnected immediately.",
+      "confidence": 1.0,
+      "rationale": "Direct explicit statement about the event."
+    },
+    {
+      "evidence_id": "EVID-019",
+      "entity_type": "event",
+      "entity_id": "EVT-012",
+      "field_path": "event",
+      "value_summary": "Andrey does not tell Marina that Lira has already helped him.",
+      "origin": "canon",
+      "source_fragment": "Andrey did not tell Marina that Lira had already helped him.",
+      "confidence": 1.0,
+      "rationale": "Direct explicit negative statement about the event."
+    },
+    {
+      "evidence_id": "EVID-020",
+      "entity_type": "relationship",
+      "entity_id": "REL-001",
+      "field_path": "relationship",
+      "value_summary": "Andrey interacts with Lira for information and instructions.",
+      "origin": "canon",
+      "source_fragment": "Andrey asked Lira who started the reactor. Lira told him that he had less than twelve minutes before automatic containment would seal the lower level. Andrey decided to follow her instructions despite not trusting her.",
+      "confidence": 1.0,
+      "rationale": "Direct explicit statements about the interaction between Andrey and Lira."
+    },
+    {
+      "evidence_id": "EVID-021",
+      "entity_type": "relationship",
+      "entity_id": "REL-002",
+      "field_path": "relationship",
+      "value_summary": "Andrey and Marina are professionals working in the same laboratory.",
+      "origin": "canon",
+      "source_fragment": "Andrey was a systems engineer. In the next corridor he found Marina, the security chief.",
+      "confidence": 1.0,
+      "rationale": "Direct explicit statements about their roles and professional relationship."
+    },
+    {
+      "evidence_id": "EVID-022",
+      "entity_type": "relationship",
+      "entity_id": "REL-003",
+      "field_path": "relationship",
+      "value_summary": "Lira and Marina have a conflict regarding Lira's role and necessity.",
+      "origin": "canon",
+      "source_fragment": "Marina told him that Lira must be disconnected immediately. Andrey did not tell Marina that Lira had already helped him.",
+      "confidence": 1.0,
+      "rationale": "Direct explicit statements about the conflict between Lira and Marina."
+    }
+  ],
+  "proposals": [],
+  "warnings": []
+}

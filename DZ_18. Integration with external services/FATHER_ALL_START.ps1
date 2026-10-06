@@ -1,23 +1,17 @@
 ﻿$ErrorActionPreference = "Stop"
 
 $Root = Split-Path -Parent $MyInvocation.MyCommand.Path
-Set-Location $Root
+Set-Location -LiteralPath $Root
 
 $env:PYTHONPATH = Join-Path $Root "src"
 
-$Logs = Join-Path $Root "runtime-data\logs"
 $ConfigDir = Join-Path $Root "runtime-data\config"
-
-New-Item -ItemType Directory -Force $Logs | Out-Null
-New-Item -ItemType Directory -Force $ConfigDir | Out-Null
-
 
 function Test-Port {
     param([int]$Port)
 
     try {
         $client = New-Object System.Net.Sockets.TcpClient
-
         $result = $client.BeginConnect(
             "127.0.0.1",
             $Port,
@@ -39,14 +33,13 @@ function Test-Port {
     }
 }
 
-
 function Wait-Port {
     param(
         [int]$Port,
-        [int]$TimeoutSeconds = 30
+        [int]$Timeout = 30
     )
 
-    for ($i = 0; $i -lt $TimeoutSeconds; $i++) {
+    for ($i = 0; $i -lt $Timeout; $i++) {
         if (Test-Port $Port) {
             return $true
         }
@@ -57,301 +50,257 @@ function Wait-Port {
     return $false
 }
 
-
-function Show-Port {
+function Start-PersistentPowerShell {
     param(
         [string]$Name,
-        [int]$Port
+        [string]$Command
     )
 
-    if (Test-Port $Port) {
-        Write-Host (
-            "{0,-18} :{1,-6} READY" -f $Name, $Port
-        ) -ForegroundColor Green
-    }
-    else {
-        Write-Host (
-            "{0,-18} :{1,-6} STOPPED" -f $Name, $Port
-        ) -ForegroundColor Red
-    }
+    $bytes = [System.Text.Encoding]::Unicode.GetBytes(
+        $Command
+    )
+
+    $encoded = [Convert]::ToBase64String(
+        $bytes
+    )
+
+    Write-Host "      Starting $Name..."
+
+    Start-Process `
+        -FilePath "powershell.exe" `
+        -ArgumentList @(
+            "-NoProfile",
+            "-ExecutionPolicy",
+            "Bypass",
+            "-EncodedCommand",
+            $encoded
+        ) `
+        -WindowStyle Minimized
 }
 
-
 Write-Host ""
 Write-Host "============================================================"
-Write-Host "                 FATHER PLATFORM START"
+Write-Host "            FATHER / ALINA PLATFORM START"
 Write-Host "============================================================"
 Write-Host ""
 
-
-# ============================================================
+# ------------------------------------------------------------
 # 1. OLLAMA
-# ============================================================
+# ------------------------------------------------------------
 
 Write-Host "[1/5] OLLAMA" -ForegroundColor Cyan
 
 if (-not (Test-Port 11434)) {
 
-    if (-not (Get-Command ollama -ErrorAction SilentlyContinue)) {
-        throw "Ollama executable not found."
-    }
+    Start-PersistentPowerShell `
+        "Ollama" `
+        "ollama serve"
+}
 
-    Write-Host "      Starting Ollama..."
-
-    Start-Process `
-        -FilePath "ollama" `
-        -ArgumentList "serve" `
-        -WindowStyle Hidden
-
-    if (-not (Wait-Port 11434 20)) {
-        throw "Ollama failed to start on port 11434."
-    }
+if (-not (Wait-Port 11434 20)) {
+    throw "Ollama failed to start."
 }
 
 Write-Host "      READY :11434" -ForegroundColor Green
 
 
-# ============================================================
+# ------------------------------------------------------------
 # 2. COMFYUI
-# ============================================================
+# ------------------------------------------------------------
 
 Write-Host "[2/5] COMFYUI" -ForegroundColor Cyan
 
 if (-not (Test-Port 8188)) {
 
-    $ComfyConfig = Join-Path `
+    $configPath = Join-Path `
         $ConfigDir `
         "comfyui.local.json"
 
-    if (-not (Test-Path $ComfyConfig)) {
-        throw "ComfyUI launch config not found: $ComfyConfig"
+    if (-not (Test-Path $configPath)) {
+        throw "ComfyUI local config not found."
     }
 
     $comfy = Get-Content `
-        $ComfyConfig `
+        $configPath `
         -Raw |
         ConvertFrom-Json
 
-    if (-not (Test-Path $comfy.executable)) {
-        throw "ComfyUI Python not found: $($comfy.executable)"
-    }
+    $wd = $comfy.working_directory.Replace(
+        "'",
+        "''"
+    )
 
-    Write-Host "      Starting ComfyUI..."
-    Write-Host "      $($comfy.executable)"
-    Write-Host "      $($comfy.arguments)"
+    $exe = $comfy.executable.Replace(
+        "'",
+        "''"
+    )
 
-    Start-Process `
-        -FilePath $comfy.executable `
-        -ArgumentList $comfy.arguments `
-        -WorkingDirectory $comfy.working_directory `
-        -RedirectStandardOutput (
-            Join-Path $Logs "comfyui.out.log"
-        ) `
-        -RedirectStandardError (
-            Join-Path $Logs "comfyui.err.log"
-        ) `
-        -WindowStyle Hidden
+    $args = $comfy.arguments
 
-    if (-not (Wait-Port 8188 120)) {
+    $command = @"
+Set-Location -LiteralPath '$wd'
+& '$exe' $args
+"@
 
-        Write-Host ""
-        Write-Host "COMFYUI ERROR LOG" -ForegroundColor Red
+    Start-PersistentPowerShell `
+        "ComfyUI" `
+        $command
+}
 
-        Get-Content `
-            (Join-Path $Logs "comfyui.err.log") `
-            -Tail 40 `
-            -ErrorAction SilentlyContinue
-
-        throw "ComfyUI failed to start on port 8188."
-    }
+if (-not (Wait-Port 8188 120)) {
+    throw "ComfyUI failed to start."
 }
 
 Write-Host "      READY :8188" -ForegroundColor Green
 
 
-# ============================================================
+# ------------------------------------------------------------
 # 3. FATHER API
-# ============================================================
+# ------------------------------------------------------------
 
 Write-Host "[3/5] FATHER API" -ForegroundColor Cyan
 
 if (-not (Test-Port 8010)) {
 
-    Write-Host "      Starting FATHER Runtime..."
+    $escapedRoot = $Root.Replace(
+        "'",
+        "''"
+    )
 
-    Start-Process `
-        -FilePath "python" `
-        -ArgumentList @(
-            "-m",
-            "uvicorn",
-            "father.runtime.api.app:app",
-            "--host",
-            "127.0.0.1",
-            "--port",
-            "8010"
-        ) `
-        -WorkingDirectory $Root `
-        -RedirectStandardOutput (
-            Join-Path $Logs "father-api.out.log"
-        ) `
-        -RedirectStandardError (
-            Join-Path $Logs "father-api.err.log"
-        ) `
-        -WindowStyle Hidden
+    $command = @"
+Set-Location -LiteralPath '$escapedRoot'
+`$env:PYTHONPATH = '$escapedRoot\src'
+python -m uvicorn father.runtime.api.app:app --host 127.0.0.1 --port 8010
+"@
 
-    if (-not (Wait-Port 8010 30)) {
+    Start-PersistentPowerShell `
+        "FATHER API" `
+        $command
+}
 
-        Get-Content `
-            (Join-Path $Logs "father-api.err.log") `
-            -Tail 40 `
-            -ErrorAction SilentlyContinue
-
-        throw "FATHER API failed to start."
-    }
+if (-not (Wait-Port 8010 30)) {
+    throw "FATHER API failed to start."
 }
 
 Write-Host "      READY :8010" -ForegroundColor Green
 
 
-# ============================================================
+# ------------------------------------------------------------
 # 4. DZ18 NODE API
-# ============================================================
+# ------------------------------------------------------------
 
 Write-Host "[4/5] DZ18 API" -ForegroundColor Cyan
 
 if (-not (Test-Port 5190)) {
 
-    Write-Host "      Starting Node API..."
+    $escapedRoot = $Root.Replace(
+        "'",
+        "''"
+    )
 
-    Start-Process `
-        -FilePath "npm.cmd" `
-        -ArgumentList @(
-            "run",
-            "dev:api"
-        ) `
-        -WorkingDirectory $Root `
-        -RedirectStandardOutput (
-            Join-Path $Logs "dz18-api.out.log"
-        ) `
-        -RedirectStandardError (
-            Join-Path $Logs "dz18-api.err.log"
-        ) `
-        -WindowStyle Hidden
+    $command = @"
+Set-Location -LiteralPath '$escapedRoot'
+npm.cmd run dev:api
+"@
 
-    if (-not (Wait-Port 5190 30)) {
+    Start-PersistentPowerShell `
+        "DZ18 API" `
+        $command
+}
 
-        Get-Content `
-            (Join-Path $Logs "dz18-api.err.log") `
-            -Tail 40 `
-            -ErrorAction SilentlyContinue
-
-        throw "DZ18 Node API failed to start."
-    }
+if (-not (Wait-Port 5190 30)) {
+    throw "DZ18 API failed to start."
 }
 
 Write-Host "      READY :5190" -ForegroundColor Green
 
 
-# ============================================================
-# 5. VITE
-# ============================================================
+# ------------------------------------------------------------
+# 5. ALINA STUDIO / VITE
+# ------------------------------------------------------------
 
-Write-Host "[5/5] DZ18 WEB" -ForegroundColor Cyan
+Write-Host "[5/5] ALINA STUDIO" -ForegroundColor Cyan
 
 if (-not (Test-Port 5188)) {
 
-    Write-Host "      Starting Vite..."
+    $escapedRoot = $Root.Replace(
+        "'",
+        "''"
+    )
 
-    Start-Process `
-        -FilePath "npm.cmd" `
-        -ArgumentList @(
-            "run",
-            "dev:web",
-            "--",
-            "--host",
-            "127.0.0.1",
-            "--port",
-            "5188"
-        ) `
-        -WorkingDirectory $Root `
-        -RedirectStandardOutput (
-            Join-Path $Logs "vite.out.log"
-        ) `
-        -RedirectStandardError (
-            Join-Path $Logs "vite.err.log"
-        ) `
-        -WindowStyle Hidden
+    $command = @"
+Set-Location -LiteralPath '$escapedRoot'
+npm.cmd run dev:web -- --host 127.0.0.1 --port 5188
+"@
 
-    if (-not (Wait-Port 5188 30)) {
+    Start-PersistentPowerShell `
+        "ALINA Studio" `
+        $command
+}
 
-        Get-Content `
-            (Join-Path $Logs "vite.err.log") `
-            -Tail 40 `
-            -ErrorAction SilentlyContinue
-
-        throw "Vite failed to start."
-    }
+if (-not (Wait-Port 5188 30)) {
+    throw "ALINA Studio failed to start."
 }
 
 Write-Host "      READY :5188" -ForegroundColor Green
 
 
-# ============================================================
-# FINAL STATUS
-# ============================================================
+# ------------------------------------------------------------
+# HEALTH
+# ------------------------------------------------------------
 
 Write-Host ""
 Write-Host "============================================================"
-Write-Host "                    FATHER STATUS"
+Write-Host "                  ALINA / FATHER STATUS"
 Write-Host "============================================================"
 
-Show-Port "Ollama" 11434
-Show-Port "ComfyUI" 8188
-Show-Port "FATHER API" 8010
-Show-Port "DZ18 API" 5190
-Show-Port "DZ18 WEB" 5188
+$services = @(
+    @{ Name = "Ollama";       Port = 11434 },
+    @{ Name = "ComfyUI";      Port = 8188  },
+    @{ Name = "FATHER API";   Port = 8010  },
+    @{ Name = "DZ18 API";     Port = 5190  },
+    @{ Name = "ALINA Studio"; Port = 5188  }
+)
 
+foreach ($service in $services) {
+
+    $state = if (Test-Port $service.Port) {
+        "READY"
+    }
+    else {
+        "STOPPED"
+    }
+
+    Write-Host (
+        "{0,-20} :{1,-6} {2}" -f `
+        $service.Name,
+        $service.Port,
+        $state
+    )
+}
 
 Write-Host ""
-Write-Host "CAPABILITIES" -ForegroundColor Cyan
 
 try {
-
     $health = Invoke-RestMethod `
-        -Uri "http://127.0.0.1:8010/api/father/health" `
+        "http://127.0.0.1:8010/api/father/health" `
         -TimeoutSec 5
 
-    Write-Host (
-        "TEXT       {0}" -f
-        $health.services.llm.status.ToUpper()
-    )
-
-    Write-Host (
-        "VOICE IN   {0}" -f
-        $health.services.stt.status.ToUpper()
-    )
-
-    Write-Host (
-        "VOICE OUT  {0}" -f
-        $health.services.tts.status.ToUpper()
-    )
-
-    Write-Host (
-        "IMAGE      {0}" -f
-        $health.services.image.status.ToUpper()
-    )
+    Write-Host "TEXT        $($health.services.llm.status.ToUpper())"
+    Write-Host "VOICE IN    $($health.services.stt.status.ToUpper())"
+    Write-Host "VOICE OUT   $($health.services.tts.status.ToUpper())"
+    Write-Host "IMAGE       $($health.services.image.status.ToUpper())"
 }
 catch {
-    Write-Host "FATHER health unavailable: $_" -ForegroundColor Red
+    Write-Host "FATHER health unavailable." -ForegroundColor Red
 }
 
-
 Write-Host ""
 Write-Host "============================================================"
-Write-Host "                     FATHER READY"
+Write-Host "                    ALINA READY"
 Write-Host "============================================================"
 Write-Host ""
-Write-Host "Control Center:"
+Write-Host "ALINA STUDIO:"
 Write-Host "http://localhost:5188/" -ForegroundColor Cyan
 Write-Host ""
 

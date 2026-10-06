@@ -1,0 +1,33 @@
+﻿Analyze the text and return JSON only.
+
+TEXT:
+
+Andrey is 42 years old.
+Andrey enters Laboratory Four.
+Lira tells Andrey that reactor cooling has failed.
+
+Return exactly this logical structure:
+
+{
+  "characters": [
+    {
+      "name": "Andrey",
+      "age": 42
+    },
+    {
+      "name": "Lira"
+    }
+  ],
+  "locations": [
+    {
+      "name": "Laboratory Four"
+    }
+  ],
+  "events": [
+    {
+      "actor": "Lira",
+      "action": "warns",
+      "content": "reactor cooling failure"
+    }
+  ]
+}

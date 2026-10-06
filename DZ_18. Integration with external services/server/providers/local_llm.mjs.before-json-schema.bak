@@ -1,0 +1,342 @@
+const DEFAULT_BASE_URL =
+  "http://127.0.0.1:8088";
+
+const DEFAULT_MODEL =
+  "Ministral 3 8B Instruct Q4";
+
+
+export function localLlmHealth() {
+  return {
+    provider: "local",
+
+    configured: true,
+
+    model:
+      process.env.LOCAL_LLM_NAME ||
+      DEFAULT_MODEL,
+
+    runtime: "llama.cpp server",
+
+    baseUrl:
+      process.env.LOCAL_LLM_BASE_URL ||
+      DEFAULT_BASE_URL,
+
+    private: true,
+  };
+}
+
+
+export async function generateLocalStructured({
+  prompt,
+  input,
+  kind = "newsletter",
+}) {
+  const baseUrl =
+    process.env.LOCAL_LLM_BASE_URL ||
+    DEFAULT_BASE_URL;
+
+  const model =
+    process.env.LOCAL_LLM_NAME ||
+    DEFAULT_MODEL;
+
+  const systemPrompt = [
+    prompt.instructions,
+
+    "",
+    "STRICT OUTPUT CONTRACT",
+    "Return ONLY one valid JSON object.",
+    "Do not use Markdown fences.",
+    "Do not write commentary before or after JSON.",
+
+    "",
+    "Required JSON schema:",
+    JSON.stringify(
+      prompt.schema,
+      null,
+      2
+    ),
+  ].join("\n");
+
+  const userPrompt =
+    JSON.stringify(
+      input,
+      null,
+      2
+    );
+
+  let response;
+
+  try {
+    response = await fetch(
+      `${baseUrl}/v1/chat/completions`,
+      {
+        method: "POST",
+
+        headers: {
+          "Content-Type":
+            "application/json; charset=utf-8",
+        },
+
+        body: JSON.stringify({
+          model,
+
+          messages: [
+            {
+              role: "system",
+              content: systemPrompt,
+            },
+            {
+              role: "user",
+              content: userPrompt,
+            },
+          ],
+
+          temperature: 0.3,
+
+          max_tokens:
+            kind === "podcast"
+              ? 1800
+              : 1200,
+
+          stream: false,
+        }),
+      }
+    );
+  }
+  catch (cause) {
+    const error =
+      new Error(
+        `Local LLM server unavailable: ${cause.message}`
+      );
+
+    error.statusCode = 503;
+    error.provider = "local";
+    error.cause = cause;
+
+    throw error;
+  }
+
+  const raw =
+    await response.text();
+
+  let payload;
+
+  try {
+    payload =
+      raw
+        ? JSON.parse(raw)
+        : {};
+  }
+  catch {
+    payload = {
+      raw,
+    };
+  }
+
+  if (!response.ok) {
+    const error =
+      new Error(
+        payload?.error?.message ||
+        payload?.error ||
+        `Local LLM HTTP ${response.status}`
+      );
+
+    error.statusCode =
+      response.status;
+
+    error.provider =
+      "local";
+
+    error.upstream = {
+      status:
+        response.status,
+
+      preview:
+        raw.slice(
+          0,
+          1200
+        ),
+    };
+
+    throw error;
+  }
+
+  const content =
+    payload?.choices?.[0]
+      ?.message?.content;
+
+  if (
+    typeof content !== "string" ||
+    !content.trim()
+  ) {
+    const error =
+      new Error(
+        "Local LLM returned no message content."
+      );
+
+    error.statusCode = 502;
+    error.provider = "local";
+
+    throw error;
+  }
+
+  const data =
+    extractJson(
+      content
+    );
+
+  validateContract(
+    data,
+    prompt.schema
+  );
+
+  return {
+    provider: "local",
+
+    model,
+
+    promptId:
+      prompt.id,
+
+    promptVersion:
+      prompt.version,
+
+    data,
+  };
+}
+
+
+function extractJson(raw) {
+  let text =
+    String(raw || "")
+      .trim();
+
+  text = text
+    .replace(
+      /^```(?:json)?\s*/i,
+      ""
+    )
+    .replace(
+      /\s*```$/,
+      ""
+    )
+    .trim();
+
+  try {
+    return JSON.parse(
+      text
+    );
+  }
+  catch {
+  }
+
+  const start =
+    text.indexOf("{");
+
+  const end =
+    text.lastIndexOf("}");
+
+  if (
+    start < 0 ||
+    end <= start
+  ) {
+    const error =
+      new Error(
+        "Local model output contains no JSON object."
+      );
+
+    error.statusCode = 502;
+    error.provider = "local";
+
+    throw error;
+  }
+
+  const candidate =
+    text.slice(
+      start,
+      end + 1
+    );
+
+  try {
+    return JSON.parse(
+      candidate
+    );
+  }
+  catch {
+    const error =
+      new Error(
+        "Local model returned invalid JSON."
+      );
+
+    error.statusCode = 502;
+    error.provider = "local";
+
+    error.upstream = {
+      preview:
+        candidate.slice(
+          0,
+          1500
+        ),
+    };
+
+    throw error;
+  }
+}
+
+
+function validateContract(
+  data,
+  schema
+) {
+  if (
+    !data ||
+    typeof data !== "object" ||
+    Array.isArray(data)
+  ) {
+    throwContract(
+      "Root must be an object."
+    );
+  }
+
+  const required =
+    Array.isArray(
+      schema?.required
+    )
+      ? schema.required
+      : [];
+
+  for (
+    const key
+    of required
+  ) {
+    if (
+      !(key in data)
+    ) {
+      throwContract(
+        `Missing field: ${key}`
+      );
+    }
+
+    if (
+      typeof data[key] === "string" &&
+      !data[key].trim()
+    ) {
+      throwContract(
+        `Empty field: ${key}`
+      );
+    }
+  }
+}
+
+
+function throwContract(detail) {
+  const error =
+    new Error(
+      `Local LLM contract failed: ${detail}`
+    );
+
+  error.statusCode = 502;
+  error.provider = "local";
+
+  throw error;
+}

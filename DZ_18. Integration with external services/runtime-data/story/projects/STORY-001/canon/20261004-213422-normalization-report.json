@@ -1,0 +1,87 @@
+{
+  "project_id": "STORY-001",
+  "mode": "deterministic",
+  "llm_used": false,
+  "counts": {
+    "characters": 3,
+    "locations": 3,
+    "scenes": 3,
+    "events": 12,
+    "relationships": 3,
+    "evidence": 22,
+    "proposals": 0
+  },
+  "warnings": [],
+  "dropped_warning_noise": [
+    "/n"
+  ],
+  "required_evidence_missing": 0,
+  "scene_event_links_repaired": 4,
+  "scene_event_link_repairs": [
+    {
+      "event_id": "EVT-006",
+      "repair": "event_scene_conflict",
+      "from": "SCENE-002",
+      "to": "SCENE-003",
+      "reason": "Unique Scene.event_ids membership overrides conflicting Event.scene_id"
+    },
+    {
+      "event_id": "EVT-007",
+      "repair": "event_scene_conflict",
+      "from": "SCENE-002",
+      "to": "SCENE-003",
+      "reason": "Unique Scene.event_ids membership overrides conflicting Event.scene_id"
+    },
+    {
+      "scene_id": "SCENE-002",
+      "repair": "scene_event_ids",
+      "from": [
+        "EVT-003",
+        "EVT-004",
+        "EVT-005"
+      ],
+      "to": [
+        "EVT-003",
+        "EVT-004",
+        "EVT-005",
+        "EVT-008",
+        "EVT-009"
+      ],
+      "missing_added": [
+        "EVT-008",
+        "EVT-009"
+      ],
+      "extra_removed": [],
+      "reason": "Rebuilt from canonical Event.scene_id mapping"
+    },
+    {
+      "scene_id": "SCENE-003",
+      "repair": "scene_event_ids",
+      "from": [
+        "EVT-006",
+        "EVT-007"
+      ],
+      "to": [
+        "EVT-006",
+        "EVT-007",
+        "EVT-010",
+        "EVT-011",
+        "EVT-012"
+      ],
+      "missing_added": [
+        "EVT-010",
+        "EVT-011",
+        "EVT-012"
+      ],
+      "extra_removed": [],
+      "reason": "Rebuilt from canonical Event.scene_id mapping"
+    }
+  ],
+  "attached_evidence": 22,
+  "unmapped_evidence_ids": [],
+  "consistency_errors": [],
+  "inputs": {
+    "facts": "G:\\1\\Vibe coding\\Vibe-coding-router\\DZ_18. Integration with external services\\runtime-data\\story\\projects\\STORY-001\\facts\\20261004-174229-facts.json",
+    "provenance": "G:\\1\\Vibe coding\\Vibe-coding-router\\DZ_18. Integration with external services\\runtime-data\\story\\projects\\STORY-001\\provenance\\20261004-204757-provenance.json"
+  }
+}

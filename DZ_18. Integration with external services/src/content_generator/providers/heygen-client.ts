@@ -15,6 +15,17 @@ export interface RuntimeHealth {
     model: string;
     ttsModel: string;
   };
+  silero: {
+    provider: "silero";
+    configured: boolean;
+    model: string;
+    voices: Array<{
+      id: string;
+      name: string;
+      gender: string;
+      language: string;
+    }>;
+  };
 }
 
 export interface HeygenVideoJob {

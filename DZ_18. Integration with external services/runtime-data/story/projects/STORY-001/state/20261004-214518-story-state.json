@@ -1,0 +1,940 @@
+{
+  "project_id": "STORY-001",
+  "timeline_event_ids": [
+    "EVT-001",
+    "EVT-002",
+    "EVT-003",
+    "EVT-004",
+    "EVT-005",
+    "EVT-006",
+    "EVT-007",
+    "EVT-008",
+    "EVT-009",
+    "EVT-010",
+    "EVT-011",
+    "EVT-012"
+  ],
+  "characters": {
+    "CHAR-ANDREY-001": {
+      "character_id": "CHAR-ANDREY-001",
+      "scene_id": "SCENE-003",
+      "location_id": "LOC-LAB-001",
+      "observed_event_ids": [
+        "EVT-001",
+        "EVT-002",
+        "EVT-004",
+        "EVT-005",
+        "EVT-006",
+        "EVT-008",
+        "EVT-009",
+        "EVT-010",
+        "EVT-011",
+        "EVT-012"
+      ],
+      "knowledge_ids": [
+        "K-EVT-004",
+        "K-EVT-005",
+        "K-EVT-008",
+        "K-EVT-011",
+        "K-EVT-012"
+      ],
+      "secret_ids": [
+        "K-EVT-012"
+      ]
+    },
+    "CHAR-LIRA-001": {
+      "character_id": "CHAR-LIRA-001",
+      "scene_id": "SCENE-002",
+      "location_id": "LOC-TERMINAL-001",
+      "observed_event_ids": [
+        "EVT-003",
+        "EVT-004",
+        "EVT-005",
+        "EVT-007",
+        "EVT-008",
+        "EVT-009"
+      ],
+      "knowledge_ids": [
+        "K-EVT-004",
+        "K-EVT-005",
+        "K-EVT-008"
+      ],
+      "secret_ids": []
+    },
+    "CHAR-MARINA-001": {
+      "character_id": "CHAR-MARINA-001",
+      "scene_id": "SCENE-003",
+      "location_id": "LOC-LAB-001",
+      "observed_event_ids": [
+        "EVT-010",
+        "EVT-011",
+        "EVT-012"
+      ],
+      "knowledge_ids": [
+        "K-EVT-011"
+      ],
+      "secret_ids": []
+    }
+  },
+  "knowledge": [
+    {
+      "knowledge_id": "K-EVT-004",
+      "source_event_id": "EVT-004",
+      "scene_id": "SCENE-002",
+      "kind": "communication",
+      "content": "Andrey asks Lira who started the reactor.",
+      "known_by": [
+        "CHAR-ANDREY-001",
+        "CHAR-LIRA-001"
+      ],
+      "hidden_from": [],
+      "evidence_ids": [
+        "EVID-011"
+      ]
+    },
+    {
+      "knowledge_id": "K-EVT-005",
+      "source_event_id": "EVT-005",
+      "scene_id": "SCENE-002",
+      "kind": "communication",
+      "content": "Lira states she cannot answer the question yet.",
+      "known_by": [
+        "CHAR-LIRA-001",
+        "CHAR-ANDREY-001"
+      ],
+      "hidden_from": [],
+      "evidence_ids": [
+        "EVID-012"
+      ]
+    },
+    {
+      "knowledge_id": "K-EVT-008",
+      "source_event_id": "EVT-008",
+      "scene_id": "SCENE-002",
+      "kind": "communication",
+      "content": "Lira tells Andrey he has less than twelve minutes before automatic containment seals the lower level.",
+      "known_by": [
+        "CHAR-LIRA-001",
+        "CHAR-ANDREY-001"
+      ],
+      "hidden_from": [],
+      "evidence_ids": [
+        "EVID-015"
+      ]
+    },
+    {
+      "knowledge_id": "K-EVT-011",
+      "source_event_id": "EVT-011",
+      "scene_id": "SCENE-003",
+      "kind": "communication",
+      "content": "Marina tells Andrey that Lira must be disconnected immediately.",
+      "known_by": [
+        "CHAR-MARINA-001",
+        "CHAR-ANDREY-001"
+      ],
+      "hidden_from": [],
+      "evidence_ids": [
+        "EVID-018"
+      ]
+    },
+    {
+      "knowledge_id": "K-EVT-012",
+      "source_event_id": "EVT-012",
+      "scene_id": "SCENE-003",
+      "kind": "secret",
+      "content": "Lira has already helped him.",
+      "known_by": [
+        "CHAR-ANDREY-001"
+      ],
+      "hidden_from": [
+        "CHAR-MARINA-001"
+      ],
+      "evidence_ids": [
+        "EVID-019"
+      ]
+    }
+  ],
+  "transitions": [
+    {
+      "event_id": "EVT-001",
+      "scene_id": "SCENE-001",
+      "before": {
+        "CHAR-ANDREY-001": {
+          "character_id": "CHAR-ANDREY-001",
+          "scene_id": null,
+          "location_id": null,
+          "observed_event_ids": [],
+          "knowledge_ids": [],
+          "secret_ids": []
+        }
+      },
+      "after": {
+        "CHAR-ANDREY-001": {
+          "character_id": "CHAR-ANDREY-001",
+          "scene_id": "SCENE-001",
+          "location_id": "LOC-LAB-001",
+          "observed_event_ids": [
+            "EVT-001"
+          ],
+          "knowledge_ids": [],
+          "secret_ids": []
+        }
+      },
+      "changes": [
+        {
+          "event_id": "EVT-001",
+          "character_id": "CHAR-ANDREY-001",
+          "field": "scene_id",
+          "before": null,
+          "after": "SCENE-001",
+          "reason": "Actor participates in event."
+        },
+        {
+          "event_id": "EVT-001",
+          "character_id": "CHAR-ANDREY-001",
+          "field": "location_id",
+          "before": null,
+          "after": "LOC-LAB-001",
+          "reason": "Explicit event location."
+        }
+      ]
+    },
+    {
+      "event_id": "EVT-002",
+      "scene_id": "SCENE-001",
+      "before": {
+        "CHAR-ANDREY-001": {
+          "character_id": "CHAR-ANDREY-001",
+          "scene_id": "SCENE-001",
+          "location_id": "LOC-LAB-001",
+          "observed_event_ids": [
+            "EVT-001"
+          ],
+          "knowledge_ids": [],
+          "secret_ids": []
+        }
+      },
+      "after": {
+        "CHAR-ANDREY-001": {
+          "character_id": "CHAR-ANDREY-001",
+          "scene_id": "SCENE-001",
+          "location_id": "LOC-LAB-001",
+          "observed_event_ids": [
+            "EVT-001",
+            "EVT-002"
+          ],
+          "knowledge_ids": [],
+          "secret_ids": []
+        }
+      },
+      "changes": []
+    },
+    {
+      "event_id": "EVT-003",
+      "scene_id": "SCENE-002",
+      "before": {
+        "CHAR-LIRA-001": {
+          "character_id": "CHAR-LIRA-001",
+          "scene_id": null,
+          "location_id": null,
+          "observed_event_ids": [],
+          "knowledge_ids": [],
+          "secret_ids": []
+        }
+      },
+      "after": {
+        "CHAR-LIRA-001": {
+          "character_id": "CHAR-LIRA-001",
+          "scene_id": "SCENE-002",
+          "location_id": "LOC-TERMINAL-001",
+          "observed_event_ids": [
+            "EVT-003"
+          ],
+          "knowledge_ids": [],
+          "secret_ids": []
+        }
+      },
+      "changes": [
+        {
+          "event_id": "EVT-003",
+          "character_id": "CHAR-LIRA-001",
+          "field": "scene_id",
+          "before": null,
+          "after": "SCENE-002",
+          "reason": "Actor participates in event."
+        },
+        {
+          "event_id": "EVT-003",
+          "character_id": "CHAR-LIRA-001",
+          "field": "location_id",
+          "before": null,
+          "after": "LOC-TERMINAL-001",
+          "reason": "Explicit event location."
+        }
+      ]
+    },
+    {
+      "event_id": "EVT-004",
+      "scene_id": "SCENE-002",
+      "before": {
+        "CHAR-ANDREY-001": {
+          "character_id": "CHAR-ANDREY-001",
+          "scene_id": "SCENE-001",
+          "location_id": "LOC-LAB-001",
+          "observed_event_ids": [
+            "EVT-001",
+            "EVT-002"
+          ],
+          "knowledge_ids": [],
+          "secret_ids": []
+        },
+        "CHAR-LIRA-001": {
+          "character_id": "CHAR-LIRA-001",
+          "scene_id": "SCENE-002",
+          "location_id": "LOC-TERMINAL-001",
+          "observed_event_ids": [
+            "EVT-003"
+          ],
+          "knowledge_ids": [],
+          "secret_ids": []
+        }
+      },
+      "after": {
+        "CHAR-ANDREY-001": {
+          "character_id": "CHAR-ANDREY-001",
+          "scene_id": "SCENE-002",
+          "location_id": "LOC-TERMINAL-001",
+          "observed_event_ids": [
+            "EVT-001",
+            "EVT-002",
+            "EVT-004"
+          ],
+          "knowledge_ids": [
+            "K-EVT-004"
+          ],
+          "secret_ids": []
+        },
+        "CHAR-LIRA-001": {
+          "character_id": "CHAR-LIRA-001",
+          "scene_id": "SCENE-002",
+          "location_id": "LOC-TERMINAL-001",
+          "observed_event_ids": [
+            "EVT-003",
+            "EVT-004"
+          ],
+          "knowledge_ids": [
+            "K-EVT-004"
+          ],
+          "secret_ids": []
+        }
+      },
+      "changes": [
+        {
+          "event_id": "EVT-004",
+          "character_id": "CHAR-ANDREY-001",
+          "field": "scene_id",
+          "before": "SCENE-001",
+          "after": "SCENE-002",
+          "reason": "Actor participates in event."
+        },
+        {
+          "event_id": "EVT-004",
+          "character_id": "CHAR-ANDREY-001",
+          "field": "location_id",
+          "before": "LOC-LAB-001",
+          "after": "LOC-TERMINAL-001",
+          "reason": "Explicit event location."
+        }
+      ]
+    },
+    {
+      "event_id": "EVT-005",
+      "scene_id": "SCENE-002",
+      "before": {
+        "CHAR-LIRA-001": {
+          "character_id": "CHAR-LIRA-001",
+          "scene_id": "SCENE-002",
+          "location_id": "LOC-TERMINAL-001",
+          "observed_event_ids": [
+            "EVT-003",
+            "EVT-004"
+          ],
+          "knowledge_ids": [
+            "K-EVT-004"
+          ],
+          "secret_ids": []
+        },
+        "CHAR-ANDREY-001": {
+          "character_id": "CHAR-ANDREY-001",
+          "scene_id": "SCENE-002",
+          "location_id": "LOC-TERMINAL-001",
+          "observed_event_ids": [
+            "EVT-001",
+            "EVT-002",
+            "EVT-004"
+          ],
+          "knowledge_ids": [
+            "K-EVT-004"
+          ],
+          "secret_ids": []
+        }
+      },
+      "after": {
+        "CHAR-LIRA-001": {
+          "character_id": "CHAR-LIRA-001",
+          "scene_id": "SCENE-002",
+          "location_id": "LOC-TERMINAL-001",
+          "observed_event_ids": [
+            "EVT-003",
+            "EVT-004",
+            "EVT-005"
+          ],
+          "knowledge_ids": [
+            "K-EVT-004",
+            "K-EVT-005"
+          ],
+          "secret_ids": []
+        },
+        "CHAR-ANDREY-001": {
+          "character_id": "CHAR-ANDREY-001",
+          "scene_id": "SCENE-002",
+          "location_id": "LOC-TERMINAL-001",
+          "observed_event_ids": [
+            "EVT-001",
+            "EVT-002",
+            "EVT-004",
+            "EVT-005"
+          ],
+          "knowledge_ids": [
+            "K-EVT-004",
+            "K-EVT-005"
+          ],
+          "secret_ids": []
+        }
+      },
+      "changes": []
+    },
+    {
+      "event_id": "EVT-006",
+      "scene_id": "SCENE-002",
+      "before": {
+        "CHAR-ANDREY-001": {
+          "character_id": "CHAR-ANDREY-001",
+          "scene_id": "SCENE-002",
+          "location_id": "LOC-TERMINAL-001",
+          "observed_event_ids": [
+            "EVT-001",
+            "EVT-002",
+            "EVT-004",
+            "EVT-005"
+          ],
+          "knowledge_ids": [
+            "K-EVT-004",
+            "K-EVT-005"
+          ],
+          "secret_ids": []
+        }
+      },
+      "after": {
+        "CHAR-ANDREY-001": {
+          "character_id": "CHAR-ANDREY-001",
+          "scene_id": "SCENE-002",
+          "location_id": "LOC-TERMINAL-001",
+          "observed_event_ids": [
+            "EVT-001",
+            "EVT-002",
+            "EVT-004",
+            "EVT-005",
+            "EVT-006"
+          ],
+          "knowledge_ids": [
+            "K-EVT-004",
+            "K-EVT-005"
+          ],
+          "secret_ids": []
+        }
+      },
+      "changes": []
+    },
+    {
+      "event_id": "EVT-007",
+      "scene_id": "SCENE-002",
+      "before": {
+        "CHAR-LIRA-001": {
+          "character_id": "CHAR-LIRA-001",
+          "scene_id": "SCENE-002",
+          "location_id": "LOC-TERMINAL-001",
+          "observed_event_ids": [
+            "EVT-003",
+            "EVT-004",
+            "EVT-005"
+          ],
+          "knowledge_ids": [
+            "K-EVT-004",
+            "K-EVT-005"
+          ],
+          "secret_ids": []
+        }
+      },
+      "after": {
+        "CHAR-LIRA-001": {
+          "character_id": "CHAR-LIRA-001",
+          "scene_id": "SCENE-002",
+          "location_id": "LOC-TERMINAL-001",
+          "observed_event_ids": [
+            "EVT-003",
+            "EVT-004",
+            "EVT-005",
+            "EVT-007"
+          ],
+          "knowledge_ids": [
+            "K-EVT-004",
+            "K-EVT-005"
+          ],
+          "secret_ids": []
+        }
+      },
+      "changes": []
+    },
+    {
+      "event_id": "EVT-008",
+      "scene_id": "SCENE-002",
+      "before": {
+        "CHAR-LIRA-001": {
+          "character_id": "CHAR-LIRA-001",
+          "scene_id": "SCENE-002",
+          "location_id": "LOC-TERMINAL-001",
+          "observed_event_ids": [
+            "EVT-003",
+            "EVT-004",
+            "EVT-005",
+            "EVT-007"
+          ],
+          "knowledge_ids": [
+            "K-EVT-004",
+            "K-EVT-005"
+          ],
+          "secret_ids": []
+        },
+        "CHAR-ANDREY-001": {
+          "character_id": "CHAR-ANDREY-001",
+          "scene_id": "SCENE-002",
+          "location_id": "LOC-TERMINAL-001",
+          "observed_event_ids": [
+            "EVT-001",
+            "EVT-002",
+            "EVT-004",
+            "EVT-005",
+            "EVT-006"
+          ],
+          "knowledge_ids": [
+            "K-EVT-004",
+            "K-EVT-005"
+          ],
+          "secret_ids": []
+        }
+      },
+      "after": {
+        "CHAR-LIRA-001": {
+          "character_id": "CHAR-LIRA-001",
+          "scene_id": "SCENE-002",
+          "location_id": "LOC-TERMINAL-001",
+          "observed_event_ids": [
+            "EVT-003",
+            "EVT-004",
+            "EVT-005",
+            "EVT-007",
+            "EVT-008"
+          ],
+          "knowledge_ids": [
+            "K-EVT-004",
+            "K-EVT-005",
+            "K-EVT-008"
+          ],
+          "secret_ids": []
+        },
+        "CHAR-ANDREY-001": {
+          "character_id": "CHAR-ANDREY-001",
+          "scene_id": "SCENE-002",
+          "location_id": "LOC-TERMINAL-001",
+          "observed_event_ids": [
+            "EVT-001",
+            "EVT-002",
+            "EVT-004",
+            "EVT-005",
+            "EVT-006",
+            "EVT-008"
+          ],
+          "knowledge_ids": [
+            "K-EVT-004",
+            "K-EVT-005",
+            "K-EVT-008"
+          ],
+          "secret_ids": []
+        }
+      },
+      "changes": []
+    },
+    {
+      "event_id": "EVT-009",
+      "scene_id": "SCENE-002",
+      "before": {
+        "CHAR-ANDREY-001": {
+          "character_id": "CHAR-ANDREY-001",
+          "scene_id": "SCENE-002",
+          "location_id": "LOC-TERMINAL-001",
+          "observed_event_ids": [
+            "EVT-001",
+            "EVT-002",
+            "EVT-004",
+            "EVT-005",
+            "EVT-006",
+            "EVT-008"
+          ],
+          "knowledge_ids": [
+            "K-EVT-004",
+            "K-EVT-005",
+            "K-EVT-008"
+          ],
+          "secret_ids": []
+        },
+        "CHAR-LIRA-001": {
+          "character_id": "CHAR-LIRA-001",
+          "scene_id": "SCENE-002",
+          "location_id": "LOC-TERMINAL-001",
+          "observed_event_ids": [
+            "EVT-003",
+            "EVT-004",
+            "EVT-005",
+            "EVT-007",
+            "EVT-008"
+          ],
+          "knowledge_ids": [
+            "K-EVT-004",
+            "K-EVT-005",
+            "K-EVT-008"
+          ],
+          "secret_ids": []
+        }
+      },
+      "after": {
+        "CHAR-ANDREY-001": {
+          "character_id": "CHAR-ANDREY-001",
+          "scene_id": "SCENE-002",
+          "location_id": "LOC-TERMINAL-001",
+          "observed_event_ids": [
+            "EVT-001",
+            "EVT-002",
+            "EVT-004",
+            "EVT-005",
+            "EVT-006",
+            "EVT-008",
+            "EVT-009"
+          ],
+          "knowledge_ids": [
+            "K-EVT-004",
+            "K-EVT-005",
+            "K-EVT-008"
+          ],
+          "secret_ids": []
+        },
+        "CHAR-LIRA-001": {
+          "character_id": "CHAR-LIRA-001",
+          "scene_id": "SCENE-002",
+          "location_id": "LOC-TERMINAL-001",
+          "observed_event_ids": [
+            "EVT-003",
+            "EVT-004",
+            "EVT-005",
+            "EVT-007",
+            "EVT-008",
+            "EVT-009"
+          ],
+          "knowledge_ids": [
+            "K-EVT-004",
+            "K-EVT-005",
+            "K-EVT-008"
+          ],
+          "secret_ids": []
+        }
+      },
+      "changes": []
+    },
+    {
+      "event_id": "EVT-010",
+      "scene_id": "SCENE-003",
+      "before": {
+        "CHAR-ANDREY-001": {
+          "character_id": "CHAR-ANDREY-001",
+          "scene_id": "SCENE-002",
+          "location_id": "LOC-TERMINAL-001",
+          "observed_event_ids": [
+            "EVT-001",
+            "EVT-002",
+            "EVT-004",
+            "EVT-005",
+            "EVT-006",
+            "EVT-008",
+            "EVT-009"
+          ],
+          "knowledge_ids": [
+            "K-EVT-004",
+            "K-EVT-005",
+            "K-EVT-008"
+          ],
+          "secret_ids": []
+        },
+        "CHAR-MARINA-001": {
+          "character_id": "CHAR-MARINA-001",
+          "scene_id": null,
+          "location_id": null,
+          "observed_event_ids": [],
+          "knowledge_ids": [],
+          "secret_ids": []
+        }
+      },
+      "after": {
+        "CHAR-ANDREY-001": {
+          "character_id": "CHAR-ANDREY-001",
+          "scene_id": "SCENE-003",
+          "location_id": "LOC-LAB-001",
+          "observed_event_ids": [
+            "EVT-001",
+            "EVT-002",
+            "EVT-004",
+            "EVT-005",
+            "EVT-006",
+            "EVT-008",
+            "EVT-009",
+            "EVT-010"
+          ],
+          "knowledge_ids": [
+            "K-EVT-004",
+            "K-EVT-005",
+            "K-EVT-008"
+          ],
+          "secret_ids": []
+        },
+        "CHAR-MARINA-001": {
+          "character_id": "CHAR-MARINA-001",
+          "scene_id": "SCENE-003",
+          "location_id": "LOC-LAB-001",
+          "observed_event_ids": [
+            "EVT-010"
+          ],
+          "knowledge_ids": [],
+          "secret_ids": []
+        }
+      },
+      "changes": [
+        {
+          "event_id": "EVT-010",
+          "character_id": "CHAR-ANDREY-001",
+          "field": "scene_id",
+          "before": "SCENE-002",
+          "after": "SCENE-003",
+          "reason": "Actor participates in event."
+        },
+        {
+          "event_id": "EVT-010",
+          "character_id": "CHAR-ANDREY-001",
+          "field": "location_id",
+          "before": "LOC-TERMINAL-001",
+          "after": "LOC-LAB-001",
+          "reason": "Explicit event location."
+        },
+        {
+          "event_id": "EVT-010",
+          "character_id": "CHAR-MARINA-001",
+          "field": "scene_id",
+          "before": null,
+          "after": "SCENE-003",
+          "reason": "Character is direct event target."
+        },
+        {
+          "event_id": "EVT-010",
+          "character_id": "CHAR-MARINA-001",
+          "field": "location_id",
+          "before": null,
+          "after": "LOC-LAB-001",
+          "reason": "Direct meeting/finding with located actor."
+        }
+      ]
+    },
+    {
+      "event_id": "EVT-011",
+      "scene_id": "SCENE-003",
+      "before": {
+        "CHAR-MARINA-001": {
+          "character_id": "CHAR-MARINA-001",
+          "scene_id": "SCENE-003",
+          "location_id": "LOC-LAB-001",
+          "observed_event_ids": [
+            "EVT-010"
+          ],
+          "knowledge_ids": [],
+          "secret_ids": []
+        },
+        "CHAR-ANDREY-001": {
+          "character_id": "CHAR-ANDREY-001",
+          "scene_id": "SCENE-003",
+          "location_id": "LOC-LAB-001",
+          "observed_event_ids": [
+            "EVT-001",
+            "EVT-002",
+            "EVT-004",
+            "EVT-005",
+            "EVT-006",
+            "EVT-008",
+            "EVT-009",
+            "EVT-010"
+          ],
+          "knowledge_ids": [
+            "K-EVT-004",
+            "K-EVT-005",
+            "K-EVT-008"
+          ],
+          "secret_ids": []
+        }
+      },
+      "after": {
+        "CHAR-MARINA-001": {
+          "character_id": "CHAR-MARINA-001",
+          "scene_id": "SCENE-003",
+          "location_id": "LOC-LAB-001",
+          "observed_event_ids": [
+            "EVT-010",
+            "EVT-011"
+          ],
+          "knowledge_ids": [
+            "K-EVT-011"
+          ],
+          "secret_ids": []
+        },
+        "CHAR-ANDREY-001": {
+          "character_id": "CHAR-ANDREY-001",
+          "scene_id": "SCENE-003",
+          "location_id": "LOC-LAB-001",
+          "observed_event_ids": [
+            "EVT-001",
+            "EVT-002",
+            "EVT-004",
+            "EVT-005",
+            "EVT-006",
+            "EVT-008",
+            "EVT-009",
+            "EVT-010",
+            "EVT-011"
+          ],
+          "knowledge_ids": [
+            "K-EVT-004",
+            "K-EVT-005",
+            "K-EVT-008",
+            "K-EVT-011"
+          ],
+          "secret_ids": []
+        }
+      },
+      "changes": []
+    },
+    {
+      "event_id": "EVT-012",
+      "scene_id": "SCENE-003",
+      "before": {
+        "CHAR-ANDREY-001": {
+          "character_id": "CHAR-ANDREY-001",
+          "scene_id": "SCENE-003",
+          "location_id": "LOC-LAB-001",
+          "observed_event_ids": [
+            "EVT-001",
+            "EVT-002",
+            "EVT-004",
+            "EVT-005",
+            "EVT-006",
+            "EVT-008",
+            "EVT-009",
+            "EVT-010",
+            "EVT-011"
+          ],
+          "knowledge_ids": [
+            "K-EVT-004",
+            "K-EVT-005",
+            "K-EVT-008",
+            "K-EVT-011"
+          ],
+          "secret_ids": []
+        },
+        "CHAR-MARINA-001": {
+          "character_id": "CHAR-MARINA-001",
+          "scene_id": "SCENE-003",
+          "location_id": "LOC-LAB-001",
+          "observed_event_ids": [
+            "EVT-010",
+            "EVT-011"
+          ],
+          "knowledge_ids": [
+            "K-EVT-011"
+          ],
+          "secret_ids": []
+        }
+      },
+      "after": {
+        "CHAR-ANDREY-001": {
+          "character_id": "CHAR-ANDREY-001",
+          "scene_id": "SCENE-003",
+          "location_id": "LOC-LAB-001",
+          "observed_event_ids": [
+            "EVT-001",
+            "EVT-002",
+            "EVT-004",
+            "EVT-005",
+            "EVT-006",
+            "EVT-008",
+            "EVT-009",
+            "EVT-010",
+            "EVT-011",
+            "EVT-012"
+          ],
+          "knowledge_ids": [
+            "K-EVT-004",
+            "K-EVT-005",
+            "K-EVT-008",
+            "K-EVT-011",
+            "K-EVT-012"
+          ],
+          "secret_ids": [
+            "K-EVT-012"
+          ]
+        },
+        "CHAR-MARINA-001": {
+          "character_id": "CHAR-MARINA-001",
+          "scene_id": "SCENE-003",
+          "location_id": "LOC-LAB-001",
+          "observed_event_ids": [
+            "EVT-010",
+            "EVT-011",
+            "EVT-012"
+          ],
+          "knowledge_ids": [
+            "K-EVT-011"
+          ],
+          "secret_ids": []
+        }
+      },
+      "changes": []
+    }
+  ],
+  "unresolved_secret_ids": [
+    "K-EVT-012"
+  ],
+  "issues": [],
+  "report": {
+    "mode": "deterministic",
+    "llm_used": false,
+    "timeline_events": 12,
+    "transitions": 12,
+    "knowledge_records": 5,
+    "unresolved_secrets": 1,
+    "continuity_issues": 0
+  }
+}

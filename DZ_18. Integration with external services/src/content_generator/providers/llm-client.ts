@@ -23,9 +23,14 @@ export interface GenerationMeta<T> {
 }
 
 export function generateNewsletter(input: {
+  provider?: "local" | "gigachat" | "openai";
   topic: string;
   audience: string;
   tone: string;
+  goal?: string;
+  campaignMode?: "individual" | "bulk";
+  recipientCount?: number;
+  personalization?: string;
   factualConstraints?: string[];
 }) {
   return postJson<GenerationMeta<NewsletterOutput>>(

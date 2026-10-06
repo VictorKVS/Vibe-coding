@@ -1,4 +1,4 @@
-﻿const DEFAULT_FATHER_URL = "http://127.0.0.1:8010";
+const DEFAULT_FATHER_URL = "http://127.0.0.1:8010";
 
 export const FATHER_URL =
   import.meta.env.VITE_FATHER_URL ??
@@ -198,3 +198,33 @@ export async function fatherTranscribe(
     },
   );
 }
+
+export async function fatherAnalyzeImage(
+  image: File,
+  prompt: string,
+) {
+  const data = new FormData();
+
+  data.append(
+    "image",
+    image,
+    image.name || "image.png",
+  );
+
+  data.append("prompt", prompt);
+
+  return jsonRequest<{
+    status: string;
+    agent: string;
+    provider: string;
+    model: string;
+    answer: string;
+  }>(
+    "/api/father/analyze-image",
+    {
+      method: "POST",
+      body: data,
+    },
+  );
+}
+
