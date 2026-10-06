@@ -1501,3 +1501,366 @@ select:focus {
     grid-template-columns: 1fr;
   }
 }
+
+/* ==========================================================
+   BOOKCRAFT CREATIVE STUDIO SHELL
+   DZ18 / ALINA + FATHER
+   ========================================================== */
+
+.bookcraft-shell {
+  min-height: 100%;
+  padding: 22px;
+  display: grid;
+  gap: 22px;
+  position: relative;
+  overflow: hidden;
+}
+
+.bookcraft-shell::before {
+  content: "";
+  position: absolute;
+  width: 620px;
+  height: 620px;
+  right: -260px;
+  top: -280px;
+  border-radius: 50%;
+  background: radial-gradient(
+    circle,
+    rgba(122, 92, 255, .16),
+    transparent 68%
+  );
+  pointer-events: none;
+}
+
+.bookcraft-topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  padding: 13px 16px;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: var(--panel-soft);
+  backdrop-filter: blur(18px);
+}
+
+.bookcraft-logo {
+  font-size: 15px;
+  letter-spacing: .18em;
+}
+
+.bookcraft-sublogo {
+  margin-left: 8px;
+  color: var(--muted);
+  font-size: 9px;
+}
+
+.bookcraft-nav {
+  display: flex;
+  gap: 18px;
+  color: var(--muted);
+  font-size: 9px;
+}
+
+.bookcraft-live,
+.alina-status {
+  color: var(--success);
+  font-size: 8px;
+  letter-spacing: .1em;
+}
+
+.bookcraft-hero {
+  min-height: 420px;
+  display: grid;
+  grid-template-columns: minmax(0, 1.2fr) minmax(300px, .8fr);
+  align-items: center;
+  gap: 40px;
+  padding: 42px;
+  border: 1px solid var(--line);
+  border-radius: 28px;
+  background:
+    radial-gradient(
+      circle at 75% 40%,
+      rgba(122, 92, 255, .13),
+      transparent 35%
+    ),
+    var(--panel-soft);
+}
+
+.bookcraft-copy {
+  position: relative;
+  z-index: 1;
+}
+
+.bookcraft-eyebrow {
+  display: block;
+  margin-bottom: 18px;
+  color: var(--muted);
+  font-size: 9px;
+  letter-spacing: .2em;
+}
+
+.bookcraft-copy h1 {
+  margin: 0;
+  max-width: 760px;
+  font-size: clamp(38px, 5vw, 72px);
+  line-height: .98;
+  letter-spacing: -.045em;
+}
+
+.bookcraft-copy h1 em {
+  font-style: normal;
+  opacity: .72;
+}
+
+.bookcraft-copy > p {
+  max-width: 620px;
+  margin: 24px 0;
+  color: var(--muted);
+  font-size: 14px;
+  line-height: 1.65;
+}
+
+.bookcraft-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.bookcraft-primary,
+.bookcraft-secondary {
+  min-height: 42px;
+  padding: 0 18px;
+  border-radius: 12px;
+  cursor: pointer;
+}
+
+.bookcraft-primary {
+  border: 0;
+  background: var(--text);
+  color: var(--bg);
+  font-weight: 700;
+}
+
+.bookcraft-secondary {
+  border: 1px solid var(--line);
+  background: var(--panel);
+  color: var(--text);
+}
+
+.bookcraft-pipeline {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-top: 28px;
+  color: var(--muted);
+  font-size: 8px;
+  letter-spacing: .08em;
+}
+
+.bookcraft-pipeline span {
+  padding: 6px 8px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+}
+
+.alina-stage {
+  min-height: 340px;
+  display: grid;
+  place-items: center;
+  position: relative;
+}
+
+.alina-orbit {
+  position: absolute;
+  border: 1px solid var(--line);
+  border-radius: 50%;
+}
+
+.orbit-one {
+  width: 310px;
+  height: 310px;
+}
+
+.orbit-two {
+  width: 380px;
+  height: 380px;
+  opacity: .45;
+}
+
+.alina-card {
+  width: min(270px, 100%);
+  position: relative;
+  z-index: 2;
+  padding: 25px;
+  text-align: center;
+  border: 1px solid var(--line);
+  border-radius: 26px;
+  background: var(--panel);
+  box-shadow: 0 28px 70px rgba(0, 0, 0, .18);
+}
+
+.alina-avatar-placeholder {
+  width: 110px;
+  height: 110px;
+  margin: 18px auto;
+  display: grid;
+  place-items: center;
+  border: 1px solid var(--line);
+  border-radius: 50%;
+  font-size: 42px;
+  font-weight: 700;
+  background: var(--panel-soft);
+}
+
+.alina-card h2 {
+  margin: 0;
+  font-size: 25px;
+  letter-spacing: .12em;
+}
+
+.alina-card > strong {
+  display: block;
+  margin-top: 5px;
+  font-size: 10px;
+}
+
+.alina-card > p {
+  color: var(--muted);
+  font-size: 9px;
+  line-height: 1.5;
+}
+
+.alina-stack {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 5px;
+  margin-top: 14px;
+}
+
+.alina-stack span {
+  padding: 5px 7px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  color: var(--muted);
+  font-size: 7px;
+}
+
+.creative-products {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.creative-product {
+  min-height: 145px;
+  padding: 16px;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: var(--panel-soft);
+  transition:
+    transform .18s ease,
+    border-color .18s ease;
+}
+
+.creative-product:hover {
+  transform: translateY(-3px);
+  border-color: var(--muted);
+}
+
+.creative-product-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.creative-product-icon {
+  font-size: 20px;
+}
+
+.creative-product small {
+  color: var(--muted);
+  font-size: 7px;
+  letter-spacing: .08em;
+}
+
+.creative-product h3 {
+  margin: 18px 0 7px;
+  font-size: 13px;
+}
+
+.creative-product p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 9px;
+  line-height: 1.5;
+}
+
+.father-flow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 15px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: var(--panel-soft);
+  color: var(--muted);
+  font-size: 8px;
+  letter-spacing: .06em;
+}
+
+.father-flow span {
+  color: var(--text);
+}
+
+.bookcraft-runtime {
+  margin-top: 10px;
+}
+
+@media (max-width: 1100px) {
+  .bookcraft-nav {
+    display: none;
+  }
+
+  .bookcraft-hero {
+    grid-template-columns: 1fr;
+  }
+
+  .creative-products {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 700px) {
+  .bookcraft-shell {
+    padding: 12px;
+  }
+
+  .bookcraft-topbar {
+    align-items: flex-start;
+  }
+
+  .bookcraft-sublogo {
+    display: none;
+  }
+
+  .bookcraft-hero {
+    padding: 24px 18px;
+  }
+
+  .bookcraft-copy h1 {
+    font-size: 40px;
+  }
+
+  .creative-products {
+    grid-template-columns: 1fr;
+  }
+
+  .orbit-two {
+    display: none;
+  }
+}

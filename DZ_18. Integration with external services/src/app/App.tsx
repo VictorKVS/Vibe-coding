@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { FatherRuntimePanel } from "../father/runtime/FatherRuntimePanel";
+import { CreativeStudioShell } from "../bookcraft/CreativeStudioShell";
 import { referencePersonas } from "../content_generator/personas/reference-personas";
 import { planDemoStoryboard } from "../content_generator/storyboard/planner";
 import type { PersonaSpec } from "../content_generator/personas/types";
@@ -23,10 +24,11 @@ import {
   type OpenAiTtsVoice,
 } from "../content_generator/providers/tts-client";
 
-type Section = "studio" | "newsletter" | "podcast" | "avatar" | "storyboard" | "diagnostics";
+type Section = "bookcraft" | "studio" | "newsletter" | "podcast" | "avatar" | "storyboard" | "diagnostics";
 type VisualMode = "strontium" | "alina";
 
 const sections: Array<{ id: Section; label: string; description: string; icon: string }> = [
+  { id: "bookcraft", label: "BOOKCRAFT", description: "ALINA · Creative AI Studio", icon: "✦" },
   { id: "studio", label: "AI Центр", description: "Control Model · RAG · Creative Studio", icon: "✦" },
   { id: "newsletter", label: "Рассылки", description: "Текст, subject, preheader и CTA", icon: "▤" },
   { id: "podcast", label: "Подкасты", description: "Сценарий и голосовой профиль", icon: "◉" },
@@ -36,7 +38,7 @@ const sections: Array<{ id: Section; label: string; description: string; icon: s
 ];
 
 export function App() {
-  const [section, setSection] = useState<Section>("studio");
+  const [section, setSection] = useState<Section>("bookcraft");
   const [visualMode, setVisualMode] = useState<VisualMode>("alina");
 
   return (
@@ -104,6 +106,11 @@ export function App() {
           </div>
         </header>
 
+        {section === "bookcraft" && (
+          <CreativeStudioShell
+            onOpenRuntime={() => setSection("studio")}
+          />
+        )}
         {section === "studio" && (
           <div className="alina-studio">
             <FatherRuntimePanel />
