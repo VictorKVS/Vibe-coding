@@ -1,0 +1,33 @@
+﻿Andrey was forty-two years old. He was a systems engineer.
+
+He entered Laboratory Block Four at 02:17.
+The corridor was narrow, concrete and almost dark.
+Red emergency lamps flashed above the sealed doors.
+
+Andrey was tall and lean. His dark hair had started turning gray
+at the temples. He rarely gestured while speaking and usually
+looked at equipment for several seconds before answering.
+
+A blue female hologram appeared above the damaged terminal.
+
+"My name is Lira," she said.
+"Who started the reactor?" Andrey asked.
+
+"I cannot answer that question yet."
+
+Andrey looked at the locked reactor door, then checked the terminal
+logs instead of arguing with her.
+
+A warning appeared on the screen:
+REACTOR COOLING FAILURE.
+
+Lira told him that he had less than twelve minutes before automatic
+containment would seal the lower level.
+
+Andrey did not trust her, but he decided to follow her instructions
+because the temperature readings confirmed part of her warning.
+
+In the next corridor he found Marina, the security chief.
+Marina told him that Lira must be disconnected immediately.
+
+Andrey did not tell Marina that Lira had already helped him.

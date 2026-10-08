@@ -1,0 +1,8 @@
+﻿{
+    "order":  10,
+    "id":  "gigachat_2",
+    "runtime":  "api",
+    "provider":  "gigachat",
+    "model":  "GigaChat-2",
+    "role":  "external-review"
+}

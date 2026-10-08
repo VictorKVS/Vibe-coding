@@ -1,0 +1,7 @@
+﻿{
+    "order":  1,
+    "id":  "llama32_1b",
+    "runtime":  "ollama",
+    "model":  "llama3.2:1b",
+    "role":  "initial-draft"
+}

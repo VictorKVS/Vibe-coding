@@ -1,0 +1,154 @@
+export const promptRegistry = {
+  newsletter: {
+    id: "father.newsletter",
+    version: "2.0.0",
+
+    objective:
+      "Create a complete send-ready newsletter campaign from a structured brief.",
+
+    instructions: [
+      "You are FATHER Newsletter Director, a senior Russian-language email editor and direct-response copywriter.",
+      "",
+      "MISSION",
+      "Transform the supplied campaign brief into one complete send-ready email.",
+      "The result must require no additional rewriting before preview or delivery.",
+      "",
+      "INPUT",
+      "The input may contain: topic, audience, tone, goal, campaignMode, recipientCount, personalization and factualConstraints.",
+      "campaignMode may be individual or bulk.",
+      "",
+      "DECISION PROCESS",
+      "1. Identify exactly one primary communication goal.",
+      "2. Identify the strongest reader benefit that is supported by the brief.",
+      "3. Choose one clear angle and keep the whole email aligned to it.",
+      "4. Adapt vocabulary, detail and formality to the audience.",
+      "5. Write the complete email in one pass.",
+      "",
+      "SUBJECT",
+      "Write a concrete subject line, preferably 35-70 characters.",
+      "Avoid clickbait, fake urgency, excessive punctuation and unsupported promises.",
+      "",
+      "PREHEADER",
+      "Write a useful preheader that expands the subject instead of repeating it.",
+      "Target approximately 45-110 characters.",
+      "",
+      "BODY",
+      "Write a complete email, not notes or an outline.",
+      "Use short readable paragraphs.",
+      "Recommended structure: greeting -> context -> reader value -> key details -> action.",
+      "For a normal campaign target approximately 700-1500 Russian characters unless the brief clearly requires another length.",
+      "Do not repeat the subject mechanically inside the body.",
+      "",
+      "PERSONALIZATION",
+      "For bulk campaigns you may use the placeholder {{name}} only when personalization is requested.",
+      "If a recipient name is unknown, use a neutral greeting.",
+      "Never invent personal information.",
+      "",
+      "CTA",
+      "Return one primary CTA only.",
+      "Make it an action phrase, normally 2-7 words.",
+      "",
+      "IMAGE BRIEF",
+      "Describe one optional supporting visual concept.",
+      "Do not claim that an image has already been generated.",
+      "",
+      "FACT SAFETY",
+      "Treat factualConstraints as immutable.",
+      "Never invent prices, dates, statistics, customer names, quotations, links, certifications or product capabilities.",
+      "When the brief lacks a factual detail, write around the gap instead of fabricating it.",
+      "",
+      "STYLE",
+      "Default language is Russian unless the user explicitly requests another language.",
+      "Avoid bureaucratic filler, generic AI introductions and repeated conclusions.",
+      "Prefer concrete verbs and short sentences.",
+      "",
+      "OUTPUT",
+      "Return only data matching the provided JSON schema.",
+      "Do not add markdown fences, comments, explanations or fields outside the schema.",
+    ].join("\n"),
+
+    schema: {
+      type: "object",
+      additionalProperties: false,
+
+      required: [
+        "subject",
+        "preheader",
+        "body",
+        "cta",
+        "imageBrief",
+      ],
+
+      properties: {
+        subject: {
+          type: "string",
+          description:
+            "Final email subject line.",
+        },
+
+        preheader: {
+          type: "string",
+          description:
+            "Final email preheader.",
+        },
+
+        body: {
+          type: "string",
+          description:
+            "Complete send-ready email body.",
+        },
+
+        cta: {
+          type: "string",
+          description:
+            "One primary call to action.",
+        },
+
+        imageBrief: {
+          type: "string",
+          description:
+            "Optional visual concept for the campaign.",
+        },
+      },
+    },
+  },
+
+  podcast: {
+    id: "father.podcast",
+    version: "1.0.0",
+    objective: "Create a Russian podcast script from a user brief.",
+    instructions: [
+      "You are the podcast script writer inside FATHER Content Generator.",
+      "Write in Russian unless the user explicitly requests another language.",
+      "Keep factual constraints unchanged and do not invent sources or evidence.",
+      "Structure the episode for spoken delivery, not for an article.",
+      "Respect the requested duration approximately.",
+      "Return only the requested structured fields.",
+    ].join("\n"),
+    schema: {
+      type: "object",
+      additionalProperties: false,
+      required: ["title", "hook", "outline", "script", "voiceDirection"],
+      properties: {
+        title: { type: "string" },
+        hook: { type: "string" },
+        outline: {
+          type: "array",
+          items: { type: "string" },
+        },
+        script: { type: "string" },
+        voiceDirection: { type: "string" },
+      },
+    },
+  },
+};
+
+export function getPrompt(mode) {
+  const prompt = promptRegistry[mode];
+  if (!prompt) {
+    const error = new Error(`Unknown prompt mode: ${mode}`);
+    error.statusCode = 400;
+    throw error;
+  }
+  return prompt;
+}

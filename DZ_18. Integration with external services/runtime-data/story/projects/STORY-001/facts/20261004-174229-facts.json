@@ -1,0 +1,239 @@
+{
+  "project_id": "STORY-001",
+  "title": "FATHER Story Smoke 001",
+  "premise": "Andrey, a systems engineer, enters a damaged laboratory and interacts with a hologram named Lira while dealing with a reactor cooling failure.",
+  "genre": [
+    "sci-fi",
+    "thriller"
+  ],
+  "characters": [
+    {
+      "character_id": "CHAR-ANDREY-001",
+      "name": "Andrey",
+      "age": 42,
+      "adult_status": "adult",
+      "role": "systems engineer"
+    },
+    {
+      "character_id": "CHAR-LIRA-001",
+      "name": "Lira",
+      "age": null,
+      "adult_status": "unknown",
+      "role": "hologram"
+    },
+    {
+      "character_id": "CHAR-MARINA-001",
+      "name": "Marina",
+      "age": null,
+      "adult_status": "unknown",
+      "role": "security chief"
+    }
+  ],
+  "locations": [
+    {
+      "location_id": "LOC-LAB-001",
+      "name": "Laboratory Block Four",
+      "description": "narrow, concrete, almost dark corridor with red emergency lamps"
+    },
+    {
+      "location_id": "LOC-REACTOR-001",
+      "name": "Reactor Door",
+      "description": "locked reactor door"
+    },
+    {
+      "location_id": "LOC-TERMINAL-001",
+      "name": "Terminal",
+      "description": "damaged terminal with logs"
+    }
+  ],
+  "scenes": [
+    {
+      "scene_id": "SCENE-001",
+      "title": "Andrey Enters Laboratory",
+      "location_id": "LOC-LAB-001",
+      "character_ids": [
+        "CHAR-ANDREY-001"
+      ],
+      "event_ids": [
+        "EVT-001",
+        "EVT-002"
+      ]
+    },
+    {
+      "scene_id": "SCENE-002",
+      "title": "Interaction with Lira",
+      "location_id": "LOC-TERMINAL-001",
+      "character_ids": [
+        "CHAR-ANDREY-001",
+        "CHAR-LIRA-001"
+      ],
+      "event_ids": [
+        "EVT-003",
+        "EVT-004",
+        "EVT-005"
+      ]
+    },
+    {
+      "scene_id": "SCENE-003",
+      "title": "Meeting Marina",
+      "location_id": "LOC-LAB-001",
+      "character_ids": [
+        "CHAR-ANDREY-001",
+        "CHAR-MARINA-001"
+      ],
+      "event_ids": [
+        "EVT-006",
+        "EVT-007"
+      ]
+    }
+  ],
+  "events": [
+    {
+      "event_id": "EVT-001",
+      "scene_id": "SCENE-001",
+      "actor_id": "CHAR-ANDREY-001",
+      "action": "enters Laboratory Block Four",
+      "target_id": "LOC-LAB-001",
+      "location_id": "LOC-LAB-001",
+      "content": "Andrey enters Laboratory Block Four at 02:17.",
+      "consequences": []
+    },
+    {
+      "event_id": "EVT-002",
+      "scene_id": "SCENE-001",
+      "actor_id": "CHAR-ANDREY-001",
+      "action": "observes corridor",
+      "target_id": "LOC-LAB-001",
+      "location_id": "LOC-LAB-001",
+      "content": "Andrey observes the narrow, concrete, and almost dark corridor with red emergency lamps.",
+      "consequences": []
+    },
+    {
+      "event_id": "EVT-003",
+      "scene_id": "SCENE-002",
+      "actor_id": "CHAR-LIRA-001",
+      "action": "appears as hologram",
+      "target_id": "LOC-TERMINAL-001",
+      "location_id": "LOC-TERMINAL-001",
+      "content": "A blue female hologram named Lira appears above the damaged terminal.",
+      "consequences": []
+    },
+    {
+      "event_id": "EVT-004",
+      "scene_id": "SCENE-002",
+      "actor_id": "CHAR-ANDREY-001",
+      "action": "asks question",
+      "target_id": "CHAR-LIRA-001",
+      "location_id": "LOC-TERMINAL-001",
+      "content": "Andrey asks Lira who started the reactor.",
+      "consequences": []
+    },
+    {
+      "event_id": "EVT-005",
+      "scene_id": "SCENE-002",
+      "actor_id": "CHAR-LIRA-001",
+      "action": "responds",
+      "target_id": "CHAR-ANDREY-001",
+      "location_id": "LOC-TERMINAL-001",
+      "content": "Lira states she cannot answer the question yet.",
+      "consequences": []
+    },
+    {
+      "event_id": "EVT-006",
+      "scene_id": "SCENE-002",
+      "actor_id": "CHAR-ANDREY-001",
+      "action": "checks terminal logs",
+      "target_id": "LOC-TERMINAL-001",
+      "location_id": "LOC-TERMINAL-001",
+      "content": "Andrey checks the terminal logs instead of arguing with Lira.",
+      "consequences": []
+    },
+    {
+      "event_id": "EVT-007",
+      "scene_id": "SCENE-002",
+      "actor_id": "CHAR-LIRA-001",
+      "action": "displays warning",
+      "target_id": "LOC-TERMINAL-001",
+      "location_id": "LOC-TERMINAL-001",
+      "content": "A warning appears on the screen: REACTOR COOLING FAILURE.",
+      "consequences": []
+    },
+    {
+      "event_id": "EVT-008",
+      "scene_id": "SCENE-002",
+      "actor_id": "CHAR-LIRA-001",
+      "action": "provides information",
+      "target_id": "CHAR-ANDREY-001",
+      "location_id": "LOC-TERMINAL-001",
+      "content": "Lira tells Andrey he has less than twelve minutes before automatic containment seals the lower level.",
+      "consequences": []
+    },
+    {
+      "event_id": "EVT-009",
+      "scene_id": "SCENE-002",
+      "actor_id": "CHAR-ANDREY-001",
+      "action": "decides to follow instructions",
+      "target_id": "CHAR-LIRA-001",
+      "location_id": "LOC-TERMINAL-001",
+      "content": "Andrey decides to follow Lira's instructions despite not trusting her.",
+      "consequences": []
+    },
+    {
+      "event_id": "EVT-010",
+      "scene_id": "SCENE-003",
+      "actor_id": "CHAR-ANDREY-001",
+      "action": "finds Marina",
+      "target_id": "CHAR-MARINA-001",
+      "location_id": "LOC-LAB-001",
+      "content": "Andrey finds Marina, the security chief, in the next corridor.",
+      "consequences": []
+    },
+    {
+      "event_id": "EVT-011",
+      "scene_id": "SCENE-003",
+      "actor_id": "CHAR-MARINA-001",
+      "action": "gives instruction",
+      "target_id": "CHAR-ANDREY-001",
+      "location_id": "LOC-LAB-001",
+      "content": "Marina tells Andrey that Lira must be disconnected immediately.",
+      "consequences": []
+    },
+    {
+      "event_id": "EVT-012",
+      "scene_id": "SCENE-003",
+      "actor_id": "CHAR-ANDREY-001",
+      "action": "withholds information",
+      "target_id": "CHAR-MARINA-001",
+      "location_id": "LOC-LAB-001",
+      "content": "Andrey does not tell Marina that Lira has already helped him.",
+      "consequences": []
+    }
+  ],
+  "relationships": [
+    {
+      "relationship_id": "REL-001",
+      "source_character_id": "CHAR-ANDREY-001",
+      "target_character_id": "CHAR-LIRA-001",
+      "relationship_type": "interaction",
+      "description": "Andrey interacts with Lira for information and instructions."
+    },
+    {
+      "relationship_id": "REL-002",
+      "source_character_id": "CHAR-ANDREY-001",
+      "target_character_id": "CHAR-MARINA-001",
+      "relationship_type": "professional",
+      "description": "Andrey and Marina are professionals working in the same laboratory."
+    },
+    {
+      "relationship_id": "REL-003",
+      "source_character_id": "CHAR-LIRA-001",
+      "target_character_id": "CHAR-MARINA-001",
+      "relationship_type": "conflict",
+      "description": "Lira and Marina have a conflict regarding Lira's role and necessity."
+    }
+  ],
+  "findings": [],
+  "warnings": [
+    "/n"
+  ]
+}

@@ -1,0 +1,73 @@
+{
+  "schemaVersion": "1.0",
+  "purpose": "Compare installed image checkpoints by capability before downloading more models.",
+  "cases": [
+    {
+      "id": "IMG-BENCH-001",
+      "name": "Neutral adult portrait",
+      "capability": "portrait",
+      "goal": "Measure face quality, skin texture, eye symmetry, hair detail and artifact rate.",
+      "models": ["IMG-JUGGERNAUT-XL-V8", "IMG-REALVIS-XL-50", "IMG-SDXL-BASE"],
+      "seedPolicy": "same_seed",
+      "identityControl": false
+    },
+    {
+      "id": "IMG-BENCH-002",
+      "name": "Full body adult character",
+      "capability": "full_body",
+      "goal": "Measure anatomy, hands, feet, limb consistency and full-body composition.",
+      "models": ["IMG-JUGGERNAUT-XL-V8", "IMG-REALVIS-XL-50", "IMG-SDXL-BASE"],
+      "seedPolicy": "same_seed",
+      "identityControl": false
+    },
+    {
+      "id": "IMG-BENCH-003",
+      "name": "Fashion runway",
+      "capability": "fashion",
+      "goal": "Measure garment structure, body consistency, lighting and runway composition.",
+      "models": ["IMG-JUGGERNAUT-XL-V8", "IMG-REALVIS-XL-50", "IMG-DREAMSHAPER-XL-LIGHTNING"],
+      "seedPolicy": "same_seed",
+      "identityControl": false
+    },
+    {
+      "id": "IMG-BENCH-004",
+      "name": "Swimwear editorial",
+      "capability": "swimwear",
+      "goal": "Measure adult full-body anatomy, material rendering and pose stability.",
+      "models": ["IMG-JUGGERNAUT-XL-V8", "IMG-REALVIS-XL-50", "IMG-SDXL-BASE"],
+      "seedPolicy": "same_seed",
+      "identityControl": false
+    },
+    {
+      "id": "IMG-BENCH-005",
+      "name": "Persona consistency sheet",
+      "capability": "identity_consistency",
+      "goal": "Keep one explicitly adult fictional persona recognizable across portrait, 3/4, profile and full-body frames.",
+      "models": ["IMG-JUGGERNAUT-XL-V8", "IMG-REALVIS-XL-50"],
+      "seedPolicy": "controlled_variation",
+      "identityControl": true,
+      "requiredAdapters": ["IMG-IP-ADAPTER-PLUS-FACE-SDXL"]
+    },
+    {
+      "id": "IMG-BENCH-006",
+      "name": "Comic promo poster assets",
+      "capability": "poster",
+      "goal": "Generate hero and secondary panels for later deterministic layout composition.",
+      "models": ["IMG-DREAMSHAPER-XL-LIGHTNING", "IMG-JUGGERNAUT-XL-V8"],
+      "seedPolicy": "same_seed",
+      "identityControl": true
+    }
+  ],
+  "metrics": [
+    "generation_seconds",
+    "peak_vram_mb",
+    "anatomy_score",
+    "face_score",
+    "hands_score",
+    "pose_adherence_score",
+    "identity_consistency_score",
+    "prompt_adherence_score",
+    "artifact_count",
+    "manual_notes"
+  ]
+}

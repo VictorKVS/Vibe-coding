@@ -1,0 +1,24 @@
+{
+  "project_id": "STORY-001",
+  "objects": {},
+  "injuries": {},
+  "commitments": {},
+  "goals": {},
+  "transitions": [],
+  "violations": [],
+  "report": {
+    "mode": "deterministic",
+    "llm_used": false,
+    "directives": 0,
+    "objects": 0,
+    "injuries": 0,
+    "commitments": 0,
+    "goals": 0,
+    "open_injuries": [],
+    "open_commitments": [],
+    "active_goals": [],
+    "violations": 0,
+    "errors": 0,
+    "passed": true
+  }
+}

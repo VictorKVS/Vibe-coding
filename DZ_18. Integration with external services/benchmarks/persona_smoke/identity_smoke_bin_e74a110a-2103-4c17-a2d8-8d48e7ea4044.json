@@ -1,0 +1,48 @@
+﻿{
+    "captured_at":  "2026-09-20T17:46:23.0901029+03:00",
+    "prompt_id":  "e74a110a-2103-4c17-a2d8-8d48e7ea4044",
+    "client_id":  "3fb02c4c-24b0-464e-8bea-f7e9c770062a",
+    "workflow":  "workflows/persona/studio_character_v2_identity_smoke_bin.json",
+    "duration_seconds":  382.12,
+    "status":  {
+                   "status_str":  "success",
+                   "completed":  true,
+                   "messages":  [
+                                    [
+                                        "execution_start",
+                                        {
+                                            "prompt_id":  "e74a110a-2103-4c17-a2d8-8d48e7ea4044",
+                                            "timestamp":  1789915200977
+                                        }
+                                    ],
+                                    [
+                                        "execution_cached",
+                                        {
+                                            "nodes":  [
+
+                                                      ],
+                                            "prompt_id":  "e74a110a-2103-4c17-a2d8-8d48e7ea4044",
+                                            "timestamp":  1789915200994
+                                        }
+                                    ],
+                                    [
+                                        "execution_success",
+                                        {
+                                            "prompt_id":  "e74a110a-2103-4c17-a2d8-8d48e7ea4044",
+                                            "timestamp":  1789915581545
+                                        }
+                                    ]
+                                ]
+               },
+    "outputs":  {
+                    "11":  {
+                               "images":  [
+                                              {
+                                                  "filename":  "identity_smoke_bin_00001_.png",
+                                                  "subfolder":  "FATHER\\persona",
+                                                  "type":  "output"
+                                              }
+                                          ]
+                           }
+                }
+}

@@ -1,0 +1,249 @@
+{
+  "type": "object",
+  "properties": {
+    "project_id": {
+      "type": "string"
+    },
+    "title": {
+      "type": "string"
+    },
+    "premise": {
+      "type": "string",
+      "maxLength": 320
+    },
+    "genre": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "maxItems": 5
+    },
+    "characters": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "character_id": {
+            "type": "string",
+            "maxLength": 80
+          },
+          "name": {
+            "type": "string",
+            "maxLength": 120
+          },
+          "age": {
+            "type": [
+              "integer",
+              "null"
+            ]
+          },
+          "adult_status": {
+            "type": "string",
+            "enum": [
+              "unknown",
+              "minor",
+              "adult"
+            ]
+          },
+          "role": {
+            "type": "string",
+            "maxLength": 160
+          }
+        },
+        "required": [
+          "character_id",
+          "name",
+          "age",
+          "adult_status",
+          "role"
+        ],
+        "additionalProperties": false
+      },
+      "maxItems": 20
+    },
+    "locations": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "location_id": {
+            "type": "string",
+            "maxLength": 80
+          },
+          "name": {
+            "type": "string",
+            "maxLength": 160
+          },
+          "description": {
+            "type": "string",
+            "maxLength": 240
+          }
+        },
+        "required": [
+          "location_id",
+          "name",
+          "description"
+        ],
+        "additionalProperties": false
+      },
+      "maxItems": 20
+    },
+    "scenes": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "scene_id": {
+            "type": "string",
+            "maxLength": 80
+          },
+          "title": {
+            "type": "string",
+            "maxLength": 180
+          },
+          "location_id": {
+            "type": "string",
+            "maxLength": 80
+          },
+          "character_ids": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "maxItems": 20
+          },
+          "event_ids": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "maxItems": 30
+          }
+        },
+        "required": [
+          "scene_id",
+          "title",
+          "location_id",
+          "character_ids",
+          "event_ids"
+        ],
+        "additionalProperties": false
+      },
+      "maxItems": 30
+    },
+    "events": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "event_id": {
+            "type": "string",
+            "maxLength": 100
+          },
+          "scene_id": {
+            "type": "string",
+            "maxLength": 80
+          },
+          "actor_id": {
+            "type": "string",
+            "maxLength": 80
+          },
+          "action": {
+            "type": "string",
+            "maxLength": 180
+          },
+          "target_id": {
+            "type": "string",
+            "maxLength": 80
+          },
+          "location_id": {
+            "type": "string",
+            "maxLength": 80
+          },
+          "content": {
+            "type": "string",
+            "maxLength": 260
+          },
+          "consequences": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "maxLength": 180
+            },
+            "maxItems": 4
+          }
+        },
+        "required": [
+          "event_id",
+          "scene_id",
+          "actor_id",
+          "action",
+          "target_id",
+          "location_id",
+          "content",
+          "consequences"
+        ],
+        "additionalProperties": false
+      },
+      "maxItems": 60
+    },
+    "relationships": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "relationship_id": {
+            "type": "string",
+            "maxLength": 100
+          },
+          "source_character_id": {
+            "type": "string",
+            "maxLength": 80
+          },
+          "target_character_id": {
+            "type": "string",
+            "maxLength": 80
+          },
+          "relationship_type": {
+            "type": "string",
+            "maxLength": 80
+          },
+          "description": {
+            "type": "string",
+            "maxLength": 220
+          }
+        },
+        "required": [
+          "relationship_id",
+          "source_character_id",
+          "target_character_id",
+          "relationship_type",
+          "description"
+        ],
+        "additionalProperties": false
+      },
+      "maxItems": 40
+    },
+    "warnings": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "maxLength": 240
+      },
+      "maxItems": 10
+    }
+  },
+  "required": [
+    "project_id",
+    "title",
+    "premise",
+    "genre",
+    "characters",
+    "locations",
+    "scenes",
+    "events",
+    "relationships",
+    "warnings"
+  ],
+  "additionalProperties": false
+}

@@ -1,0 +1,1603 @@
+{
+  "project_id": "STORY-001",
+  "title": "FATHER Story Smoke 001",
+  "genre": [
+    "sci-fi",
+    "thriller"
+  ],
+  "premise": "Andrey, a systems engineer, enters a damaged laboratory and interacts with a hologram named Lira while dealing with a reactor cooling failure.",
+  "target_products": [
+    "novel",
+    "comic"
+  ],
+  "style": {
+    "narrative_distance": 0.5,
+    "sentence_rhythm": 0.5,
+    "dialogue_density": 0.5,
+    "description_density": 0.5,
+    "technical_detail": 0.5,
+    "psychological_depth": 0.5,
+    "visuality": 0.5,
+    "action": 0.5,
+    "humor": 0.0,
+    "darkness": 0.0,
+    "romance": 0.0,
+    "eroticism": 0.0,
+    "reference_notes": []
+  },
+  "skeleton": [],
+  "characters": [
+    {
+      "character_id": "CHAR-ANDREY-001",
+      "name": "Andrey",
+      "aliases": [],
+      "story_role": "systems engineer",
+      "archetype": null,
+      "age": 42,
+      "adult_status": "adult",
+      "biography": [],
+      "psychology": {
+        "temperament": null,
+        "dominant_traits": [],
+        "motivation": [],
+        "fears": [],
+        "values": [],
+        "weaknesses": [],
+        "stress_response": null,
+        "conflict_style": null,
+        "speech_style": null,
+        "openness": null,
+        "conscientiousness": null,
+        "extraversion": null,
+        "agreeableness": null,
+        "neuroticism": null
+      },
+      "visual": {
+        "shape_language": [],
+        "silhouette": null,
+        "face_shape": null,
+        "eyes": null,
+        "brows": null,
+        "nose": null,
+        "mouth": null,
+        "jaw": null,
+        "posture": null,
+        "gestures": [],
+        "movement": null,
+        "neutral_expression": null,
+        "expression_system": {},
+        "grotesque_level": 0.5,
+        "stylization_level": 0.5
+      },
+      "appearance_canon": {},
+      "identity_lock": [],
+      "mutable_attributes": [],
+      "wardrobe": [],
+      "props": [],
+      "goals": [],
+      "secrets": [],
+      "knowledge": [],
+      "evidence": [
+        {
+          "source_id": "EVID-001",
+          "source_type": "story_text",
+          "fragment": "Andrey was forty-two years old. He was a systems engineer.",
+          "confidence": 1.0
+        },
+        {
+          "source_id": "EVID-002",
+          "source_type": "story_text",
+          "fragment": "Andrey was forty-two years old.",
+          "confidence": 1.0
+        }
+      ]
+    },
+    {
+      "character_id": "CHAR-LIRA-001",
+      "name": "Lira",
+      "aliases": [],
+      "story_role": "hologram",
+      "archetype": null,
+      "age": null,
+      "adult_status": "unknown",
+      "biography": [],
+      "psychology": {
+        "temperament": null,
+        "dominant_traits": [],
+        "motivation": [],
+        "fears": [],
+        "values": [],
+        "weaknesses": [],
+        "stress_response": null,
+        "conflict_style": null,
+        "speech_style": null,
+        "openness": null,
+        "conscientiousness": null,
+        "extraversion": null,
+        "agreeableness": null,
+        "neuroticism": null
+      },
+      "visual": {
+        "shape_language": [],
+        "silhouette": null,
+        "face_shape": null,
+        "eyes": null,
+        "brows": null,
+        "nose": null,
+        "mouth": null,
+        "jaw": null,
+        "posture": null,
+        "gestures": [],
+        "movement": null,
+        "neutral_expression": null,
+        "expression_system": {},
+        "grotesque_level": 0.5,
+        "stylization_level": 0.5
+      },
+      "appearance_canon": {},
+      "identity_lock": [],
+      "mutable_attributes": [],
+      "wardrobe": [],
+      "props": [],
+      "goals": [],
+      "secrets": [],
+      "knowledge": [],
+      "evidence": [
+        {
+          "source_id": "EVID-003",
+          "source_type": "story_text",
+          "fragment": "A blue female hologram appeared above the damaged terminal. My name is Lira, she said.",
+          "confidence": 1.0
+        }
+      ]
+    },
+    {
+      "character_id": "CHAR-MARINA-001",
+      "name": "Marina",
+      "aliases": [],
+      "story_role": "security chief",
+      "archetype": null,
+      "age": null,
+      "adult_status": "unknown",
+      "biography": [],
+      "psychology": {
+        "temperament": null,
+        "dominant_traits": [],
+        "motivation": [],
+        "fears": [],
+        "values": [],
+        "weaknesses": [],
+        "stress_response": null,
+        "conflict_style": null,
+        "speech_style": null,
+        "openness": null,
+        "conscientiousness": null,
+        "extraversion": null,
+        "agreeableness": null,
+        "neuroticism": null
+      },
+      "visual": {
+        "shape_language": [],
+        "silhouette": null,
+        "face_shape": null,
+        "eyes": null,
+        "brows": null,
+        "nose": null,
+        "mouth": null,
+        "jaw": null,
+        "posture": null,
+        "gestures": [],
+        "movement": null,
+        "neutral_expression": null,
+        "expression_system": {},
+        "grotesque_level": 0.5,
+        "stylization_level": 0.5
+      },
+      "appearance_canon": {},
+      "identity_lock": [],
+      "mutable_attributes": [],
+      "wardrobe": [],
+      "props": [],
+      "goals": [],
+      "secrets": [],
+      "knowledge": [],
+      "evidence": [
+        {
+          "source_id": "EVID-004",
+          "source_type": "story_text",
+          "fragment": "In the next corridor he found Marina, the security chief.",
+          "confidence": 1.0
+        }
+      ]
+    }
+  ],
+  "locations": [
+    {
+      "location_id": "LOC-LAB-001",
+      "name": "Laboratory Block Four",
+      "description": "narrow, concrete, almost dark corridor with red emergency lamps",
+      "purpose": null,
+      "architecture": null,
+      "atmosphere": null,
+      "lighting": null,
+      "state": null,
+      "objects": [],
+      "hazards": [],
+      "world_rules": [],
+      "visual_prompt_base": null,
+      "camera_presets": [],
+      "evidence": [
+        {
+          "source_id": "EVID-005",
+          "source_type": "story_text",
+          "fragment": "He entered Laboratory Block Four at 02:17. The corridor was narrow, concrete and almost dark. Red emergency lamps flashed above the sealed doors.",
+          "confidence": 1.0
+        }
+      ]
+    },
+    {
+      "location_id": "LOC-REACTOR-001",
+      "name": "Reactor Door",
+      "description": "locked reactor door",
+      "purpose": null,
+      "architecture": null,
+      "atmosphere": null,
+      "lighting": null,
+      "state": null,
+      "objects": [],
+      "hazards": [],
+      "world_rules": [],
+      "visual_prompt_base": null,
+      "camera_presets": [],
+      "evidence": [
+        {
+          "source_id": "EVID-006",
+          "source_type": "story_text",
+          "fragment": "Andrey looked at the locked reactor door, then checked the terminal logs instead of arguing with her.",
+          "confidence": 1.0
+        }
+      ]
+    },
+    {
+      "location_id": "LOC-TERMINAL-001",
+      "name": "Terminal",
+      "description": "damaged terminal with logs",
+      "purpose": null,
+      "architecture": null,
+      "atmosphere": null,
+      "lighting": null,
+      "state": null,
+      "objects": [],
+      "hazards": [],
+      "world_rules": [],
+      "visual_prompt_base": null,
+      "camera_presets": [],
+      "evidence": [
+        {
+          "source_id": "EVID-007",
+          "source_type": "story_text",
+          "fragment": "A blue female hologram appeared above the damaged terminal.",
+          "confidence": 1.0
+        }
+      ]
+    }
+  ],
+  "scenes": [
+    {
+      "scene_id": "SCENE-001",
+      "title": "Andrey Enters Laboratory",
+      "skeleton_node_id": null,
+      "location_id": "LOC-LAB-001",
+      "character_ids": [
+        "CHAR-ANDREY-001"
+      ],
+      "event_ids": [
+        "EVT-001",
+        "EVT-002"
+      ],
+      "goal": null,
+      "obstacle": null,
+      "conflict": null,
+      "outcome": null,
+      "information_revealed": [],
+      "character_state_before": {
+        "CHAR-ANDREY-001": {
+          "character_id": "CHAR-ANDREY-001",
+          "scene_id": null,
+          "location_id": null,
+          "observed_event_ids": [],
+          "knowledge_ids": [],
+          "secret_ids": []
+        }
+      },
+      "character_state_after": {
+        "CHAR-ANDREY-001": {
+          "character_id": "CHAR-ANDREY-001",
+          "scene_id": "SCENE-001",
+          "location_id": "LOC-LAB-001",
+          "observed_event_ids": [
+            "EVT-001",
+            "EVT-002"
+          ],
+          "knowledge_ids": [],
+          "secret_ids": []
+        }
+      },
+      "world_state_before": {},
+      "world_state_after": {},
+      "comic_shots": []
+    },
+    {
+      "scene_id": "SCENE-002",
+      "title": "Interaction with Lira",
+      "skeleton_node_id": null,
+      "location_id": "LOC-TERMINAL-001",
+      "character_ids": [
+        "CHAR-ANDREY-001",
+        "CHAR-LIRA-001"
+      ],
+      "event_ids": [
+        "EVT-003",
+        "EVT-004",
+        "EVT-005",
+        "EVT-006",
+        "EVT-007",
+        "EVT-008",
+        "EVT-009"
+      ],
+      "goal": null,
+      "obstacle": null,
+      "conflict": null,
+      "outcome": null,
+      "information_revealed": [],
+      "character_state_before": {
+        "CHAR-ANDREY-001": {
+          "character_id": "CHAR-ANDREY-001",
+          "scene_id": "SCENE-001",
+          "location_id": "LOC-LAB-001",
+          "observed_event_ids": [
+            "EVT-001",
+            "EVT-002"
+          ],
+          "knowledge_ids": [],
+          "secret_ids": []
+        },
+        "CHAR-LIRA-001": {
+          "character_id": "CHAR-LIRA-001",
+          "scene_id": null,
+          "location_id": null,
+          "observed_event_ids": [],
+          "knowledge_ids": [],
+          "secret_ids": []
+        }
+      },
+      "character_state_after": {
+        "CHAR-ANDREY-001": {
+          "character_id": "CHAR-ANDREY-001",
+          "scene_id": "SCENE-002",
+          "location_id": "LOC-TERMINAL-001",
+          "observed_event_ids": [
+            "EVT-001",
+            "EVT-002",
+            "EVT-004",
+            "EVT-005",
+            "EVT-006",
+            "EVT-008",
+            "EVT-009"
+          ],
+          "knowledge_ids": [
+            "K-EVT-004",
+            "K-EVT-005",
+            "K-EVT-008"
+          ],
+          "secret_ids": []
+        },
+        "CHAR-LIRA-001": {
+          "character_id": "CHAR-LIRA-001",
+          "scene_id": "SCENE-002",
+          "location_id": "LOC-TERMINAL-001",
+          "observed_event_ids": [
+            "EVT-003",
+            "EVT-004",
+            "EVT-005",
+            "EVT-007",
+            "EVT-008",
+            "EVT-009"
+          ],
+          "knowledge_ids": [
+            "K-EVT-004",
+            "K-EVT-005",
+            "K-EVT-008"
+          ],
+          "secret_ids": []
+        }
+      },
+      "world_state_before": {},
+      "world_state_after": {},
+      "comic_shots": []
+    },
+    {
+      "scene_id": "SCENE-003",
+      "title": "Meeting Marina",
+      "skeleton_node_id": null,
+      "location_id": "LOC-LAB-001",
+      "character_ids": [
+        "CHAR-ANDREY-001",
+        "CHAR-MARINA-001"
+      ],
+      "event_ids": [
+        "EVT-010",
+        "EVT-011",
+        "EVT-012"
+      ],
+      "goal": null,
+      "obstacle": null,
+      "conflict": null,
+      "outcome": null,
+      "information_revealed": [],
+      "character_state_before": {
+        "CHAR-ANDREY-001": {
+          "character_id": "CHAR-ANDREY-001",
+          "scene_id": "SCENE-002",
+          "location_id": "LOC-TERMINAL-001",
+          "observed_event_ids": [
+            "EVT-001",
+            "EVT-002",
+            "EVT-004",
+            "EVT-005",
+            "EVT-006",
+            "EVT-008",
+            "EVT-009"
+          ],
+          "knowledge_ids": [
+            "K-EVT-004",
+            "K-EVT-005",
+            "K-EVT-008"
+          ],
+          "secret_ids": []
+        },
+        "CHAR-MARINA-001": {
+          "character_id": "CHAR-MARINA-001",
+          "scene_id": null,
+          "location_id": null,
+          "observed_event_ids": [],
+          "knowledge_ids": [],
+          "secret_ids": []
+        }
+      },
+      "character_state_after": {
+        "CHAR-ANDREY-001": {
+          "character_id": "CHAR-ANDREY-001",
+          "scene_id": "SCENE-003",
+          "location_id": "LOC-LAB-001",
+          "observed_event_ids": [
+            "EVT-001",
+            "EVT-002",
+            "EVT-004",
+            "EVT-005",
+            "EVT-006",
+            "EVT-008",
+            "EVT-009",
+            "EVT-010",
+            "EVT-011",
+            "EVT-012"
+          ],
+          "knowledge_ids": [
+            "K-EVT-004",
+            "K-EVT-005",
+            "K-EVT-008",
+            "K-EVT-011",
+            "K-EVT-012"
+          ],
+          "secret_ids": [
+            "K-EVT-012"
+          ]
+        },
+        "CHAR-MARINA-001": {
+          "character_id": "CHAR-MARINA-001",
+          "scene_id": "SCENE-003",
+          "location_id": "LOC-LAB-001",
+          "observed_event_ids": [
+            "EVT-010",
+            "EVT-011",
+            "EVT-012"
+          ],
+          "knowledge_ids": [
+            "K-EVT-011"
+          ],
+          "secret_ids": []
+        }
+      },
+      "world_state_before": {},
+      "world_state_after": {},
+      "comic_shots": []
+    }
+  ],
+  "events": [
+    {
+      "event_id": "EVT-001",
+      "scene_id": "SCENE-001",
+      "actor_id": "CHAR-ANDREY-001",
+      "action": "enters Laboratory Block Four",
+      "target_id": "LOC-LAB-001",
+      "object_id": null,
+      "location_id": "LOC-LAB-001",
+      "content": "Andrey enters Laboratory Block Four at 02:17.",
+      "causes": [],
+      "consequences": [],
+      "before_state": {
+        "CHAR-ANDREY-001": {
+          "character_id": "CHAR-ANDREY-001",
+          "scene_id": null,
+          "location_id": null,
+          "observed_event_ids": [],
+          "knowledge_ids": [],
+          "secret_ids": []
+        }
+      },
+      "after_state": {
+        "CHAR-ANDREY-001": {
+          "character_id": "CHAR-ANDREY-001",
+          "scene_id": "SCENE-001",
+          "location_id": "LOC-LAB-001",
+          "observed_event_ids": [
+            "EVT-001"
+          ],
+          "knowledge_ids": [],
+          "secret_ids": []
+        }
+      },
+      "evidence": [
+        {
+          "source_id": "EVID-008",
+          "source_type": "story_text",
+          "fragment": "He entered Laboratory Block Four at 02:17.",
+          "confidence": 1.0
+        }
+      ]
+    },
+    {
+      "event_id": "EVT-002",
+      "scene_id": "SCENE-001",
+      "actor_id": "CHAR-ANDREY-001",
+      "action": "observes corridor",
+      "target_id": "LOC-LAB-001",
+      "object_id": null,
+      "location_id": "LOC-LAB-001",
+      "content": "Andrey observes the narrow, concrete, and almost dark corridor with red emergency lamps.",
+      "causes": [],
+      "consequences": [],
+      "before_state": {
+        "CHAR-ANDREY-001": {
+          "character_id": "CHAR-ANDREY-001",
+          "scene_id": "SCENE-001",
+          "location_id": "LOC-LAB-001",
+          "observed_event_ids": [
+            "EVT-001"
+          ],
+          "knowledge_ids": [],
+          "secret_ids": []
+        }
+      },
+      "after_state": {
+        "CHAR-ANDREY-001": {
+          "character_id": "CHAR-ANDREY-001",
+          "scene_id": "SCENE-001",
+          "location_id": "LOC-LAB-001",
+          "observed_event_ids": [
+            "EVT-001",
+            "EVT-002"
+          ],
+          "knowledge_ids": [],
+          "secret_ids": []
+        }
+      },
+      "evidence": [
+        {
+          "source_id": "EVID-009",
+          "source_type": "story_text",
+          "fragment": "The corridor was narrow, concrete and almost dark. Red emergency lamps flashed above the sealed doors.",
+          "confidence": 1.0
+        }
+      ]
+    },
+    {
+      "event_id": "EVT-003",
+      "scene_id": "SCENE-002",
+      "actor_id": "CHAR-LIRA-001",
+      "action": "appears as hologram",
+      "target_id": "LOC-TERMINAL-001",
+      "object_id": null,
+      "location_id": "LOC-TERMINAL-001",
+      "content": "A blue female hologram named Lira appears above the damaged terminal.",
+      "causes": [],
+      "consequences": [],
+      "before_state": {
+        "CHAR-LIRA-001": {
+          "character_id": "CHAR-LIRA-001",
+          "scene_id": null,
+          "location_id": null,
+          "observed_event_ids": [],
+          "knowledge_ids": [],
+          "secret_ids": []
+        }
+      },
+      "after_state": {
+        "CHAR-LIRA-001": {
+          "character_id": "CHAR-LIRA-001",
+          "scene_id": "SCENE-002",
+          "location_id": "LOC-TERMINAL-001",
+          "observed_event_ids": [
+            "EVT-003"
+          ],
+          "knowledge_ids": [],
+          "secret_ids": []
+        }
+      },
+      "evidence": [
+        {
+          "source_id": "EVID-010",
+          "source_type": "story_text",
+          "fragment": "A blue female hologram appeared above the damaged terminal. My name is Lira, she said.",
+          "confidence": 1.0
+        }
+      ]
+    },
+    {
+      "event_id": "EVT-004",
+      "scene_id": "SCENE-002",
+      "actor_id": "CHAR-ANDREY-001",
+      "action": "asks question",
+      "target_id": "CHAR-LIRA-001",
+      "object_id": null,
+      "location_id": "LOC-TERMINAL-001",
+      "content": "Andrey asks Lira who started the reactor.",
+      "causes": [],
+      "consequences": [],
+      "before_state": {
+        "CHAR-ANDREY-001": {
+          "character_id": "CHAR-ANDREY-001",
+          "scene_id": "SCENE-001",
+          "location_id": "LOC-LAB-001",
+          "observed_event_ids": [
+            "EVT-001",
+            "EVT-002"
+          ],
+          "knowledge_ids": [],
+          "secret_ids": []
+        },
+        "CHAR-LIRA-001": {
+          "character_id": "CHAR-LIRA-001",
+          "scene_id": "SCENE-002",
+          "location_id": "LOC-TERMINAL-001",
+          "observed_event_ids": [
+            "EVT-003"
+          ],
+          "knowledge_ids": [],
+          "secret_ids": []
+        }
+      },
+      "after_state": {
+        "CHAR-ANDREY-001": {
+          "character_id": "CHAR-ANDREY-001",
+          "scene_id": "SCENE-002",
+          "location_id": "LOC-TERMINAL-001",
+          "observed_event_ids": [
+            "EVT-001",
+            "EVT-002",
+            "EVT-004"
+          ],
+          "knowledge_ids": [
+            "K-EVT-004"
+          ],
+          "secret_ids": []
+        },
+        "CHAR-LIRA-001": {
+          "character_id": "CHAR-LIRA-001",
+          "scene_id": "SCENE-002",
+          "location_id": "LOC-TERMINAL-001",
+          "observed_event_ids": [
+            "EVT-003",
+            "EVT-004"
+          ],
+          "knowledge_ids": [
+            "K-EVT-004"
+          ],
+          "secret_ids": []
+        }
+      },
+      "evidence": [
+        {
+          "source_id": "EVID-011",
+          "source_type": "story_text",
+          "fragment": "Who started the reactor? Andrey asked.",
+          "confidence": 1.0
+        }
+      ]
+    },
+    {
+      "event_id": "EVT-005",
+      "scene_id": "SCENE-002",
+      "actor_id": "CHAR-LIRA-001",
+      "action": "responds",
+      "target_id": "CHAR-ANDREY-001",
+      "object_id": null,
+      "location_id": "LOC-TERMINAL-001",
+      "content": "Lira states she cannot answer the question yet.",
+      "causes": [],
+      "consequences": [],
+      "before_state": {
+        "CHAR-LIRA-001": {
+          "character_id": "CHAR-LIRA-001",
+          "scene_id": "SCENE-002",
+          "location_id": "LOC-TERMINAL-001",
+          "observed_event_ids": [
+            "EVT-003",
+            "EVT-004"
+          ],
+          "knowledge_ids": [
+            "K-EVT-004"
+          ],
+          "secret_ids": []
+        },
+        "CHAR-ANDREY-001": {
+          "character_id": "CHAR-ANDREY-001",
+          "scene_id": "SCENE-002",
+          "location_id": "LOC-TERMINAL-001",
+          "observed_event_ids": [
+            "EVT-001",
+            "EVT-002",
+            "EVT-004"
+          ],
+          "knowledge_ids": [
+            "K-EVT-004"
+          ],
+          "secret_ids": []
+        }
+      },
+      "after_state": {
+        "CHAR-LIRA-001": {
+          "character_id": "CHAR-LIRA-001",
+          "scene_id": "SCENE-002",
+          "location_id": "LOC-TERMINAL-001",
+          "observed_event_ids": [
+            "EVT-003",
+            "EVT-004",
+            "EVT-005"
+          ],
+          "knowledge_ids": [
+            "K-EVT-004",
+            "K-EVT-005"
+          ],
+          "secret_ids": []
+        },
+        "CHAR-ANDREY-001": {
+          "character_id": "CHAR-ANDREY-001",
+          "scene_id": "SCENE-002",
+          "location_id": "LOC-TERMINAL-001",
+          "observed_event_ids": [
+            "EVT-001",
+            "EVT-002",
+            "EVT-004",
+            "EVT-005"
+          ],
+          "knowledge_ids": [
+            "K-EVT-004",
+            "K-EVT-005"
+          ],
+          "secret_ids": []
+        }
+      },
+      "evidence": [
+        {
+          "source_id": "EVID-012",
+          "source_type": "story_text",
+          "fragment": "I cannot answer that question yet.",
+          "confidence": 1.0
+        }
+      ]
+    },
+    {
+      "event_id": "EVT-006",
+      "scene_id": "SCENE-002",
+      "actor_id": "CHAR-ANDREY-001",
+      "action": "checks terminal logs",
+      "target_id": "LOC-TERMINAL-001",
+      "object_id": null,
+      "location_id": "LOC-TERMINAL-001",
+      "content": "Andrey checks the terminal logs instead of arguing with Lira.",
+      "causes": [],
+      "consequences": [],
+      "before_state": {
+        "CHAR-ANDREY-001": {
+          "character_id": "CHAR-ANDREY-001",
+          "scene_id": "SCENE-002",
+          "location_id": "LOC-TERMINAL-001",
+          "observed_event_ids": [
+            "EVT-001",
+            "EVT-002",
+            "EVT-004",
+            "EVT-005"
+          ],
+          "knowledge_ids": [
+            "K-EVT-004",
+            "K-EVT-005"
+          ],
+          "secret_ids": []
+        }
+      },
+      "after_state": {
+        "CHAR-ANDREY-001": {
+          "character_id": "CHAR-ANDREY-001",
+          "scene_id": "SCENE-002",
+          "location_id": "LOC-TERMINAL-001",
+          "observed_event_ids": [
+            "EVT-001",
+            "EVT-002",
+            "EVT-004",
+            "EVT-005",
+            "EVT-006"
+          ],
+          "knowledge_ids": [
+            "K-EVT-004",
+            "K-EVT-005"
+          ],
+          "secret_ids": []
+        }
+      },
+      "evidence": [
+        {
+          "source_id": "EVID-013",
+          "source_type": "story_text",
+          "fragment": "Andrey looked at the locked reactor door, then checked the terminal logs instead of arguing with her.",
+          "confidence": 1.0
+        }
+      ]
+    },
+    {
+      "event_id": "EVT-007",
+      "scene_id": "SCENE-002",
+      "actor_id": "CHAR-LIRA-001",
+      "action": "displays warning",
+      "target_id": "LOC-TERMINAL-001",
+      "object_id": null,
+      "location_id": "LOC-TERMINAL-001",
+      "content": "A warning appears on the screen: REACTOR COOLING FAILURE.",
+      "causes": [],
+      "consequences": [],
+      "before_state": {
+        "CHAR-LIRA-001": {
+          "character_id": "CHAR-LIRA-001",
+          "scene_id": "SCENE-002",
+          "location_id": "LOC-TERMINAL-001",
+          "observed_event_ids": [
+            "EVT-003",
+            "EVT-004",
+            "EVT-005"
+          ],
+          "knowledge_ids": [
+            "K-EVT-004",
+            "K-EVT-005"
+          ],
+          "secret_ids": []
+        }
+      },
+      "after_state": {
+        "CHAR-LIRA-001": {
+          "character_id": "CHAR-LIRA-001",
+          "scene_id": "SCENE-002",
+          "location_id": "LOC-TERMINAL-001",
+          "observed_event_ids": [
+            "EVT-003",
+            "EVT-004",
+            "EVT-005",
+            "EVT-007"
+          ],
+          "knowledge_ids": [
+            "K-EVT-004",
+            "K-EVT-005"
+          ],
+          "secret_ids": []
+        }
+      },
+      "evidence": [
+        {
+          "source_id": "EVID-014",
+          "source_type": "story_text",
+          "fragment": "A warning appeared on the screen: REACTOR COOLING FAILURE.",
+          "confidence": 1.0
+        }
+      ]
+    },
+    {
+      "event_id": "EVT-008",
+      "scene_id": "SCENE-002",
+      "actor_id": "CHAR-LIRA-001",
+      "action": "provides information",
+      "target_id": "CHAR-ANDREY-001",
+      "object_id": null,
+      "location_id": "LOC-TERMINAL-001",
+      "content": "Lira tells Andrey he has less than twelve minutes before automatic containment seals the lower level.",
+      "causes": [],
+      "consequences": [],
+      "before_state": {
+        "CHAR-LIRA-001": {
+          "character_id": "CHAR-LIRA-001",
+          "scene_id": "SCENE-002",
+          "location_id": "LOC-TERMINAL-001",
+          "observed_event_ids": [
+            "EVT-003",
+            "EVT-004",
+            "EVT-005",
+            "EVT-007"
+          ],
+          "knowledge_ids": [
+            "K-EVT-004",
+            "K-EVT-005"
+          ],
+          "secret_ids": []
+        },
+        "CHAR-ANDREY-001": {
+          "character_id": "CHAR-ANDREY-001",
+          "scene_id": "SCENE-002",
+          "location_id": "LOC-TERMINAL-001",
+          "observed_event_ids": [
+            "EVT-001",
+            "EVT-002",
+            "EVT-004",
+            "EVT-005",
+            "EVT-006"
+          ],
+          "knowledge_ids": [
+            "K-EVT-004",
+            "K-EVT-005"
+          ],
+          "secret_ids": []
+        }
+      },
+      "after_state": {
+        "CHAR-LIRA-001": {
+          "character_id": "CHAR-LIRA-001",
+          "scene_id": "SCENE-002",
+          "location_id": "LOC-TERMINAL-001",
+          "observed_event_ids": [
+            "EVT-003",
+            "EVT-004",
+            "EVT-005",
+            "EVT-007",
+            "EVT-008"
+          ],
+          "knowledge_ids": [
+            "K-EVT-004",
+            "K-EVT-005",
+            "K-EVT-008"
+          ],
+          "secret_ids": []
+        },
+        "CHAR-ANDREY-001": {
+          "character_id": "CHAR-ANDREY-001",
+          "scene_id": "SCENE-002",
+          "location_id": "LOC-TERMINAL-001",
+          "observed_event_ids": [
+            "EVT-001",
+            "EVT-002",
+            "EVT-004",
+            "EVT-005",
+            "EVT-006",
+            "EVT-008"
+          ],
+          "knowledge_ids": [
+            "K-EVT-004",
+            "K-EVT-005",
+            "K-EVT-008"
+          ],
+          "secret_ids": []
+        }
+      },
+      "evidence": [
+        {
+          "source_id": "EVID-015",
+          "source_type": "story_text",
+          "fragment": "Lira told him that he had less than twelve minutes before automatic containment would seal the lower level.",
+          "confidence": 1.0
+        }
+      ]
+    },
+    {
+      "event_id": "EVT-009",
+      "scene_id": "SCENE-002",
+      "actor_id": "CHAR-ANDREY-001",
+      "action": "decides to follow instructions",
+      "target_id": "CHAR-LIRA-001",
+      "object_id": null,
+      "location_id": "LOC-TERMINAL-001",
+      "content": "Andrey decides to follow Lira's instructions despite not trusting her.",
+      "causes": [],
+      "consequences": [],
+      "before_state": {
+        "CHAR-ANDREY-001": {
+          "character_id": "CHAR-ANDREY-001",
+          "scene_id": "SCENE-002",
+          "location_id": "LOC-TERMINAL-001",
+          "observed_event_ids": [
+            "EVT-001",
+            "EVT-002",
+            "EVT-004",
+            "EVT-005",
+            "EVT-006",
+            "EVT-008"
+          ],
+          "knowledge_ids": [
+            "K-EVT-004",
+            "K-EVT-005",
+            "K-EVT-008"
+          ],
+          "secret_ids": []
+        },
+        "CHAR-LIRA-001": {
+          "character_id": "CHAR-LIRA-001",
+          "scene_id": "SCENE-002",
+          "location_id": "LOC-TERMINAL-001",
+          "observed_event_ids": [
+            "EVT-003",
+            "EVT-004",
+            "EVT-005",
+            "EVT-007",
+            "EVT-008"
+          ],
+          "knowledge_ids": [
+            "K-EVT-004",
+            "K-EVT-005",
+            "K-EVT-008"
+          ],
+          "secret_ids": []
+        }
+      },
+      "after_state": {
+        "CHAR-ANDREY-001": {
+          "character_id": "CHAR-ANDREY-001",
+          "scene_id": "SCENE-002",
+          "location_id": "LOC-TERMINAL-001",
+          "observed_event_ids": [
+            "EVT-001",
+            "EVT-002",
+            "EVT-004",
+            "EVT-005",
+            "EVT-006",
+            "EVT-008",
+            "EVT-009"
+          ],
+          "knowledge_ids": [
+            "K-EVT-004",
+            "K-EVT-005",
+            "K-EVT-008"
+          ],
+          "secret_ids": []
+        },
+        "CHAR-LIRA-001": {
+          "character_id": "CHAR-LIRA-001",
+          "scene_id": "SCENE-002",
+          "location_id": "LOC-TERMINAL-001",
+          "observed_event_ids": [
+            "EVT-003",
+            "EVT-004",
+            "EVT-005",
+            "EVT-007",
+            "EVT-008",
+            "EVT-009"
+          ],
+          "knowledge_ids": [
+            "K-EVT-004",
+            "K-EVT-005",
+            "K-EVT-008"
+          ],
+          "secret_ids": []
+        }
+      },
+      "evidence": [
+        {
+          "source_id": "EVID-016",
+          "source_type": "story_text",
+          "fragment": "Andrey did not trust her, but he decided to follow her instructions because the temperature readings confirmed part of her warning.",
+          "confidence": 1.0
+        }
+      ]
+    },
+    {
+      "event_id": "EVT-010",
+      "scene_id": "SCENE-003",
+      "actor_id": "CHAR-ANDREY-001",
+      "action": "finds Marina",
+      "target_id": "CHAR-MARINA-001",
+      "object_id": null,
+      "location_id": "LOC-LAB-001",
+      "content": "Andrey finds Marina, the security chief, in the next corridor.",
+      "causes": [],
+      "consequences": [],
+      "before_state": {
+        "CHAR-ANDREY-001": {
+          "character_id": "CHAR-ANDREY-001",
+          "scene_id": "SCENE-002",
+          "location_id": "LOC-TERMINAL-001",
+          "observed_event_ids": [
+            "EVT-001",
+            "EVT-002",
+            "EVT-004",
+            "EVT-005",
+            "EVT-006",
+            "EVT-008",
+            "EVT-009"
+          ],
+          "knowledge_ids": [
+            "K-EVT-004",
+            "K-EVT-005",
+            "K-EVT-008"
+          ],
+          "secret_ids": []
+        },
+        "CHAR-MARINA-001": {
+          "character_id": "CHAR-MARINA-001",
+          "scene_id": null,
+          "location_id": null,
+          "observed_event_ids": [],
+          "knowledge_ids": [],
+          "secret_ids": []
+        }
+      },
+      "after_state": {
+        "CHAR-ANDREY-001": {
+          "character_id": "CHAR-ANDREY-001",
+          "scene_id": "SCENE-003",
+          "location_id": "LOC-LAB-001",
+          "observed_event_ids": [
+            "EVT-001",
+            "EVT-002",
+            "EVT-004",
+            "EVT-005",
+            "EVT-006",
+            "EVT-008",
+            "EVT-009",
+            "EVT-010"
+          ],
+          "knowledge_ids": [
+            "K-EVT-004",
+            "K-EVT-005",
+            "K-EVT-008"
+          ],
+          "secret_ids": []
+        },
+        "CHAR-MARINA-001": {
+          "character_id": "CHAR-MARINA-001",
+          "scene_id": "SCENE-003",
+          "location_id": "LOC-LAB-001",
+          "observed_event_ids": [
+            "EVT-010"
+          ],
+          "knowledge_ids": [],
+          "secret_ids": []
+        }
+      },
+      "evidence": [
+        {
+          "source_id": "EVID-017",
+          "source_type": "story_text",
+          "fragment": "In the next corridor he found Marina, the security chief.",
+          "confidence": 1.0
+        }
+      ]
+    },
+    {
+      "event_id": "EVT-011",
+      "scene_id": "SCENE-003",
+      "actor_id": "CHAR-MARINA-001",
+      "action": "gives instruction",
+      "target_id": "CHAR-ANDREY-001",
+      "object_id": null,
+      "location_id": "LOC-LAB-001",
+      "content": "Marina tells Andrey that Lira must be disconnected immediately.",
+      "causes": [],
+      "consequences": [],
+      "before_state": {
+        "CHAR-MARINA-001": {
+          "character_id": "CHAR-MARINA-001",
+          "scene_id": "SCENE-003",
+          "location_id": "LOC-LAB-001",
+          "observed_event_ids": [
+            "EVT-010"
+          ],
+          "knowledge_ids": [],
+          "secret_ids": []
+        },
+        "CHAR-ANDREY-001": {
+          "character_id": "CHAR-ANDREY-001",
+          "scene_id": "SCENE-003",
+          "location_id": "LOC-LAB-001",
+          "observed_event_ids": [
+            "EVT-001",
+            "EVT-002",
+            "EVT-004",
+            "EVT-005",
+            "EVT-006",
+            "EVT-008",
+            "EVT-009",
+            "EVT-010"
+          ],
+          "knowledge_ids": [
+            "K-EVT-004",
+            "K-EVT-005",
+            "K-EVT-008"
+          ],
+          "secret_ids": []
+        }
+      },
+      "after_state": {
+        "CHAR-MARINA-001": {
+          "character_id": "CHAR-MARINA-001",
+          "scene_id": "SCENE-003",
+          "location_id": "LOC-LAB-001",
+          "observed_event_ids": [
+            "EVT-010",
+            "EVT-011"
+          ],
+          "knowledge_ids": [
+            "K-EVT-011"
+          ],
+          "secret_ids": []
+        },
+        "CHAR-ANDREY-001": {
+          "character_id": "CHAR-ANDREY-001",
+          "scene_id": "SCENE-003",
+          "location_id": "LOC-LAB-001",
+          "observed_event_ids": [
+            "EVT-001",
+            "EVT-002",
+            "EVT-004",
+            "EVT-005",
+            "EVT-006",
+            "EVT-008",
+            "EVT-009",
+            "EVT-010",
+            "EVT-011"
+          ],
+          "knowledge_ids": [
+            "K-EVT-004",
+            "K-EVT-005",
+            "K-EVT-008",
+            "K-EVT-011"
+          ],
+          "secret_ids": []
+        }
+      },
+      "evidence": [
+        {
+          "source_id": "EVID-018",
+          "source_type": "story_text",
+          "fragment": "Marina told him that Lira must be disconnected immediately.",
+          "confidence": 1.0
+        }
+      ]
+    },
+    {
+      "event_id": "EVT-012",
+      "scene_id": "SCENE-003",
+      "actor_id": "CHAR-ANDREY-001",
+      "action": "withholds information",
+      "target_id": "CHAR-MARINA-001",
+      "object_id": null,
+      "location_id": "LOC-LAB-001",
+      "content": "Andrey does not tell Marina that Lira has already helped him.",
+      "causes": [],
+      "consequences": [],
+      "before_state": {
+        "CHAR-ANDREY-001": {
+          "character_id": "CHAR-ANDREY-001",
+          "scene_id": "SCENE-003",
+          "location_id": "LOC-LAB-001",
+          "observed_event_ids": [
+            "EVT-001",
+            "EVT-002",
+            "EVT-004",
+            "EVT-005",
+            "EVT-006",
+            "EVT-008",
+            "EVT-009",
+            "EVT-010",
+            "EVT-011"
+          ],
+          "knowledge_ids": [
+            "K-EVT-004",
+            "K-EVT-005",
+            "K-EVT-008",
+            "K-EVT-011"
+          ],
+          "secret_ids": []
+        },
+        "CHAR-MARINA-001": {
+          "character_id": "CHAR-MARINA-001",
+          "scene_id": "SCENE-003",
+          "location_id": "LOC-LAB-001",
+          "observed_event_ids": [
+            "EVT-010",
+            "EVT-011"
+          ],
+          "knowledge_ids": [
+            "K-EVT-011"
+          ],
+          "secret_ids": []
+        }
+      },
+      "after_state": {
+        "CHAR-ANDREY-001": {
+          "character_id": "CHAR-ANDREY-001",
+          "scene_id": "SCENE-003",
+          "location_id": "LOC-LAB-001",
+          "observed_event_ids": [
+            "EVT-001",
+            "EVT-002",
+            "EVT-004",
+            "EVT-005",
+            "EVT-006",
+            "EVT-008",
+            "EVT-009",
+            "EVT-010",
+            "EVT-011",
+            "EVT-012"
+          ],
+          "knowledge_ids": [
+            "K-EVT-004",
+            "K-EVT-005",
+            "K-EVT-008",
+            "K-EVT-011",
+            "K-EVT-012"
+          ],
+          "secret_ids": [
+            "K-EVT-012"
+          ]
+        },
+        "CHAR-MARINA-001": {
+          "character_id": "CHAR-MARINA-001",
+          "scene_id": "SCENE-003",
+          "location_id": "LOC-LAB-001",
+          "observed_event_ids": [
+            "EVT-010",
+            "EVT-011",
+            "EVT-012"
+          ],
+          "knowledge_ids": [
+            "K-EVT-011"
+          ],
+          "secret_ids": []
+        }
+      },
+      "evidence": [
+        {
+          "source_id": "EVID-019",
+          "source_type": "story_text",
+          "fragment": "Andrey did not tell Marina that Lira had already helped him.",
+          "confidence": 1.0
+        }
+      ]
+    }
+  ],
+  "relationships": [
+    {
+      "relationship_id": "REL-001",
+      "source_character_id": "CHAR-ANDREY-001",
+      "target_character_id": "CHAR-LIRA-001",
+      "relationship_type": "interaction",
+      "description": "Andrey interacts with Lira for information and instructions.",
+      "evidence": [
+        {
+          "source_id": "EVID-020",
+          "source_type": "story_text",
+          "fragment": "Andrey asked Lira who started the reactor. Lira told him that he had less than twelve minutes before automatic containment would seal the lower level. Andrey decided to follow her instructions despite not trusting her.",
+          "confidence": 1.0
+        }
+      ],
+      "trust": null,
+      "fear": null,
+      "attraction": null,
+      "hostility": null,
+      "status": null,
+      "changed_by_event_id": null
+    },
+    {
+      "relationship_id": "REL-002",
+      "source_character_id": "CHAR-ANDREY-001",
+      "target_character_id": "CHAR-MARINA-001",
+      "relationship_type": "professional",
+      "description": "Andrey and Marina are professionals working in the same laboratory.",
+      "evidence": [
+        {
+          "source_id": "EVID-021",
+          "source_type": "story_text",
+          "fragment": "Andrey was a systems engineer. In the next corridor he found Marina, the security chief.",
+          "confidence": 1.0
+        }
+      ],
+      "trust": null,
+      "fear": null,
+      "attraction": null,
+      "hostility": null,
+      "status": null,
+      "changed_by_event_id": null
+    },
+    {
+      "relationship_id": "REL-003",
+      "source_character_id": "CHAR-LIRA-001",
+      "target_character_id": "CHAR-MARINA-001",
+      "relationship_type": "conflict",
+      "description": "Lira and Marina have a conflict regarding Lira's role and necessity.",
+      "evidence": [
+        {
+          "source_id": "EVID-022",
+          "source_type": "story_text",
+          "fragment": "Marina told him that Lira must be disconnected immediately. Andrey did not tell Marina that Lira had already helped him.",
+          "confidence": 1.0
+        }
+      ],
+      "trust": null,
+      "fear": null,
+      "attraction": null,
+      "hostility": null,
+      "status": null,
+      "changed_by_event_id": null
+    }
+  ],
+  "canon": {
+    "scene_id": "SCENE-003",
+    "characters": {
+      "CHAR-ANDREY-001": {
+        "name": "Andrey",
+        "age": 42,
+        "adult_status": "adult",
+        "story_role": "systems engineer",
+        "last_scene_id": "SCENE-003",
+        "last_location_id": "LOC-LAB-001",
+        "evidence_ids": [
+          "EVID-001",
+          "EVID-002"
+        ],
+        "observed_event_ids": [
+          "EVT-001",
+          "EVT-002",
+          "EVT-004",
+          "EVT-005",
+          "EVT-006",
+          "EVT-008",
+          "EVT-009",
+          "EVT-010",
+          "EVT-011",
+          "EVT-012"
+        ],
+        "knowledge_ids": [
+          "K-EVT-004",
+          "K-EVT-005",
+          "K-EVT-008",
+          "K-EVT-011",
+          "K-EVT-012"
+        ],
+        "secret_ids": [
+          "K-EVT-012"
+        ]
+      },
+      "CHAR-LIRA-001": {
+        "name": "Lira",
+        "age": null,
+        "adult_status": "unknown",
+        "story_role": "hologram",
+        "last_scene_id": "SCENE-002",
+        "last_location_id": "LOC-TERMINAL-001",
+        "evidence_ids": [
+          "EVID-003"
+        ],
+        "observed_event_ids": [
+          "EVT-003",
+          "EVT-004",
+          "EVT-005",
+          "EVT-007",
+          "EVT-008",
+          "EVT-009"
+        ],
+        "knowledge_ids": [
+          "K-EVT-004",
+          "K-EVT-005",
+          "K-EVT-008"
+        ],
+        "secret_ids": []
+      },
+      "CHAR-MARINA-001": {
+        "name": "Marina",
+        "age": null,
+        "adult_status": "unknown",
+        "story_role": "security chief",
+        "last_scene_id": "SCENE-003",
+        "last_location_id": "LOC-LAB-001",
+        "evidence_ids": [
+          "EVID-004"
+        ],
+        "observed_event_ids": [
+          "EVT-010",
+          "EVT-011",
+          "EVT-012"
+        ],
+        "knowledge_ids": [
+          "K-EVT-011"
+        ],
+        "secret_ids": []
+      }
+    },
+    "locations": {
+      "LOC-LAB-001": {
+        "name": "Laboratory Block Four",
+        "description": "narrow, concrete, almost dark corridor with red emergency lamps",
+        "evidence_ids": [
+          "EVID-005"
+        ]
+      },
+      "LOC-REACTOR-001": {
+        "name": "Reactor Door",
+        "description": "locked reactor door",
+        "evidence_ids": [
+          "EVID-006"
+        ]
+      },
+      "LOC-TERMINAL-001": {
+        "name": "Terminal",
+        "description": "damaged terminal with logs",
+        "evidence_ids": [
+          "EVID-007"
+        ]
+      }
+    },
+    "world": {
+      "scene_order": [
+        "SCENE-001",
+        "SCENE-002",
+        "SCENE-003"
+      ],
+      "timeline_event_ids": [
+        "EVT-001",
+        "EVT-002",
+        "EVT-003",
+        "EVT-004",
+        "EVT-005",
+        "EVT-006",
+        "EVT-007",
+        "EVT-008",
+        "EVT-009",
+        "EVT-010",
+        "EVT-011",
+        "EVT-012"
+      ],
+      "state_engine_version": "D1",
+      "state_timeline_event_ids": [
+        "EVT-001",
+        "EVT-002",
+        "EVT-003",
+        "EVT-004",
+        "EVT-005",
+        "EVT-006",
+        "EVT-007",
+        "EVT-008",
+        "EVT-009",
+        "EVT-010",
+        "EVT-011",
+        "EVT-012"
+      ],
+      "knowledge_record_ids": [
+        "K-EVT-004",
+        "K-EVT-005",
+        "K-EVT-008",
+        "K-EVT-011",
+        "K-EVT-012"
+      ],
+      "continuity_issue_ids": []
+    },
+    "active_props": {},
+    "unresolved_secrets": [
+      "K-EVT-012"
+    ]
+  },
+  "proposals": []
+}

@@ -1,0 +1,7 @@
+﻿{
+    "order":  5,
+    "id":  "qwen25_coder_7b",
+    "runtime":  "ollama",
+    "model":  "qwen2.5-coder:7b-instruct-q4_K_M",
+    "role":  "structure-review"
+}

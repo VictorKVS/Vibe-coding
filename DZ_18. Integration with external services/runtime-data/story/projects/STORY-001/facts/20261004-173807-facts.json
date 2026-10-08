@@ -1,0 +1,144 @@
+{
+  "project_id": "STORY-001",
+  "title": "FATHER Story Smoke 001",
+  "premise": "Andrey, a systems engineer, enters a laboratory block and encounters a hologram named Lira who provides critical information about a reactor cooling failure. Andrey interacts with Marina, the security chief, who advises disconnecting Lira.",
+  "genre": [
+    "sci-fi",
+    "thriller"
+  ],
+  "characters": [
+    {
+      "character_id": "CHAR-ANDREY-001",
+      "name": "Andrey",
+      "age": null,
+      "adult_status": "unknown",
+      "role": "systems engineer"
+    },
+    {
+      "character_id": "CHAR-LIRA-001",
+      "name": "Lira",
+      "age": null,
+      "adult_status": "unknown",
+      "role": "hologram"
+    },
+    {
+      "character_id": "CHAR-MARINA-001",
+      "name": "Marina",
+      "age": null,
+      "adult_status": "unknown",
+      "role": "security chief"
+    }
+  ],
+  "locations": [
+    {
+      "location_id": "LOC-LAB-001",
+      "name": "Laboratory Block Four",
+      "description": "narrow, concrete corridor with red emergency lamps"
+    },
+    {
+      "location_id": "LOC-REACTOR-001",
+      "name": "Reactor Door",
+      "description": "locked reactor door"
+    }
+  ],
+  "scenes": [
+    {
+      "scene_id": "SCENE-001",
+      "title": "Andrey Enters Laboratory Block Four",
+      "location_id": "LOC-LAB-001",
+      "character_ids": [
+        "CHAR-ANDREY-001"
+      ],
+      "event_ids": [
+        "EVT-001"
+      ]
+    },
+    {
+      "scene_id": "SCENE-002",
+      "title": "Andrey Interacts with Lira",
+      "location_id": "LOC-LAB-001",
+      "character_ids": [
+        "CHAR-ANDREY-001",
+        "CHAR-LIRA-001"
+      ],
+      "event_ids": [
+        "EVT-002",
+        "EVT-003"
+      ]
+    },
+    {
+      "scene_id": "SCENE-003",
+      "title": "Andrey Meets Marina",
+      "location_id": "LOC-LAB-001",
+      "character_ids": [
+        "CHAR-ANDREY-001",
+        "CHAR-MARINA-001"
+      ],
+      "event_ids": [
+        "EVT-004"
+      ]
+    }
+  ],
+  "events": [
+    {
+      "event_id": "EVT-001",
+      "scene_id": "SCENE-001",
+      "actor_id": "CHAR-ANDREY-001",
+      "action": "enters Laboratory Block Four",
+      "target_id": "LOC-LAB-001",
+      "location_id": "LOC-LAB-001",
+      "content": "Andrey enters Laboratory Block Four at 02:17.",
+      "consequences": []
+    },
+    {
+      "event_id": "EVT-002",
+      "scene_id": "SCENE-002",
+      "actor_id": "CHAR-LIRA-001",
+      "action": "appears as hologram",
+      "target_id": "CHAR-ANDREY-001",
+      "location_id": "LOC-LAB-001",
+      "content": "Lira appears as a blue female hologram above the damaged terminal.",
+      "consequences": []
+    },
+    {
+      "event_id": "EVT-003",
+      "scene_id": "SCENE-002",
+      "actor_id": "CHAR-ANDREY-001",
+      "action": "asks about reactor start",
+      "target_id": "CHAR-LIRA-001",
+      "location_id": "LOC-LAB-001",
+      "content": "Andrey asks Lira who started the reactor.",
+      "consequences": []
+    },
+    {
+      "event_id": "EVT-004",
+      "scene_id": "SCENE-003",
+      "actor_id": "CHAR-MARINA-001",
+      "action": "instructs to disconnect Lira",
+      "target_id": "CHAR-ANDREY-001",
+      "location_id": "LOC-LAB-001",
+      "content": "Marina tells Andrey that Lira must be disconnected immediately.",
+      "consequences": []
+    }
+  ],
+  "relationships": [
+    {
+      "relationship_id": "REL-001",
+      "source_character_id": "CHAR-ANDREY-001",
+      "target_character_id": "CHAR-LIRA-001",
+      "relationship_type": "interaction",
+      "description": "Andrey interacts with Lira for information about the reactor."
+    },
+    {
+      "relationship_id": "REL-002",
+      "source_character_id": "CHAR-ANDREY-001",
+      "target_character_id": "CHAR-MARINA-001",
+      "relationship_type": "professional",
+      "description": "Andrey and Marina have a professional relationship as Andrey is a systems engineer and Marina is the security chief."
+    }
+  ],
+  "findings": [],
+  "warnings": [
+    "/n"
+  ]
+}

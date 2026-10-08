@@ -1,0 +1,81 @@
+﻿[
+    {
+        "order":  1,
+        "id":  "llama32_1b",
+        "runtime":  "ollama",
+        "model":  "llama3.2:1b",
+        "role":  "initial-draft"
+    },
+    {
+        "order":  2,
+        "id":  "qwen25_3b",
+        "runtime":  "ollama",
+        "model":  "qwen2.5:3b",
+        "role":  "improver"
+    },
+    {
+        "order":  3,
+        "id":  "ministral_3b",
+        "runtime":  "llama.cpp",
+        "model":  "Ministral-3-3B-Instruct-2512-Q4_K_M.gguf",
+        "role":  "improver"
+    },
+    {
+        "order":  4,
+        "id":  "qwen25_7b",
+        "runtime":  "ollama",
+        "model":  "qwen2.5:7b",
+        "role":  "improver"
+    },
+    {
+        "order":  5,
+        "id":  "qwen25_coder_7b",
+        "runtime":  "ollama",
+        "model":  "qwen2.5-coder:7b-instruct-q4_K_M",
+        "role":  "structure-review"
+    },
+    {
+        "order":  6,
+        "id":  "deepseek_r1_7b",
+        "runtime":  "ollama",
+        "model":  "deepseek-r1:7b",
+        "role":  "critic"
+    },
+    {
+        "order":  7,
+        "id":  "ministral_8b",
+        "runtime":  "llama.cpp",
+        "model":  "Ministral-3-8B-Instruct-2512-Q4_K_M.gguf",
+        "role":  "senior-editor"
+    },
+    {
+        "order":  8,
+        "id":  "qwen3_vl_8b",
+        "runtime":  "ollama",
+        "model":  "qwen3-vl:8b-instruct-q4_K_M",
+        "role":  "reviewer"
+    },
+    {
+        "order":  9,
+        "id":  "ministral_14b_reasoning",
+        "runtime":  "llama.cpp",
+        "model":  "Ministral-3-14B-Reasoning-2512-Q4_K_M.gguf",
+        "role":  "reasoning-review"
+    },
+    {
+        "order":  10,
+        "id":  "gigachat_2",
+        "runtime":  "api",
+        "provider":  "gigachat",
+        "model":  "GigaChat-2",
+        "role":  "external-review"
+    },
+    {
+        "order":  11,
+        "id":  "openai",
+        "runtime":  "api",
+        "provider":  "openai",
+        "model":  "gpt-5.6-luna",
+        "role":  "final-review"
+    }
+]

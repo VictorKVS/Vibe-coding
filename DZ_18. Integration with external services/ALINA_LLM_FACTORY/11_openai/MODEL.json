@@ -1,0 +1,8 @@
+﻿{
+    "order":  11,
+    "id":  "openai",
+    "runtime":  "api",
+    "provider":  "openai",
+    "model":  "gpt-5.6-luna",
+    "role":  "final-review"
+}

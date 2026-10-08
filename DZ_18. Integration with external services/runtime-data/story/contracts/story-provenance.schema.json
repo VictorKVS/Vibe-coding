@@ -1,0 +1,154 @@
+{
+  "type": "object",
+  "properties": {
+    "project_id": {
+      "type": "string",
+      "maxLength": 120
+    },
+    "evidence": {
+      "type": "array",
+      "maxItems": 80,
+      "items": {
+        "type": "object",
+        "properties": {
+          "evidence_id": {
+            "type": "string",
+            "maxLength": 100
+          },
+          "entity_type": {
+            "type": "string",
+            "enum": [
+              "project",
+              "character",
+              "location",
+              "scene",
+              "event",
+              "relationship"
+            ]
+          },
+          "entity_id": {
+            "type": "string",
+            "maxLength": 120
+          },
+          "field_path": {
+            "type": "string",
+            "maxLength": 100
+          },
+          "value_summary": {
+            "type": "string",
+            "maxLength": 220
+          },
+          "origin": {
+            "type": "string",
+            "enum": [
+              "canon",
+              "inference"
+            ]
+          },
+          "source_fragment": {
+            "type": "string",
+            "maxLength": 260
+          },
+          "confidence": {
+            "type": "number",
+            "minimum": 0.0,
+            "maximum": 1.0
+          },
+          "rationale": {
+            "type": "string",
+            "maxLength": 220
+          }
+        },
+        "required": [
+          "evidence_id",
+          "entity_type",
+          "entity_id",
+          "field_path",
+          "value_summary",
+          "origin",
+          "source_fragment",
+          "confidence",
+          "rationale"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "proposals": {
+      "type": "array",
+      "maxItems": 5,
+      "items": {
+        "type": "object",
+        "properties": {
+          "proposal_id": {
+            "type": "string",
+            "maxLength": 100
+          },
+          "entity_type": {
+            "type": "string",
+            "enum": [
+              "project",
+              "character",
+              "location",
+              "scene",
+              "event",
+              "relationship"
+            ]
+          },
+          "entity_id": {
+            "type": "string",
+            "maxLength": 120
+          },
+          "category": {
+            "type": "string",
+            "enum": [
+              "psychology",
+              "visual",
+              "continuity",
+              "story",
+              "comic",
+              "other"
+            ]
+          },
+          "value": {
+            "type": "string",
+            "maxLength": 260
+          },
+          "confidence": {
+            "type": "number",
+            "minimum": 0.0,
+            "maximum": 1.0
+          },
+          "rationale": {
+            "type": "string",
+            "maxLength": 220
+          }
+        },
+        "required": [
+          "proposal_id",
+          "entity_type",
+          "entity_id",
+          "category",
+          "value",
+          "confidence",
+          "rationale"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "warnings": {
+      "type": "array",
+      "maxItems": 10,
+      "items": {
+        "type": "string",
+        "maxLength": 240
+      }
+    }
+  },
+  "required": [
+    "project_id",
+    "evidence",
+    "proposals",
+    "warnings"
+  ],
+  "additionalProperties": false
+}

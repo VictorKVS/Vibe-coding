@@ -1,0 +1,17 @@
+{
+  "version": "1.0.0",
+  "providers": {
+    "local": {
+      "enabled": true,
+      "missing_credentials": "error"
+    },
+    "gigachat": {
+      "enabled": true,
+      "missing_credentials": "skipped_not_configured"
+    },
+    "openai": {
+      "enabled": true,
+      "missing_credentials": "skipped_not_configured"
+    }
+  }
+}

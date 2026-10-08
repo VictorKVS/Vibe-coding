@@ -1,0 +1,7 @@
+﻿{
+    "order":  9,
+    "id":  "ministral_14b_reasoning",
+    "runtime":  "llama.cpp",
+    "model":  "Ministral-3-14B-Reasoning-2512-Q4_K_M.gguf",
+    "role":  "reasoning-review"
+}

@@ -1,0 +1,7 @@
+﻿{
+    "order":  8,
+    "id":  "qwen3_vl_8b",
+    "runtime":  "ollama",
+    "model":  "qwen3-vl:8b-instruct-q4_K_M",
+    "role":  "reviewer"
+}

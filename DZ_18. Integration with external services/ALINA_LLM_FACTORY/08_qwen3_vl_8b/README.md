@@ -1,0 +1,4 @@
+﻿INPUT/
+RAW/
+OUTPUT/
+META/
