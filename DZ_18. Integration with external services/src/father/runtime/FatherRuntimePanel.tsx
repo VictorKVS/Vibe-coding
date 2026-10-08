@@ -26,7 +26,7 @@ export function FatherRuntimePanel() {
 
   const [answer, setAnswer] = useState("");
   const [imagePrompt, setImagePrompt] = useState(
-    "FATHER AI engineering control center, cinematic technical interface"
+    "ALINA AI Creative Director in a premium BOOKCRAFT studio, working at a desk with books and a laptop, cinematic lighting, photorealistic, highly detailed"
   );
 
   const [imageUrl, setImageUrl] = useState("");
@@ -329,7 +329,7 @@ export function FatherRuntimePanel() {
         </section>
 
         <section className="card">
-          <h2>Image Zoo</h2>
+          <h2>АЛИНА · Image Studio</h2>
 
           <textarea
             rows={5}

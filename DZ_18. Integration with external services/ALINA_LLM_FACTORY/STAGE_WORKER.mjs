@@ -89,6 +89,7 @@ const {
   prompt_file,
   input_file,
   previous_product_file,
+  quality_feedback_file,
   output_dir
 } = config;
 
@@ -214,12 +215,28 @@ const prompt = {
  * Therefore every stage receives the same
  * immutable base prompt and original input.
  */
+let qualityFeedback = null;
+
+if (quality_feedback_file) {
+  if (!fs.existsSync(quality_feedback_file)) {
+    throw new Error(
+      `Quality feedback file not found: ${quality_feedback_file}`
+    );
+  }
+
+  qualityFeedback = JSON.parse(
+    readUtf8(quality_feedback_file)
+  );
+}
 const stageInput = {
   ORIGINAL_INPUT:
     originalInput,
 
   PREVIOUS_PRODUCT:
-    previousProduct
+    previousProduct,
+
+
+  QUALITY_FEEDBACK: qualityFeedback
 };
 
 

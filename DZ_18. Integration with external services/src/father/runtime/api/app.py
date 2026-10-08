@@ -1071,7 +1071,7 @@ def generate_image(request: ImageRequest):
             detail=f"ComfyUI submit error: {exc}",
         )
 
-    deadline = time.time() + 240
+    deadline = time.time() + 600
 
     image_info = None
 
