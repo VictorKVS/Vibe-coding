@@ -1,0 +1,7 @@
+﻿{
+    "order":  2,
+    "id":  "qwen25_3b",
+    "runtime":  "ollama",
+    "model":  "qwen2.5:3b",
+    "role":  "improver"
+}

@@ -1,26 +1,25 @@
 const DEFAULT_BASE_URL =
-  "http://127.0.0.1:8088";
+  "http://127.0.0.1:11434";
 
 const DEFAULT_MODEL =
-  "Ministral 3 8B Instruct Q4";
+  "qwen2.5:7b";
+
+const DEFAULT_DISPLAY =
+  "Qwen 2.5 7B";
 
 
 export function localLlmHealth() {
   return {
     provider: "local",
 
-    configured:
-      Boolean(
-        process.env.LOCAL_LLM_BASE_URL ||
-        DEFAULT_BASE_URL
-      ),
+    configured: true,
 
     model:
       process.env.LOCAL_LLM_NAME ||
-      DEFAULT_MODEL,
+      DEFAULT_DISPLAY,
 
     runtime:
-      "llama.cpp server",
+      "ollama",
 
     structuredOutput:
       "json-schema",
@@ -40,9 +39,13 @@ export async function generateLocalStructured({
     process.env.LOCAL_LLM_BASE_URL ||
     DEFAULT_BASE_URL;
 
-  const model =
-    process.env.LOCAL_LLM_NAME ||
+  const ollamaModel =
+    process.env.OLLAMA_MODEL ||
     DEFAULT_MODEL;
+
+  const displayModel =
+    process.env.LOCAL_LLM_NAME ||
+    DEFAULT_DISPLAY;
 
 
   const systemPrompt = [
@@ -50,148 +53,18 @@ export async function generateLocalStructured({
 
     "",
     "FACTUAL SAFETY",
-    "Use only facts explicitly supplied by INPUT.",
-    "Never invent prices, dates, statistics, links, certifications, customers, integrations, product capabilities, free access or trial conditions.",
-    "If INPUT does not contain a fact, omit it.",
-    "Do not compensate for missing facts by inventing plausible details.",
+    "Use only facts explicitly present in INPUT.",
+    "Never invent prices, dates, statistics, URLs, customers, integrations, certifications, free access, trial conditions or product capabilities.",
+    "If INPUT does not provide a fact, omit it.",
 
     "",
     "OUTPUT",
-    "Return exactly one object matching the JSON schema.",
+    "Return exactly one JSON object matching the schema.",
     "No Markdown.",
-    "No commentary outside the object.",
+    "No text outside JSON.",
   ].join("\n");
 
 
-  let correction = "";
-
-
-  for (
-    let attempt = 1;
-    attempt <= 2;
-    attempt++
-  ) {
-    const messages = [
-      {
-        role: "system",
-        content:
-          systemPrompt +
-          correction,
-      },
-
-      {
-        role: "user",
-        content:
-          JSON.stringify(
-            input,
-            null,
-            2
-          ),
-      },
-    ];
-
-
-    const payload =
-      await callLocalServer({
-        baseUrl,
-        model,
-        messages,
-        schema:
-          prompt.schema,
-
-        maxTokens:
-          kind === "podcast"
-            ? 1800
-            : 1200,
-      });
-
-
-    const content =
-      payload?.choices?.[0]
-        ?.message?.content;
-
-
-    if (
-      typeof content !== "string" ||
-      !content.trim()
-    ) {
-      throwProvider(
-        "Local LLM returned no message content."
-      );
-    }
-
-
-    const data =
-      parseStructuredJson(
-        content
-      );
-
-
-    validateContract(
-      data,
-      prompt.schema
-    );
-
-
-    const factProblem =
-      findFactProblem(
-        data,
-        input
-      );
-
-
-    if (!factProblem) {
-      return {
-        provider: "local",
-        model,
-
-        promptId:
-          prompt.id,
-
-        promptVersion:
-          prompt.version,
-
-        attempts:
-          attempt,
-
-        data,
-      };
-    }
-
-
-    if (attempt === 2) {
-      throwProvider(
-        "Factual guard rejected the generated content: " +
-        factProblem
-      );
-    }
-
-
-    correction = [
-      "",
-      "",
-      "CORRECTION FOR THIS ATTEMPT:",
-      "The previous draft contained an unsupported claim:",
-      factProblem,
-      "Regenerate from INPUT only.",
-      "Remove that claim instead of replacing it with another invented fact.",
-    ].join("\n");
-  }
-
-
-  throwProvider(
-    "Local generation failed."
-  );
-}
-
-
-async function callLocalServer({
-  baseUrl,
-  model,
-  messages,
-  schema,
-  maxTokens,
-}) {
   const controller =
     new AbortController();
 
@@ -202,192 +75,196 @@ async function callLocalServer({
     );
 
 
+  let response;
+
   try {
-    let response;
 
-    try {
-      response =
-        await fetch(
-          `${baseUrl}/v1/chat/completions`,
-          {
-            method: "POST",
+    response = await fetch(
+      `${baseUrl}/api/chat`,
+      {
+        method: "POST",
 
-            headers: {
-              "Content-Type":
-                "application/json; charset=utf-8",
-            },
-
-            signal:
-              controller.signal,
-
-            body:
-              JSON.stringify({
-                model,
-
-                messages,
-
-                /*
-                 * llama.cpp native structured output:
-                 * type=json_object + schema.
-                 */
-                response_format: {
-                  type: "json_object",
-                  schema,
-                },
-
-                temperature:
-                  0.15,
-
-                max_tokens:
-                  maxTokens,
-
-                stream:
-                  false,
-              }),
-          }
-        );
-    }
-    catch (cause) {
-      const message =
-        cause?.name === "AbortError"
-          ? "Local LLM request timed out."
-          : `Local LLM server unavailable: ${cause?.message || cause}`;
-
-      const error =
-        new Error(message);
-
-      error.statusCode = 503;
-      error.provider = "local";
-      error.cause = cause;
-
-      throw error;
-    }
-
-
-    const raw =
-      await response.text();
-
-
-    let payload;
-
-    try {
-      payload =
-        raw
-          ? JSON.parse(raw)
-          : {};
-    }
-    catch {
-      payload = {
-        raw,
-      };
-    }
-
-
-    if (!response.ok) {
-      throwProvider(
-        payload?.error?.message ||
-        payload?.error ||
-        `Local LLM HTTP ${response.status}`,
-        {
-          status:
-            response.status,
-
-          preview:
-            raw.slice(
-              0,
-              1500
-            ),
+        headers: {
+          "Content-Type":
+            "application/json; charset=utf-8",
         },
-        response.status
+
+        signal:
+          controller.signal,
+
+        body:
+          JSON.stringify({
+            model:
+              ollamaModel,
+
+            messages: [
+              {
+                role:
+                  "system",
+
+                content:
+                  systemPrompt,
+              },
+              {
+                role:
+                  "user",
+
+                content:
+                  JSON.stringify(
+                    input,
+                    null,
+                    2
+                  ),
+              },
+            ],
+
+            stream:
+              false,
+
+            format:
+              prompt.schema,
+
+            keep_alive:
+              "30m",
+
+            options: {
+              temperature:
+                0,
+
+              num_ctx:
+                4096,
+            },
+          }),
+      }
+    );
+  }
+  catch (cause) {
+
+    const error =
+      new Error(
+        cause?.name === "AbortError"
+          ? "Ollama request timed out."
+          : `Ollama unavailable: ${cause?.message || cause}`
       );
-    }
 
+    error.statusCode = 503;
+    error.provider = "local";
+    error.cause = cause;
 
-    return payload;
+    throw error;
   }
   finally {
-    clearTimeout(
-      timer
-    );
+    clearTimeout(timer);
   }
-}
 
 
-function parseStructuredJson(raw) {
-  let text =
-    String(raw || "")
-      .trim();
+  const raw =
+    await response.text();
 
 
-  text = text
-    .replace(
-      /^```(?:json)?\s*/i,
-      ""
-    )
-    .replace(
-      /\s*```$/,
-      ""
-    )
-    .trim();
-
+  let payload;
 
   try {
-    return JSON.parse(
-      text
-    );
+    payload =
+      raw
+        ? JSON.parse(raw)
+        : {};
   }
   catch {
+    payload = {
+      raw,
+    };
   }
 
 
-  const start =
-    text.indexOf("{");
+  if (!response.ok) {
 
-  const end =
-    text.lastIndexOf("}");
+    const error =
+      new Error(
+        payload?.error ||
+        `Ollama HTTP ${response.status}`
+      );
+
+    error.statusCode =
+      response.status;
+
+    error.provider =
+      "local";
+
+    error.upstream = {
+      preview:
+        raw.slice(
+          0,
+          1500
+        ),
+    };
+
+    throw error;
+  }
+
+
+  const content =
+    payload?.message?.content;
 
 
   if (
-    start < 0 ||
-    end <= start
+    typeof content !== "string" ||
+    !content.trim()
   ) {
     throwProvider(
-      "Local model output contains no JSON object.",
-      {
-        preview:
-          text.slice(
-            0,
-            1500
-          ),
-      }
+      "Ollama returned no message content."
     );
   }
 
 
-  const candidate =
-    text.slice(
-      start,
-      end + 1
-    );
-
+  let data;
 
   try {
-    return JSON.parse(
-      candidate
-    );
+    data =
+      JSON.parse(
+        content
+      );
   }
   catch {
     throwProvider(
-      "Local model returned invalid JSON.",
+      "Ollama structured output was not valid JSON.",
       {
         preview:
-          candidate.slice(
+          content.slice(
             0,
             1500
           ),
       }
     );
   }
+
+
+  validateContract(
+    data,
+    prompt.schema
+  );
+
+
+  return {
+    provider:
+      "local",
+
+    model:
+      displayModel,
+
+    runtime:
+      "ollama",
+
+    ollamaModel,
+
+    promptId:
+      prompt.id,
+
+    promptVersion:
+      prompt.version,
+
+    data,
+  };
 }
 
 
@@ -395,6 +272,7 @@ function validateContract(
   data,
   schema
 ) {
+
   if (
     !data ||
     typeof data !== "object" ||
@@ -418,9 +296,8 @@ function validateContract(
     const key
     of required
   ) {
-    if (
-      !(key in data)
-    ) {
+
+    if (!(key in data)) {
       throwProvider(
         `Missing required field: ${key}`
       );
@@ -439,138 +316,16 @@ function validateContract(
 }
 
 
-function findFactProblem(
-  data,
-  input
-) {
-  const supplied =
-    JSON.stringify(input)
-      .toLowerCase();
-
-  const generated =
-    JSON.stringify(data)
-      .toLowerCase();
-
-
-  const checks = [
-    {
-      input:
-        [
-          "\\u0431\\u0435\\u0441\\u043f\\u043b\\u0430\\u0442",
-          "free",
-        ],
-
-      output:
-        [
-          "\\u0431\\u0435\\u0441\\u043f\\u043b\\u0430\\u0442",
-          "free trial",
-          "free access",
-        ],
-
-      message:
-        "unsupported free-access claim",
-    },
-
-    {
-      input:
-        [
-          "http://",
-          "https://",
-          "url",
-        ],
-
-      output:
-        [
-          "\\u043f\\u043e \\u0441\\u0441\\u044b\\u043b\\u043a",
-          "\\u043f\\u0435\\u0440\\u0435\\u0439\\u0434\\u0438\\u0442\\u0435 \\u043f\\u043e \\u0441\\u0441\\u044b\\u043b\\u043a",
-        ],
-
-      message:
-        "unsupported link instruction",
-    },
-
-    {
-      input:
-        [
-          "github",
-          "vs code",
-          "visual studio code",
-        ],
-
-      output:
-        [
-          "github",
-          "vs code",
-          "visual studio code",
-        ],
-
-      message:
-        "unsupported integration claim",
-    },
-  ];
-
-
-  for (
-    const check
-    of checks
-  ) {
-    const inputHasFact =
-      check.input.some(
-        (marker) =>
-          supplied.includes(
-            decodeMarker(marker)
-          )
-      );
-
-
-    if (inputHasFact) {
-      continue;
-    }
-
-
-    const outputHasClaim =
-      check.output.some(
-        (marker) =>
-          generated.includes(
-            decodeMarker(marker)
-          )
-      );
-
-
-    if (outputHasClaim) {
-      return check.message;
-    }
-  }
-
-
-  return null;
-}
-
-
-function decodeMarker(value) {
-  return value.replace(
-    /\\u([0-9a-f]{4})/gi,
-    (_, hex) =>
-      String.fromCharCode(
-        parseInt(
-          hex,
-          16
-        )
-      )
-  );
-}
-
-
 function throwProvider(
   message,
-  upstream,
-  statusCode = 502
+  upstream
 ) {
+
   const error =
     new Error(message);
 
   error.statusCode =
-    statusCode;
+    502;
 
   error.provider =
     "local";

@@ -1,0 +1,56 @@
+﻿{
+    "generated_at":  "2026-10-07T11:16:34.1853794+03:00",
+    "architecture":  "ALINA Multi-LLM Sequential Factory",
+    "providers":  [
+                      "gigachat",
+                      "local",
+                      "openai"
+                  ],
+    "ollama_models":  [
+                          "qwen3-vl:8b-instruct-q4_K_M",
+                          "llava:7b",
+                          "qwen2.5-coder:1.5b",
+                          "qwen2.5-coder:7b-instruct-q4_K_M",
+                          "qwen2.5:7b",
+                          "qwen2.5:3b",
+                          "deepseek-r1:7b",
+                          "llama3.2:1b"
+                      ],
+    "ollama_model_count":  8,
+    "model_files":  [
+                        {
+                            "name":  "Ministral-3-14B-Reasoning-2512-Q4_K_M.gguf",
+                            "extension":  ".gguf",
+                            "size_gb":  7.674,
+                            "path":  "G:\\1\\Vibe coding\\Vibe-coding-router\\DZ_18. Integration with external services\\models\\ministral-14b-reasoning-q4\\Ministral-3-14B-Reasoning-2512-Q4_K_M.gguf"
+                        },
+                        {
+                            "name":  "Ministral-3-3B-Instruct-2512-Q4_K_M.gguf",
+                            "extension":  ".gguf",
+                            "size_gb":  2,
+                            "path":  "G:\\1\\Vibe coding\\Vibe-coding-router\\DZ_18. Integration with external services\\models\\ministral-3b-instruct-q4\\Ministral-3-3B-Instruct-2512-Q4_K_M.gguf"
+                        },
+                        {
+                            "name":  "Ministral-3-8B-Instruct-2512-Q4_K_M.gguf",
+                            "extension":  ".gguf",
+                            "size_gb":  4.842,
+                            "path":  "G:\\1\\Vibe coding\\Vibe-coding-router\\DZ_18. Integration with external services\\models\\ministral-8b-instruct-q4\\Ministral-3-8B-Instruct-2512-Q4_K_M.gguf"
+                        },
+                        {
+                            "name":  "model.safetensors",
+                            "extension":  ".safetensors",
+                            "size_gb":  1.11,
+                            "path":  "G:\\1\\Vibe coding\\Vibe-coding-router\\DZ_18. Integration with external services\\models\\qwen3-embedding-0.6b\\model.safetensors"
+                        },
+                        {
+                            "name":  "model.safetensors",
+                            "extension":  ".safetensors",
+                            "size_gb":  1.11,
+                            "path":  "G:\\1\\Vibe coding\\Vibe-coding-router\\DZ_18. Integration with external services\\models\\qwen3-reranker-0.6b\\model.safetensors"
+                        }
+                    ],
+    "execution":  "sequential",
+    "common_prompt":  true,
+    "common_input":  true,
+    "previous_product_passed_to_next_model":  true
+}

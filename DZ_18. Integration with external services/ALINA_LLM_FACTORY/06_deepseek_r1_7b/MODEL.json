@@ -1,0 +1,7 @@
+﻿{
+    "order":  6,
+    "id":  "deepseek_r1_7b",
+    "runtime":  "ollama",
+    "model":  "deepseek-r1:7b",
+    "role":  "critic"
+}

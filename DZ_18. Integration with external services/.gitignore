@@ -18,3 +18,29 @@ runtime-data/outputs/
 
 runtime-data/config/*.local.json
 runtime-data/backups/
+
+# ALINA-BOOK generated artifacts
+ALINA_LLM_FACTORY/RUNS/
+ALINA_LLM_FACTORY/FINAL/
+
+# ALINA-BOOK temporary and backup files
+*.bak
+*.before-*
+*.before-*.bak
+
+# Environment backups and secrets
+.env.*
+!.env.example
+
+# FATHER runtime traces
+runtime-data/traces/
+
+# Temporary generated files
+*.tmp
+*.temp
+
+# ALINA-BOOK diagnostics and generated test runs
+ALINA_LLM_FACTORY/DIAGNOSTICS/
+ALINA_LLM_FACTORY/QWEN7B_SMOKE_RESULT.json
+ALINA_LLM_FACTORY/TESTS/GIGACHAT_*/
+ALINA_LLM_FACTORY/TESTS/OPENAI_SKIP_*/

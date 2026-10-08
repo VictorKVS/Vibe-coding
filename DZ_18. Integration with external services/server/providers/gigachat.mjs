@@ -1,4 +1,4 @@
-﻿import GigaChat from "gigachat";
+import GigaChat from "gigachat";
 import { Agent } from "node:https";
 
 const DEFAULT_MODEL = "GigaChat-2";
@@ -112,28 +112,8 @@ export async function generateGigaStructured({
     throw error;
   }
 
-  let data;
-
-  try {
-    data = JSON.parse(
-      content.trim()
-    );
-  }
-  catch {
-    const error = new Error(
-      "GigaChat structured output was not valid JSON."
-    );
-
-    error.statusCode = 502;
-    error.provider = "gigachat";
-
-    error.upstream = {
-      preview:
-        content.slice(0, 1000),
-    };
-
-    throw error;
-  }
+  const data =
+    parseGigaStructuredJson(content);
 
   return {
     provider: "gigachat",
@@ -142,4 +122,77 @@ export async function generateGigaStructured({
     promptVersion: prompt.version,
     data,
   };
+}
+function parseGigaStructuredJson(raw) {
+  let text =
+    String(raw || "")
+      .trim();
+
+  text = text
+    .replace(
+      /^```(?:json)?\s*/i,
+      ""
+    )
+    .replace(
+      /\s*```$/,
+      ""
+    )
+    .trim();
+
+  try {
+    return JSON.parse(text);
+  }
+  catch {
+    // GigaChat may wrap a valid object
+    // in a short natural-language preface.
+  }
+
+  const start =
+    text.indexOf("{");
+
+  const end =
+    text.lastIndexOf("}");
+
+  if (
+    start < 0 ||
+    end <= start
+  ) {
+    throwGigaJsonError(
+      raw,
+      "GigaChat output contains no JSON object."
+    );
+  }
+
+  const candidate =
+    text.slice(
+      start,
+      end + 1
+    );
+
+  try {
+    return JSON.parse(candidate);
+  }
+  catch {
+    throwGigaJsonError(
+      candidate,
+      "GigaChat structured output was not valid JSON."
+    );
+  }
+}
+
+
+function throwGigaJsonError(raw, message) {
+  const error =
+    new Error(message);
+
+  error.statusCode = 502;
+  error.provider = "gigachat";
+
+  error.upstream = {
+    preview:
+      String(raw || "")
+        .slice(0, 1500),
+  };
+
+  throw error;
 }
